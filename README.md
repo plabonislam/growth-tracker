@@ -1,28 +1,30 @@
-🧩 PNPM Monorepo with Shared Package
+# 🧩 PNPM Monorepo with Shared Package
 
-This repository is a PNPM-based monorepo containing both a frontend and a backend, along with a shared package for common utilities, types, and constants.
+This repository is a PNPM-based monorepo containing a frontend, a backend, and a shared package for common utilities, types, and constants.
 
-⚙️ Requirements
+## ⚙️ Requirements
 
-Node.js ≥ 18
+Ensure you have the following installed:
 
-PNPM ≥ 10.16.1
+*   **Node.js**: Version 18 or higher (`≥ 18`)
+*   **PNPM**: Version 10.16.1 or higher (`≥ 10.16.1`)
 
-Install PNPM globally if you haven’t already:
+If you do not have PNPM installed globally, you can install it using npm:
 
+```bash
 npm install -g pnpm
 
-🚀 Getting Started
-1. Install Dependencies
-
-Run the following command in the root directory:
+# 🧩 Getting started
+##1. Install Dependencies
 
 pnpm install
 
 
+
+
 This installs all dependencies for the root, backend, frontend, and shared packages.
 
-2. Development
+##2. Development
 
 To start frontend and backend concurrently:
 

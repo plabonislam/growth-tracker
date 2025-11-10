@@ -2,11 +2,12 @@
   "name": "pnpm_mono_shared",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "private": true,
   "scripts": {
-    "dev:backend": "pnpm run --filter backend start:dev",
+    "dev:shared": "pnpm --filter shared run build",
+    "dev:backend": "pnpm run --filter backend start",
     "dev:frontend": "pnpm run --filter frontend dev",
-    "dev": "concurrently \"pnpm run dev:frontend\" \"pnpm run dev:backend\""
+    "dev": "concurrently \"pnpm run dev:shared\" \"pnpm run dev:frontend\" \"pnpm run dev:backend\""
   },
   "keywords": [],
   "author": "",

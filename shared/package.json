@@ -1,13 +1,31 @@
 {
   "name": "shared",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsup"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "packageManager": "pnpm@10.16.1"
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./const/languages": {
+      "import": "./dist/const/languages.mjs",
+      "require": "./dist/const/languages.js"
+    },
+    "./types/languages": {
+      "import": "./dist/types/languages.mjs",
+      "require": "./dist/types/languages.js"
+    }
+  },
+  "packageManager": "pnpm@10.6.4",
+  "devDependencies": {
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.3"
+  }
 }

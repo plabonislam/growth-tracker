@@ -1,1 +1,1 @@
-export type Language = "javascript" | "go" | "c";
+export type Language = 'javascript' | 'go' | 'c';

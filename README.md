@@ -501,10 +501,4 @@ git commit -m "feat(backend): add user authentication endpoint"
 - [TypeScript Documentation](https://www.typescriptlang.org/docs/)
 - [Pre-commit Hooks Setup](./PRECOMMIT_SETUP.md)
 
-## 📄 License
-
-[Add your license information here]
-
----
-
 **Happy Coding! 🚀**

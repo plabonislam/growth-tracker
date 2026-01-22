@@ -11,6 +11,9 @@ importers:
       concurrently:
         specifier: ^9.2.1
         version: 9.2.1
+      prettier:
+        specifier: ^3.4.2
+        version: 3.6.2
 
   backend:
     dependencies:

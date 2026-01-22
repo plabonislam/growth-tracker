@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react';
 import { defaultLanguages } from 'shared';
-import './App.css'
+import './App.css';
 
 function App() {
- const [languages, setLanguages] = useState(defaultLanguages);
+  const [languages, setLanguages] = useState(defaultLanguages);
 
   useEffect(() => {
     setTimeout(async () => {
@@ -15,10 +15,9 @@ function App() {
 
   return (
     <>
-      
       <h1>Vite + React</h1>
       <div className="card">
-          {languages}
+        {languages}
         <p>
           Edit <code>src/App.tsx</code> and save to test HMR
         </p>
@@ -27,7 +26,7 @@ function App() {
         Click on the Vite and React logos to learn more
       </p>
     </>
-  )
+  );
 }
 
-export default App
+export default App;

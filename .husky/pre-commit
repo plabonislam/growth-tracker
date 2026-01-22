@@ -1,0 +1,10 @@
+# Run type checking
+echo "🔍 Running type checks..."
+pnpm type-check || exit 1
+
+# Run lint-staged (will handle linting and prettier on staged files)
+echo "🎨 Running linter and prettier on staged files..."
+pnpm lint-staged || exit 1
+
+echo "✅ Pre-commit checks passed!"
+

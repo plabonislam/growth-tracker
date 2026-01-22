@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return */
 import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
 import { Language } from 'shared';

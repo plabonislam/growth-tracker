@@ -103,7 +103,7 @@ Shared configuration at `.prettierrc`:
 
 - **Backend**: TypeScript + Prettier integration (`backend/eslint.config.mjs`)
 - **Frontend**: React + TypeScript rules (`frontend/eslint.config.js`)
-- **Shared**: TypeScript rules (`shared/eslint.config.mjs`)
+- **Shared**: TypeScript rules (`packages/shared/eslint.config.mjs`)
 
 ## Bypassing Pre-commit Hooks
 

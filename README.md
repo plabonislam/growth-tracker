@@ -31,7 +31,8 @@ All packages use TypeScript, share code through the `shared` package, and follow
 pnpm_mono_shared/
 ├── apps/
 │   ├── backend/      # NestJS backend application
-│   ├── frontend/     # React frontend application
+│   └── frontend/     # React frontend application
+├── packages/
 │   └── shared/       # Shared TypeScript package
 ├── .husky/           # Git hooks (pre-commit)
 ├── .prettierrc       # Shared Prettier configuration
@@ -278,7 +279,7 @@ Key features:
 - TypeScript support
 - ESLint with React rules
 
-### Shared (`apps/shared/`)
+### Shared (`packages/shared/`)
 
 - **Build Tool**: tsup
 - **Language**: TypeScript 5.9
@@ -340,7 +341,7 @@ pnpm type-check
 - `eslint.config.mjs` - Root ESLint base configuration
 - `apps/backend/eslint.config.mjs` - Backend-specific ESLint rules
 - `apps/frontend/eslint.config.js` - Frontend-specific ESLint rules
-- `apps/shared/eslint.config.mjs` - Shared package ESLint rules
+- `packages/shared/eslint.config.mjs` - Shared package ESLint rules
 
 ## 🐛 Troubleshooting
 

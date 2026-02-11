@@ -1,0 +1,37 @@
+{
+  "name": "shared",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "tsup",
+    "lint": "eslint . --fix",
+    "type-check": "tsc --noEmit"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    },
+    "./const/languages": {
+      "import": "./dist/const/languages.mjs",
+      "require": "./dist/const/languages.js"
+    },
+    "./types/languages": {
+      "import": "./dist/types/languages.mjs",
+      "require": "./dist/types/languages.js"
+    }
+  },
+  "packageManager": "pnpm@10.6.4",
+  "devDependencies": {
+    "@eslint/js": "^9.18.0",
+    "eslint": "^9.18.0",
+    "globals": "^16.0.0",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.20.0"
+  }
+}

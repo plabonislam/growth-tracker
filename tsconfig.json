@@ -2,10 +2,10 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@shared/*": ["shared/src/*"],
-      "@frontend/*": ["frontend/src/*"],
-      "@backend/*": ["backend/src/*"]
+      "@shared/*": ["apps/shared/src/*"],
+      "@frontend/*": ["apps/frontend/src/*"],
+      "@backend/*": ["apps/backend/src/*"]
     }
   },
-  "include": ["frontend/src", "backend/src", "shared/src"]
+  "include": ["apps/frontend/src", "apps/backend/src", "apps/shared/src"]
 }

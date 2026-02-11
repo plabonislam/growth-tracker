@@ -1,6 +1,6 @@
 import { Controller, Get } from '@nestjs/common';
+import { Language } from '../../../packages/shared/dist';
 import { AppService } from './app.service';
-import { Language } from 'shared';
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}

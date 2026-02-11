@@ -33,7 +33,7 @@ importers:
         specifier: ^8.53.1
         version: 8.53.1(eslint@9.39.2)(typescript@5.9.3)
 
-  backend:
+  apps/backend:
     dependencies:
       '@nestjs/common':
         specifier: ^11.0.1
@@ -124,7 +124,7 @@ importers:
         specifier: ^8.20.0
         version: 8.46.3(eslint@9.39.1)(typescript@5.9.3)
 
-  frontend:
+  apps/frontend:
     dependencies:
       react:
         specifier: ^19.1.1
@@ -173,7 +173,7 @@ importers:
         specifier: ^7.1.7
         version: 7.1.12(@types/node@24.10.0)(terser@5.44.0)(yaml@2.8.2)
 
-  shared:
+  apps/shared:
     devDependencies:
       '@eslint/js':
         specifier: ^9.18.0

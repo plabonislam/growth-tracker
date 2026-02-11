@@ -29,9 +29,10 @@ All packages use TypeScript, share code through the `shared` package, and follow
 
 ```
 pnpm_mono_shared/
-├── backend/          # NestJS backend application
-├── frontend/         # React frontend application
-├── shared/           # Shared TypeScript package
+├── apps/
+│   ├── backend/      # NestJS backend application
+│   ├── frontend/     # React frontend application
+│   └── shared/       # Shared TypeScript package
 ├── .husky/           # Git hooks (pre-commit)
 ├── .prettierrc       # Shared Prettier configuration
 ├── .prettierignore   # Prettier ignore patterns
@@ -248,7 +249,7 @@ pnpm --filter shared <script>
 
 ## 📦 Packages
 
-### Backend (`backend/`)
+### Backend (`apps/backend/`)
 
 - **Framework**: NestJS 11
 - **Language**: TypeScript 5.7
@@ -263,7 +264,7 @@ Key features:
 - ESLint + Prettier integration
 - Jest for unit and e2e testing
 
-### Frontend (`frontend/`)
+### Frontend (`apps/frontend/`)
 
 - **Framework**: React 19
 - **Build Tool**: Vite 7
@@ -277,7 +278,7 @@ Key features:
 - TypeScript support
 - ESLint with React rules
 
-### Shared (`shared/`)
+### Shared (`apps/shared/`)
 
 - **Build Tool**: tsup
 - **Language**: TypeScript 5.9
@@ -337,9 +338,9 @@ pnpm type-check
 - `.prettierrc` - Shared Prettier configuration
 - `.prettierignore` - Files to exclude from formatting
 - `eslint.config.mjs` - Root ESLint base configuration
-- `backend/eslint.config.mjs` - Backend-specific ESLint rules
-- `frontend/eslint.config.js` - Frontend-specific ESLint rules
-- `shared/eslint.config.mjs` - Shared package ESLint rules
+- `apps/backend/eslint.config.mjs` - Backend-specific ESLint rules
+- `apps/frontend/eslint.config.js` - Frontend-specific ESLint rules
+- `apps/shared/eslint.config.mjs` - Shared package ESLint rules
 
 ## 🐛 Troubleshooting
 

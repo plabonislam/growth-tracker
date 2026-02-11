@@ -1,5 +1,5 @@
 import { Controller, Get } from '@nestjs/common';
-import { Language } from '../../../packages/shared/dist';
+import { type Language } from 'shared';
 import { AppService } from './app.service';
 @Controller()
 export class AppController {

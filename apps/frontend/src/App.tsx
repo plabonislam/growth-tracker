@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
-import { defaultLanguages } from 'shared';
+import { defaultLanguages, type Language } from 'shared';
 import './App.css';
 
 function App() {
-  const [languages, setLanguages] = useState(defaultLanguages);
+  const [languages, setLanguages] = useState<Language[]>(defaultLanguages);
 
   useEffect(() => {
     setTimeout(async () => {

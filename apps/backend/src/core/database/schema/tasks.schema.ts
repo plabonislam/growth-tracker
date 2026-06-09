@@ -9,6 +9,8 @@ import {
 } from 'drizzle-orm/pg-core';
 import { TaskSubmissionStatus } from 'shared';
 import { usersTable } from './users.schema';
+export const taskInputTypeEnum = pgEnum('task_input_type', ['text']);
+
 import { courseModulesTable } from './course-modules.schema';
 
 export const taskSubmissionStatusEnum = pgEnum('task_submission_status', [
@@ -23,7 +25,7 @@ export const tasksTable = pgTable('tasks', {
     .references(() => courseModulesTable.id)
     .notNull(),
   statement: text('statement').notNull(),
-  inputType: pgEnum('task_input_type', ['text'])('input_type').default('text'),
+  inputType: taskInputTypeEnum('input_type').default('text'),
   mandatory: boolean('mandatory').default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });

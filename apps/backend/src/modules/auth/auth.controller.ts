@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Post, Res, UseGuards } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
@@ -15,7 +16,10 @@ interface AuthenticatedUser {
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly config: ConfigService,
+  ) {}
 
   @Public()
   @UseGuards(AuthGuard('google'))
@@ -31,13 +35,11 @@ export class AuthController {
   @ApiOperation({
     summary: 'Google OAuth callback — redirects to frontend with tokens',
   })
-  async googleCallback(
-    @CurrentUser() user: AuthenticatedUser,
-    @Res() res: Response,
-  ) {
+  googleCallback(@CurrentUser() user: AuthenticatedUser, @Res() res: Response) {
+    const frontendUrl =
+      this.config.get<string>('FRONTEND_URL') ?? 'http://localhost:5173';
     if (!user) {
-      // TODO: move to ConfigService
-      return res.redirect('http://localhost:5173/login?error=oauth_failed');
+      return res.redirect(`${frontendUrl}/login?error=oauth_failed`);
     }
     const { accessToken, refreshToken } = this.authService.generateTokens(
       user as unknown as {
@@ -46,9 +48,8 @@ export class AuthController {
         isAuthority: boolean | null;
       },
     );
-    // TODO: move to ConfigService
     return res.redirect(
-      `http://localhost:5173/auth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}`,
+      `${frontendUrl}/auth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}`,
     );
   }
 

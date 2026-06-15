@@ -1,4 +1,5 @@
 export * from './auth.schema';
+export * from './users.schema';
 export * from './clubs.schema';
 export * from './topics.schema';
 export * from './course-modules.schema';

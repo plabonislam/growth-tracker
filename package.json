@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev:shared": "pnpm --filter shared run build",
-    "dev:backend": "pnpm run --filter backend start",
+    "dev:backend": "pnpm run --filter backend start:dev",
     "dev:frontend": "pnpm run --filter frontend dev",
     "dev": "concurrently \"pnpm run dev:shared\" \"pnpm run dev:frontend\" \"pnpm run dev:backend\"",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\"",

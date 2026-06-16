@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
+import { and, count, eq, sql } from 'drizzle-orm';
+
 import { DatabaseService } from '../../core/database/database.service';
 import {
   clubMembershipsTable,
@@ -17,17 +18,41 @@ export class ClubsRepository {
 
   findAllActive() {
     return this.db.db
-      .select()
+      .select({
+        id: clubsTable.id,
+        name: clubsTable.name,
+        coordinatorId: clubsTable.coordinatorId,
+        archived: clubsTable.archived,
+        createdAt: clubsTable.createdAt,
+        topicCount: sql<number>`cast(count(distinct case when ${topicsTable.archived} = false then ${topicsTable.id} end) as int)`,
+        memberCount: sql<number>`cast(count(distinct ${clubMembershipsTable.id}) as int)`,
+      })
       .from(clubsTable)
-      .where(eq(clubsTable.archived, false));
+      .leftJoin(topicsTable, eq(topicsTable.clubId, clubsTable.id))
+      .leftJoin(
+        clubMembershipsTable,
+        eq(clubMembershipsTable.clubId, clubsTable.id),
+      )
+      .where(eq(clubsTable.archived, false))
+      .groupBy(clubsTable.id);
   }
 
   async findById(id: string) {
-    const [row] = await this.db.db
-      .select()
-      .from(clubsTable)
-      .where(eq(clubsTable.id, id));
-    return row ?? null;
+    const [[row], [topicRow], [memberRow]] = await Promise.all([
+      this.db.db.select().from(clubsTable).where(eq(clubsTable.id, id)),
+      this.db.db
+        .select({ count: count() })
+        .from(topicsTable)
+        .where(
+          and(eq(topicsTable.clubId, id), eq(topicsTable.archived, false)),
+        ),
+      this.db.db
+        .select({ count: count() })
+        .from(clubMembershipsTable)
+        .where(eq(clubMembershipsTable.clubId, id)),
+    ]);
+    if (!row) return null;
+    return { ...row, topicCount: topicRow.count, memberCount: memberRow.count };
   }
 
   async insert(data: { name: string; coordinatorId: string }) {

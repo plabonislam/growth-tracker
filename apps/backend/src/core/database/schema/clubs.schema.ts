@@ -21,6 +21,7 @@ export const membershipStatusEnum = pgEnum('membership_status', [
 export const clubsTable = pgTable('clubs', {
   id: uuid('id').primaryKey().defaultRandom(),
   name: text('name').notNull(),
+  description: text('description'),
   coordinatorId: uuid('coordinator_id')
     .references(() => usersTable.id)
     .notNull(),

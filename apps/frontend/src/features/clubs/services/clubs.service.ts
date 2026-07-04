@@ -1,4 +1,4 @@
-import type { Club } from '../clubs.types';
+import type { Club, ClubDetail } from '../clubs.types';
 
 /**
  * Clubs service.
@@ -77,6 +77,57 @@ const CLUBS: Club[] = [
   },
 ];
 
+const CLUB_DETAIL: ClubDetail = {
+  id: 'data-insights',
+  name: 'Advanced Data Analytics Club',
+  tone: 'primary',
+  topicsCount: 12,
+  membersLabel: '1.2k',
+  expectationsIntro:
+    'This club focuses on bridging the gap between theoretical data science and practical industry application. Members are expected to:',
+  expectations: [
+    'Commit 4-6 hours weekly for research and peer discussions.',
+    'Contribute to at least one group project per quarter.',
+    'Maintain a collaborative and mentorship-driven attitude.',
+  ],
+  mentorshipFocus: 'Guided by industry leads from top tech firms.',
+  topics: [
+    {
+      id: 'statistical-forecasting',
+      title: 'Statistical Forecasting Models',
+      iconKey: 'analytics',
+      tone: 'primary',
+      modules: 8,
+      hours: 4.5,
+      mentor: { name: 'Dr. Marcus Chen', role: 'Lead Mentor' },
+      enrolled: true,
+    },
+    {
+      id: 'neural-networks',
+      title: 'Neural Network Architectures',
+      iconKey: 'neural',
+      tone: 'amber',
+      modules: 15,
+      hours: 12,
+      mentor: { name: 'Sarah Jenkins', role: 'Expert' },
+      enrolled: false,
+    },
+    {
+      id: 'data-pipelines',
+      title: 'Scalable Data Pipelines',
+      iconKey: 'pipeline',
+      tone: 'indigo',
+      modules: 6,
+      hours: 3,
+      mentor: { name: 'David Volek', role: 'Specialist' },
+      enrolled: false,
+    },
+  ],
+};
+
 export const clubsService = {
   getClubs: (): Promise<Club[]> => Promise.resolve(CLUBS),
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  getClubDetail: (_id: string): Promise<ClubDetail> =>
+    Promise.resolve(CLUB_DETAIL),
 };

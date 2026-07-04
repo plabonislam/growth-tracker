@@ -24,3 +24,37 @@ export interface Club {
   /** `null` when the user has not joined the club yet. */
   membership: MembershipStatus | null;
 }
+
+/** Icon key for a topic, resolved in `clubs.constants.ts`. */
+export type TopicIconKey = 'analytics' | 'neural' | 'pipeline';
+
+export type MentorRole = 'Lead Mentor' | 'Expert' | 'Specialist';
+
+export interface Mentor {
+  name: string;
+  role: MentorRole;
+}
+
+export interface Topic {
+  id: string;
+  title: string;
+  iconKey: TopicIconKey;
+  tone: ClubTone;
+  modules: number;
+  hours: number;
+  mentor: Mentor;
+  /** Enrolled topics show "Open"; otherwise "Enroll". */
+  enrolled: boolean;
+}
+
+export interface ClubDetail {
+  id: string;
+  name: string;
+  tone: ClubTone;
+  topicsCount: number;
+  membersLabel: string;
+  expectationsIntro: string;
+  expectations: string[];
+  mentorshipFocus: string;
+  topics: Topic[];
+}

@@ -1,5 +1,7 @@
 import {
   Brain,
+  BrainCircuit,
+  Database,
   LineChart,
   Palette,
   Shield,
@@ -8,7 +10,13 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
-import type { ClubIconKey, ClubTone, MembershipStatus } from './clubs.types';
+import type {
+  ClubIconKey,
+  ClubTone,
+  MembershipStatus,
+  MentorRole,
+  TopicIconKey,
+} from './clubs.types';
 
 /** Icon key → lucide icon. */
 export const CLUB_ICONS: Record<ClubIconKey, LucideIcon> = {
@@ -18,6 +26,20 @@ export const CLUB_ICONS: Record<ClubIconKey, LucideIcon> = {
   leadership: Users,
   security: Shield,
   design: Palette,
+};
+
+/** Topic icon key → lucide icon. */
+export const TOPIC_ICONS: Record<TopicIconKey, LucideIcon> = {
+  analytics: LineChart,
+  neural: BrainCircuit,
+  pipeline: Database,
+};
+
+/** Mentor role → badge classes. */
+export const MENTOR_ROLE_META: Record<MentorRole, string> = {
+  'Lead Mentor': 'bg-primary/10 text-primary',
+  Expert: 'bg-muted text-muted-foreground',
+  Specialist: 'bg-muted text-muted-foreground',
 };
 
 /** Tone → literal Tailwind classes (kept literal so the JIT compiler sees them). */

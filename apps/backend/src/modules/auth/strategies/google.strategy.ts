@@ -8,7 +8,7 @@ import { AuthService } from '../auth.service';
 export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
   constructor(
     private readonly authService: AuthService,
-    config: ConfigService,
+    private readonly config: ConfigService,
   ) {
     super({
       clientID: config.get<string>('GOOGLE_CLIENT_ID') ?? '',
@@ -32,7 +32,15 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     done?: VerifyCallback,
   ) {
     const email = profile.emails[0].value;
-    if (!email.endsWith('@dsinnovators.com')) {
+    const allowedDomains = this.config
+      .get<string>('ALLOWED_EMAIL_DOMAINS', '')
+      .split(',')
+      .map((d) => d.trim())
+      .filter(Boolean);
+    if (
+      allowedDomains.length > 0 &&
+      !allowedDomains.some((domain) => email.endsWith(`@${domain}`))
+    ) {
       throw new UnauthorizedException('Email domain not allowed');
     }
     const user = await this.authService.upsertUser({

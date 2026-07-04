@@ -37,6 +37,7 @@
     "@nestjs/swagger": "^11.4.4",
     "dotenv": "^17.3.1",
     "drizzle-orm": "^0.45.1",
+    "helmet": "^8.2.0",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "passport-jwt": "^4.0.1",

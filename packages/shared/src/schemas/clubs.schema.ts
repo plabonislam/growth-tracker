@@ -2,11 +2,13 @@ import { z } from 'zod';
 
 export const CreateClubSchema = z.object({
   name: z.string().min(1),
+  description: z.string().optional(),
   coordinatorId: z.string().uuid().optional(),
 });
 
 export const UpdateClubSchema = z.object({
   name: z.string().min(1).optional(),
+  description: z.string().optional(),
   coordinatorId: z.string().uuid().optional(),
 });
 

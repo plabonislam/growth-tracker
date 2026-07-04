@@ -37,7 +37,7 @@ export class AuthController {
   })
   googleCallback(@CurrentUser() user: AuthenticatedUser, @Res() res: Response) {
     const frontendUrl =
-      this.config.get<string>('FRONTEND_URL') ?? 'http://localhost:5173';
+      this.config.get<string>('FRONTEND_URL') || 'http://localhost:5173';
     if (!user) {
       return res.redirect(`${frontendUrl}/login?error=oauth_failed`);
     }

@@ -92,3 +92,18 @@ export const NOT_ENROLLED_META = {
   label: 'Not Enrolled',
   className: 'bg-muted text-muted-foreground',
 };
+
+/** Default commitment checklist shown in the topic enrollment modal. */
+export const TOPIC_ENROLLMENT_COMMITMENTS = [
+  'I acknowledge the time commitment of approximately 5–8 hours per week.',
+  'I agree to adhere to the Peer-Review Code of Conduct.',
+  'I confirm that I have access to the necessary cloud environment resources.',
+];
+
+/** Emphasized final acknowledgement in the topic enrollment modal. */
+export const TOPIC_ENROLLMENT_ACKNOWLEDGEMENT =
+  'I have read and understand the aforementioned requirements and I am ready to commit to the intensive learning schedule for this topic.';
+
+/** Review note shown beneath the enrollment submit button. */
+export const TOPIC_ENROLLMENT_REVIEW_NOTE =
+  'Requests are typically reviewed within 48 hours. You will receive a notification upon approval.';

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 
+import { ExplorePage } from '@/pages/explore/explore-page';
 import { LandingPage } from '@/pages/landing/landing-page';
 import { LoginPage } from '@/pages/login/login-page';
 
@@ -82,5 +83,6 @@ export default function App() {
 
   if (path === '/auth/callback') return <CallbackPage />;
   if (path === '/login') return <LoginPage />;
+  if (path === '/explore') return <ExplorePage />;
   return <LandingPage />;
 }

@@ -58,3 +58,15 @@ export interface ClubDetail {
   mentorshipFocus: string;
   topics: Topic[];
 }
+
+/** Data shown on the club joining form (left identity + rules panels). */
+export interface ClubJoinInfo {
+  id: string;
+  name: string;
+  iconKey: TopicIconKey;
+  tone: ClubTone;
+  topicsLabel: string;
+  membersLabel: string;
+  coordinators: string[];
+  rules: string[];
+}

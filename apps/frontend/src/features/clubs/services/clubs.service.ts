@@ -1,4 +1,6 @@
-import type { Club, ClubDetail } from '../clubs.types';
+import type { JoinClub } from 'shared';
+
+import type { Club, ClubDetail, ClubJoinInfo } from '../clubs.types';
 
 /**
  * Clubs service.
@@ -125,9 +127,47 @@ const CLUB_DETAIL: ClubDetail = {
   ],
 };
 
+const CLUB_JOIN_INFO: ClubJoinInfo = {
+  id: 'data-science-masters',
+  name: 'Data Science Masters',
+  iconKey: 'analytics',
+  tone: 'primary',
+  topicsLabel: '24 active tracks',
+  membersLabel: '1,240 learners',
+  coordinators: ['Priya Nair', 'Tom Reed', 'Lena Wu', 'Omar Farouk'],
+  rules: [
+    'Maintain professional conduct in all community channels.',
+    'Active participation required in at least one topic per month.',
+    'No plagiarism in shared code snippets or project contributions.',
+    'Support fellow members and provide constructive feedback.',
+    'Respect the intellectual property of DSI course materials.',
+  ],
+};
+
+export interface JoinApplicationResult {
+  applicationId: string;
+  status: 'pending';
+}
+
 export const clubsService = {
   getClubs: (): Promise<Club[]> => Promise.resolve(CLUBS),
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   getClubDetail: (_id: string): Promise<ClubDetail> =>
     Promise.resolve(CLUB_DETAIL),
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  getClubJoinInfo: (_id: string): Promise<ClubJoinInfo> =>
+    Promise.resolve(CLUB_JOIN_INFO),
+  submitJoinApplication: (
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _clubId: string,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _payload: JoinClub,
+  ): Promise<JoinApplicationResult> =>
+    new Promise((resolve) =>
+      setTimeout(
+        () =>
+          resolve({ applicationId: crypto.randomUUID(), status: 'pending' }),
+        600,
+      ),
+    ),
 };

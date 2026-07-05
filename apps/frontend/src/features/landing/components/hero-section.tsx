@@ -1,39 +1,46 @@
 import { ArrowDown } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
 import { navigate } from '@/lib/navigation';
 import heroEngineers from '@/assets/hero-engineers.png';
 import { HERO } from '../landing.constants';
 
 export function HeroSection() {
   return (
-    <section className="relative overflow-hidden bg-background pb-28 pt-20">
-      <div className="mx-auto flex max-w-4xl flex-col items-center px-6 text-center">
-        <h1 className="mb-8 max-w-2xl font-serif text-4xl font-bold leading-tight tracking-tight sm:text-5xl">
-          Grow Faster <span className="text-primary">Together</span> in the DSI
-          Club
+    <section className="relative flex min-h-[85vh] items-center overflow-hidden bg-slate-950">
+      {/* Background image + legibility overlay */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src={heroEngineers}
+          alt="Diverse team of software engineers collaborating on a complex coding project in a modern office."
+          className="size-full object-cover object-center opacity-40"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/80 via-slate-950/40 to-slate-950/90" />
+      </div>
+
+      <div className="relative z-10 mx-auto max-w-4xl px-6 py-24 text-center">
+        <h1 className="mb-8 font-serif text-4xl font-bold leading-tight tracking-tight text-white drop-shadow-lg sm:text-5xl lg:text-6xl">
+          Grow Faster <span className="text-sky-300">Together</span>
+          <br />
+          in the DSI Club
         </h1>
-        <p className="mb-12 max-w-xl text-muted-foreground">{HERO.subtitle}</p>
-        <div className="flex flex-col items-center gap-6">
-          <Button size="lg" onClick={() => navigate('/login')}>
+        <p className="mx-auto mb-12 max-w-2xl text-lg text-slate-200 drop-shadow-md md:text-xl">
+          {HERO.subtitle}
+        </p>
+        <div className="flex flex-col items-center gap-8">
+          <button
+            type="button"
+            onClick={() => navigate('/explore')}
+            className="rounded-xl bg-primary px-12 py-5 text-lg font-bold text-primary-foreground shadow-2xl transition-all hover:-translate-y-1 hover:shadow-primary/40 active:scale-95"
+          >
             {HERO.primaryCta}
-          </Button>
+          </button>
           <a
             href="#success-stories"
-            className="flex items-center gap-2 font-bold text-primary hover:underline"
+            className="group flex items-center gap-2 font-bold text-sky-300 transition-colors hover:text-white"
           >
             {HERO.secondaryCta}
-            <ArrowDown className="size-4" />
+            <ArrowDown className="size-4 transition-transform group-hover:translate-y-1" />
           </a>
-        </div>
-
-        {/* Hero visual — exact Stitch asset */}
-        <div className="mt-16 w-full max-w-2xl rounded-3xl border bg-card p-4 shadow-[0px_20px_40px_rgba(0,0,0,0.08)]">
-          <img
-            src={heroEngineers}
-            alt="Diverse team of software engineers collaborating on a complex coding project in a modern office."
-            className="h-auto w-full rounded-2xl"
-          />
         </div>
       </div>
     </section>

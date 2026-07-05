@@ -8,46 +8,50 @@ const COLUMNS = [
 
 export function LandingFooter() {
   return (
-    <footer className="border-t bg-muted/40">
-      <div className="mx-auto grid w-full max-w-7xl grid-cols-1 gap-8 px-8 py-12 md:grid-cols-2">
-        <div className="space-y-4">
-          <div className="text-lg font-black">DSI Club</div>
-          <p className="max-w-xs text-sm text-muted-foreground">
-            Building the future of engineering excellence through community and
-            structured growth.
-          </p>
-          <div className="flex gap-4 text-muted-foreground">
-            <Globe className="size-5 cursor-pointer transition-colors hover:text-primary" />
-            <Terminal className="size-5 cursor-pointer transition-colors hover:text-primary" />
-            <Mail className="size-5 cursor-pointer transition-colors hover:text-primary" />
+    <footer className="border-t bg-muted/30">
+      <div className="mx-auto max-w-[1800px] px-10 py-20">
+        <div className="grid grid-cols-1 gap-16 md:grid-cols-12">
+          <div className="space-y-6 md:col-span-4">
+            <div className="font-serif text-2xl font-black text-primary">
+              DSI Club
+            </div>
+            <p className="max-w-sm text-lg leading-relaxed text-muted-foreground">
+              Building the future of engineering excellence through community
+              and structured growth.
+            </p>
+            <div className="flex gap-6 text-muted-foreground">
+              <Globe className="size-6 cursor-pointer transition-colors hover:text-primary" />
+              <Terminal className="size-6 cursor-pointer transition-colors hover:text-primary" />
+              <Mail className="size-6 cursor-pointer transition-colors hover:text-primary" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-12 sm:grid-cols-3 md:col-span-8">
+            {COLUMNS.map((col) => (
+              <div key={col.title}>
+                <h5 className="mb-6 text-lg font-bold">{col.title}</h5>
+                <ul className="space-y-4 text-muted-foreground">
+                  {col.links.map((link) => (
+                    <li key={link}>
+                      <a
+                        href="#"
+                        className="transition-colors hover:text-primary"
+                      >
+                        {link}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-8 sm:grid-cols-3">
-          {COLUMNS.map((col) => (
-            <div key={col.title}>
-              <h5 className="mb-4 font-bold">{col.title}</h5>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                {col.links.map((link) => (
-                  <li key={link}>
-                    <a
-                      href="#"
-                      className="transition-colors hover:text-primary"
-                    >
-                      {link}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 border-t px-8 py-8 sm:flex-row">
-        <div className="text-sm text-muted-foreground">
-          © 2024 DSI Club. All rights reserved.
-        </div>
-        <div className="text-sm text-muted-foreground">
-          Designed for Engineers by Engineers
+        <div className="mt-20 flex flex-col items-center justify-between gap-6 border-t pt-10 sm:flex-row">
+          <div className="text-sm text-muted-foreground">
+            © 2024 DSI Club. All rights reserved.
+          </div>
+          <div className="text-sm font-medium text-muted-foreground">
+            Designed for Engineers by Engineers
+          </div>
         </div>
       </div>
     </footer>

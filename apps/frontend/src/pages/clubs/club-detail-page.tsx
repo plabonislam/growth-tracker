@@ -1,7 +1,7 @@
+import { ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
 
 import { BottomNav } from '@/components/layout/bottom-nav';
-import { PageHeader } from '@/components/layout/page-header';
 import { ClubExpectations } from '@/features/clubs/components/club-expectations';
 import { ClubHero } from '@/features/clubs/components/club-hero';
 import { TopicEnrollModal } from '@/features/clubs/components/topic-enroll-modal';
@@ -13,6 +13,7 @@ import {
 } from '@/features/clubs/clubs.constants';
 import type { Topic } from '@/features/clubs/clubs.types';
 import { useClubDetail } from '@/features/clubs/hooks/use-clubs';
+import { LandingHeader } from '@/features/landing/components/landing-header';
 import { navigate } from '@/lib/navigation';
 
 export function ClubDetailPage({ clubId }: { clubId: string }) {
@@ -26,9 +27,19 @@ export function ClubDetailPage({ clubId }: { clubId: string }) {
 
   return (
     <div className="min-h-screen bg-background pb-24 text-foreground">
-      <PageHeader title="Club Detail" onBack={() => navigate('/explore')} />
+      <LandingHeader showLogin={false} />
 
-      <main className="mx-auto max-w-[1440px] px-4 py-6 md:px-8">
+      <main className="mx-auto max-w-[1800px] px-4 py-6 md:px-8">
+        {/* In-content back affordance — keeps global chrome constant */}
+        <button
+          type="button"
+          onClick={() => navigate('/explore')}
+          className="mb-4 flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="size-4" />
+          Back to Explore
+        </button>
+
         {isError && (
           <p className="py-12 text-center text-sm text-destructive">
             Couldn’t load this club. Please try again.

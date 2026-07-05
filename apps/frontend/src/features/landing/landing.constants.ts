@@ -12,7 +12,15 @@ import type { AccentTone, Benefit, Step } from './landing.types';
 /** Tailwind class fragments per accent tone, resolved at render time. */
 export const TONE: Record<
   AccentTone | 'slate',
-  { text: string; bg: string; bgSoft: string; border: string; gradient: string }
+  {
+    text: string;
+    bg: string;
+    bgSoft: string;
+    border: string;
+    gradient: string;
+    /** Literal `group-hover:` fill — kept literal so the JIT compiler sees it. */
+    groupHoverBg: string;
+  }
 > = {
   primary: {
     text: 'text-primary',
@@ -20,6 +28,7 @@ export const TONE: Record<
     bgSoft: 'bg-primary/10',
     border: 'border-primary',
     gradient: 'from-primary/90',
+    groupHoverBg: 'group-hover:bg-primary',
   },
   emerald: {
     text: 'text-emerald-600',
@@ -27,6 +36,7 @@ export const TONE: Record<
     bgSoft: 'bg-emerald-500/10',
     border: 'border-emerald-500',
     gradient: 'from-emerald-600/90',
+    groupHoverBg: 'group-hover:bg-emerald-600',
   },
   indigo: {
     text: 'text-indigo-600',
@@ -34,6 +44,7 @@ export const TONE: Record<
     bgSoft: 'bg-indigo-500/10',
     border: 'border-indigo-500',
     gradient: 'from-indigo-600/90',
+    groupHoverBg: 'group-hover:bg-indigo-600',
   },
   amber: {
     text: 'text-amber-600',
@@ -41,6 +52,7 @@ export const TONE: Record<
     bgSoft: 'bg-amber-500/10',
     border: 'border-amber-500',
     gradient: 'from-amber-600/90',
+    groupHoverBg: 'group-hover:bg-amber-600',
   },
   slate: {
     text: 'text-slate-600',
@@ -48,6 +60,7 @@ export const TONE: Record<
     bgSoft: 'bg-slate-500/10',
     border: 'border-slate-500',
     gradient: 'from-slate-900/90',
+    groupHoverBg: 'group-hover:bg-slate-900',
   },
 };
 

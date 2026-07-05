@@ -8,16 +8,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { GoogleSignInButton } from '@/features/auth/components/google-sign-in-button';
-
-function Header() {
-  return (
-    <header className="z-10 flex shrink-0 items-center border-b bg-background/80 px-6 py-4 backdrop-blur-md sm:px-8">
-      <span className="text-lg font-extrabold tracking-tight text-primary">
-        DSI Club
-      </span>
-    </header>
-  );
-}
+import { LandingHeader } from '@/features/landing/components/landing-header';
 
 function HeroPanel() {
   return (
@@ -122,7 +113,7 @@ function Footer() {
 export function LoginPage() {
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
-      <Header />
+      <LandingHeader showLogin={false} />
       <main className="grid flex-grow overflow-hidden lg:grid-cols-2">
         <HeroPanel />
         <LoginPanel />

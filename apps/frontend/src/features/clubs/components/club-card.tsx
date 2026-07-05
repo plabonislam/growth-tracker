@@ -27,9 +27,7 @@ export function ClubCard({ club, onExplore, onJoin }: ClubCardProps) {
   const isMember = Boolean(club.membership);
 
   return (
-    <Card
-      className={`flex flex-col gap-0 border-t-4 p-6 transition-all hover:-translate-y-1 hover:shadow-md ${tone.borderTop}`}
-    >
+    <Card className="flex flex-col gap-0 border-t-4 border-t-primary/40 p-6 transition-all hover:-translate-y-1 hover:border-t-primary hover:shadow-md">
       <div className="mb-4 flex items-start justify-between">
         <div className={`rounded-lg p-3 ${tone.bgSoft}`}>
           <Icon className={`size-6 ${tone.text}`} />

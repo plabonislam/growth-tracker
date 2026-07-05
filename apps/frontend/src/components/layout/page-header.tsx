@@ -12,7 +12,7 @@ export function PageHeader({
 
   return (
     <nav className="sticky top-0 z-50 flex h-16 w-full items-center border-b bg-background/90 px-4 backdrop-blur-md">
-      <div className="flex items-center gap-3">
+      <div className="mx-auto flex w-full max-w-[1800px] items-center gap-3">
         <button
           type="button"
           aria-label="Go back"

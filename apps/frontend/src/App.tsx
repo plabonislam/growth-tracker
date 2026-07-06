@@ -104,14 +104,26 @@ export default function App() {
   const topicMatch = path.match(/^\/topics\/([^/]+)$/);
   if (topicMatch)
     return (
-      <AppShell activePath="/dashboard">
+      <AppShell
+        activePath="/dashboard"
+        breadcrumb={[
+          { label: 'Dashboard', path: '/dashboard' },
+          { label: 'Enrolled Topic' },
+        ]}
+      >
         <EnrolledTopicPage topicId={topicMatch[1]} />
       </AppShell>
     );
   const clubMatch = path.match(/^\/clubs\/([^/]+)$/);
   if (clubMatch)
     return (
-      <AppShell activePath="/explore">
+      <AppShell
+        activePath="/explore"
+        breadcrumb={[
+          { label: 'Explore Clubs', path: '/explore' },
+          { label: 'Club Details' },
+        ]}
+      >
         <ClubDetailPage clubId={clubMatch[1]} />
       </AppShell>
     );

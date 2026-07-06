@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 
 import { ClubDetailPage } from '@/pages/clubs/club-detail-page';
+
+import { DashboardPage } from '@/pages/dashboard/dashboard-page';
 import { ExplorePage } from '@/pages/explore/explore-page';
+import { EnrolledTopicPage } from '@/pages/topics/enrolled-topic-page';
 import { LandingPage } from '@/pages/landing/landing-page';
 import { LoginPage } from '@/pages/login/login-page';
 
@@ -85,6 +88,9 @@ export default function App() {
   if (path === '/auth/callback') return <CallbackPage />;
   if (path === '/login') return <LoginPage />;
   if (path === '/explore') return <ExplorePage />;
+  if (path === '/dashboard') return <DashboardPage />;
+  const topicMatch = path.match(/^\/topics\/([^/]+)$/);
+  if (topicMatch) return <EnrolledTopicPage topicId={topicMatch[1]} />;
   const clubMatch = path.match(/^\/clubs\/([^/]+)$/);
   if (clubMatch) return <ClubDetailPage clubId={clubMatch[1]} />;
   return <LandingPage />;

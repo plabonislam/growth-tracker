@@ -21,7 +21,10 @@ export function ClubDetailPage({ clubId }: { clubId: string }) {
   const [enrollTopic, setEnrollTopic] = useState<Topic | null>(null);
 
   const handleTopicAction = (topic: Topic) => {
-    if (topic.enrolled) return; // "Open" — enrolled topic navigation TBD
+    if (topic.enrolled) {
+      navigate(`/topics/${topic.id}`); // "Open" — enrolled topic view
+      return;
+    }
     setEnrollTopic(topic);
   };
 

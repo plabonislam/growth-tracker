@@ -4,7 +4,6 @@ import { JourneyCard } from '@/features/dashboard/components/journey-card';
 import { LearningPathCard } from '@/features/dashboard/components/learning-path-card';
 import { MetricTile } from '@/features/dashboard/components/metric-tile';
 import { useLearnerDashboard } from '@/features/dashboard/hooks/use-dashboard';
-import { LandingHeader } from '@/features/landing/components/landing-header';
 import { navigate } from '@/lib/navigation';
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
@@ -19,9 +18,7 @@ export function DashboardPage() {
   const { data, isLoading, isError } = useLearnerDashboard();
 
   return (
-    <div className="min-h-screen bg-background pb-16 text-foreground">
-      <LandingHeader showLogin={false} showNotifications />
-
+    <div className="pb-16">
       <main className="mx-auto max-w-[1800px] space-y-8 px-4 py-8 md:px-6">
         {isError && (
           <p className="py-12 text-center text-sm text-destructive">

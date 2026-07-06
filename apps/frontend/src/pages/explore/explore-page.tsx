@@ -1,10 +1,8 @@
 import { useState } from 'react';
 
-// import { BottomNav } from '@/components/layout/bottom-nav'; // TODO: revisit footer/bottom nav
 import { ClubJoinModal } from '@/features/clubs/components/club-join-modal';
 import { ExploreClubsGrid } from '@/features/clubs/components/explore-clubs-grid';
 import { useClubs } from '@/features/clubs/hooks/use-clubs';
-import { LandingHeader } from '@/features/landing/components/landing-header';
 import { navigate } from '@/lib/navigation';
 
 export function ExplorePage() {
@@ -13,9 +11,7 @@ export function ExplorePage() {
   const { data: clubs = [], isLoading } = useClubs();
 
   return (
-    <div className="min-h-screen bg-background pb-24 text-foreground">
-      <LandingHeader showLogin={false} />
-
+    <div className="pb-24">
       <main className="mx-auto max-w-[1800px] px-4 md:px-6">
         {/* Page header — title, supporting copy, result count */}
         <div className="flex flex-col gap-2 py-8 md:flex-row md:items-end md:justify-between md:py-10">
@@ -40,9 +36,6 @@ export function ExplorePage() {
           onJoin={(club) => setJoinClubId(club.id)}
         />
       </main>
-
-      {/* TODO: revisit footer / bottom nav later */}
-      {/* <BottomNav activePath="/explore" /> */}
 
       <ClubJoinModal
         clubId={joinClubId ?? ''}

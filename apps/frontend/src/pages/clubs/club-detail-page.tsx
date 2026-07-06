@@ -1,7 +1,6 @@
 import { ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
 
-import { BottomNav } from '@/components/layout/bottom-nav';
 import { ClubExpectations } from '@/features/clubs/components/club-expectations';
 import { ClubHero } from '@/features/clubs/components/club-hero';
 import { TopicEnrollModal } from '@/features/clubs/components/topic-enroll-modal';
@@ -13,7 +12,6 @@ import {
 } from '@/features/clubs/clubs.constants';
 import type { Topic } from '@/features/clubs/clubs.types';
 import { useClubDetail } from '@/features/clubs/hooks/use-clubs';
-import { LandingHeader } from '@/features/landing/components/landing-header';
 import { navigate } from '@/lib/navigation';
 
 export function ClubDetailPage({ clubId }: { clubId: string }) {
@@ -29,9 +27,7 @@ export function ClubDetailPage({ clubId }: { clubId: string }) {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-24 text-foreground">
-      <LandingHeader showLogin={false} />
-
+    <div className="pb-24">
       <main className="mx-auto max-w-[1800px] px-4 py-6 md:px-8">
         {/* In-content back affordance — keeps global chrome constant */}
         <button
@@ -96,8 +92,6 @@ export function ClubDetailPage({ clubId }: { clubId: string }) {
           onSubmit={() => setEnrollTopic(null)}
         />
       )}
-
-      <BottomNav activePath="/explore" />
     </div>
   );
 }

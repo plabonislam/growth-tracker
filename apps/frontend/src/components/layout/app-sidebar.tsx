@@ -1,0 +1,132 @@
+import {
+  Award,
+  CalendarDays,
+  ClipboardList,
+  Compass,
+  LayoutDashboard,
+  Library,
+  type LucideIcon,
+} from 'lucide-react';
+
+import { BrandLogo } from '@/components/layout/brand-logo';
+
+import { cn } from '@/lib/utils';
+import { navigate } from '@/lib/navigation';
+
+interface SidebarItem {
+  label: string;
+  icon: LucideIcon;
+  path?: string;
+  /** Feature not built yet — rendered muted with a "Soon" badge. */
+  comingSoon?: boolean;
+}
+
+interface SidebarSection {
+  title?: string;
+  items: SidebarItem[];
+}
+
+const SECTIONS: SidebarSection[] = [
+  {
+    items: [
+      { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+      { label: 'Explore Clubs', icon: Compass, path: '/explore' },
+      { label: 'My Topics', icon: Library, comingSoon: true },
+    ],
+  },
+  {
+    title: 'Learning',
+    items: [
+      { label: 'My Tasks', icon: ClipboardList, comingSoon: true },
+      { label: 'Sessions', icon: CalendarDays, comingSoon: true },
+      { label: 'Certifications', icon: Award, comingSoon: true },
+    ],
+  },
+];
+
+function SidebarLink({
+  item,
+  isActive,
+}: {
+  item: SidebarItem;
+  isActive: boolean;
+}) {
+  const { label, icon: Icon, path, comingSoon } = item;
+
+  if (comingSoon) {
+    return (
+      <span
+        aria-disabled
+        className="flex cursor-default items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground/50"
+      >
+        <Icon className="size-[18px]" strokeWidth={1.75} />
+        <span className="flex-1 text-left">{label}</span>
+        <span className="rounded-full border border-border/60 px-1.5 py-px text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+          Soon
+        </span>
+      </span>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={() => path && navigate(path)}
+      className={cn(
+        'group relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+        isActive
+          ? 'bg-primary/10 font-semibold text-primary'
+          : 'font-medium text-muted-foreground hover:bg-muted/70 hover:text-foreground',
+      )}
+    >
+      {/* Active rail marker — anchors the highlight to the sidebar edge */}
+      <span
+        className={cn(
+          'absolute -left-3 h-5 w-1 rounded-r-full bg-primary transition-opacity',
+          isActive ? 'opacity-100' : 'opacity-0',
+        )}
+      />
+      <Icon className="size-[18px]" strokeWidth={isActive ? 2.25 : 1.75} />
+      {label}
+    </button>
+  );
+}
+
+/**
+ * Desktop navigation sidebar (hidden below `md`). `activePath` marks the
+ * current route; mobile uses BottomNav instead.
+ */
+export function AppSidebar({ activePath }: { activePath: string }) {
+  return (
+    <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r bg-background md:flex">
+      {/* Brand lockup — mark + wordmark, free-floating (no border row) */}
+      <button
+        type="button"
+        onClick={() => navigate('/dashboard')}
+        className="mx-3 mt-5 flex items-center rounded-lg px-3 py-2 transition-colors hover:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+      >
+        <BrandLogo caption />
+      </button>
+
+      {/* Nav sections */}
+      <nav className="flex-1 space-y-7 overflow-y-auto px-3 pb-4 pt-7">
+        {SECTIONS.map((section, i) => (
+          <div key={section.title ?? i} className="space-y-0.5">
+            {section.title && (
+              <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground/70">
+                {section.title}
+              </p>
+            )}
+            {section.items.map((item) => (
+              <SidebarLink
+                key={item.label}
+                item={item}
+                isActive={activePath === item.path}
+              />
+            ))}
+          </div>
+        ))}
+      </nav>
+    </aside>
+  );
+}

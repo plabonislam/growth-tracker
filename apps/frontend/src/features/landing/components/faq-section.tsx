@@ -6,18 +6,20 @@ import { useFaqs } from '../hooks/use-landing';
 
 export function FaqSection() {
   const { data: faqs = [] } = useFaqs();
-  const [openId, setOpenId] = useState<string | null>(null);
+  // `undefined` = untouched → first question defaults open once data loads.
+  const [openId, setOpenId] = useState<string | null | undefined>(undefined);
+  const activeId = openId === undefined ? faqs[0]?.id : openId;
 
   return (
-    <section className="mx-auto max-w-4xl px-6 py-20">
-      <div className="mb-12 text-center">
-        <h2 className="font-serif text-3xl font-bold">
+    <section className="mx-auto max-w-[1000px] px-6 py-16">
+      <div className="mb-16 text-center">
+        <h2 className="font-serif text-4xl font-bold">
           Frequently Asked Questions
         </h2>
       </div>
-      <div className="space-y-4">
+      <div className="space-y-6">
         {faqs.map((faq) => {
-          const isOpen = openId === faq.id;
+          const isOpen = activeId === faq.id;
           return (
             <div
               key={faq.id}

@@ -124,6 +124,26 @@ const CLUB_DETAIL: ClubDetail = {
       mentor: { name: 'David Volek', role: 'Specialist' },
       enrolled: false,
     },
+    {
+      id: 'exploratory-analysis',
+      title: 'Exploratory Data Analysis',
+      iconKey: 'analytics',
+      tone: 'violet',
+      modules: 5,
+      hours: 2.5,
+      mentor: { name: 'Amara Osei', role: 'Expert' },
+      enrolled: false,
+    },
+    {
+      id: 'ml-deployment',
+      title: 'ML Model Deployment & Serving',
+      iconKey: 'neural',
+      tone: 'rose',
+      modules: 10,
+      hours: 8,
+      mentor: { name: 'Dr. Elena Petrova', role: 'Lead Mentor' },
+      enrolled: false,
+    },
   ],
 };
 

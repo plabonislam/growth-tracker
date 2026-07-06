@@ -17,7 +17,7 @@ export function TopicsList({ topics, onTopicAction }: TopicsListProps) {
           Showing {topics.length} results
         </span>
       </div>
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {topics.map((topic) => (
           <TopicItem key={topic.id} topic={topic} onAction={onTopicAction} />
         ))}

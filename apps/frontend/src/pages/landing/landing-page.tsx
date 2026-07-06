@@ -1,7 +1,6 @@
 import { BenefitsSection } from '@/features/landing/components/benefits-section';
 import { ClubsSection } from '@/features/landing/components/clubs-section';
 import { FaqSection } from '@/features/landing/components/faq-section';
-import { FinalCtaSection } from '@/features/landing/components/final-cta-section';
 import { HeroSection } from '@/features/landing/components/hero-section';
 import { HowItWorksSection } from '@/features/landing/components/how-it-works-section';
 import { LandingFooter } from '@/features/landing/components/landing-footer';
@@ -21,7 +20,6 @@ export function LandingPage() {
         <HowItWorksSection />
         <TestimonialsSection />
         <FaqSection />
-        <FinalCtaSection />
       </main>
       <LandingFooter />
     </div>

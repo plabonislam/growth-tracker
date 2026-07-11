@@ -1,6 +1,5 @@
-import { MessageCircle } from 'lucide-react';
+import { Star, Timer } from 'lucide-react';
 
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import type { TopicMentor } from '../topics.types';
 
@@ -14,40 +13,62 @@ function initials(name: string) {
     .toUpperCase();
 }
 
-export function TopicMentorCard({
-  mentor,
-  onMessage,
+function MetricTile({
+  label,
+  icon,
+  value,
 }: {
-  mentor: TopicMentor;
-  onMessage?: () => void;
+  label: string;
+  icon: React.ReactNode;
+  value: string;
 }) {
   return (
-    <Card className="h-full justify-between gap-4 p-6 md:p-8">
+    <div className="space-y-0.5 rounded-xl border border-border/60 p-3">
+      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </span>
+      <p className="flex items-center gap-1 text-sm font-bold">
+        {icon}
+        {value}
+      </p>
+    </div>
+  );
+}
+
+export function TopicMentorCard({ mentor }: { mentor: TopicMentor }) {
+  return (
+    <Card className="h-full justify-between gap-3 p-4 md:p-5">
       {/* Identity */}
-      <div className="space-y-3">
-        <span className="block text-[10px] font-bold uppercase tracking-wider text-primary">
-          Mentor
+      <div className="flex items-center gap-3">
+        <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary text-base font-bold text-primary-foreground">
+          {initials(mentor.name)}
         </span>
-        <div className="flex items-center gap-4">
-          <span className="flex size-14 shrink-0 items-center justify-center rounded-full bg-primary text-lg font-bold text-primary-foreground">
-            {initials(mentor.name)}
+        <div className="min-w-0">
+          <span className="block text-[10px] font-bold uppercase tracking-wider text-primary">
+            Mentor
           </span>
-          <div className="min-w-0">
-            <h3 className="truncate font-serif text-xl font-semibold">
-              {mentor.name}
-            </h3>
-            <p className="truncate text-sm text-muted-foreground">
-              {mentor.role}
-            </p>
-          </div>
+          <h3 className="truncate font-serif text-lg font-semibold">
+            {mentor.name}
+          </h3>
+          <p className="truncate text-sm text-muted-foreground">
+            {mentor.role}
+          </p>
         </div>
       </div>
 
-      {/* Action */}
-      <Button size="lg" className="w-full" onClick={onMessage}>
-        <MessageCircle className="size-4" />
-        Message
-      </Button>
+      {/* Metrics */}
+      <div className="grid grid-cols-2 gap-3">
+        <MetricTile
+          label="Rating"
+          icon={<Star className="size-3.5 fill-amber-400 text-amber-400" />}
+          value={mentor.rating.toFixed(1)}
+        />
+        <MetricTile
+          label="Avg. Response"
+          icon={<Timer className="size-3.5 text-primary" />}
+          value={mentor.avgResponseTime}
+        />
+      </div>
     </Card>
   );
 }

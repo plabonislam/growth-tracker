@@ -47,9 +47,11 @@ const SECTIONS: SidebarSection[] = [
 function SidebarLink({
   item,
   isActive,
+  onNavigate,
 }: {
   item: SidebarItem;
   isActive: boolean;
+  onNavigate?: () => void;
 }) {
   const { label, icon: Icon, path, comingSoon } = item;
 
@@ -71,7 +73,11 @@ function SidebarLink({
   return (
     <button
       type="button"
-      onClick={() => path && navigate(path)}
+      onClick={() => {
+        if (!path) return;
+        navigate(path);
+        onNavigate?.();
+      }}
       className={cn(
         'group relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
         isActive
@@ -93,16 +99,26 @@ function SidebarLink({
 }
 
 /**
- * Desktop navigation sidebar (hidden below `md`). `activePath` marks the
- * current route; mobile uses BottomNav instead.
+ * Sidebar inner content (brand + nav sections), shared by the sticky desktop
+ * sidebar and the tablet slide-over drawer. `onNavigate` fires after a link
+ * is followed so the drawer can close itself.
  */
-export function AppSidebar({ activePath }: { activePath: string }) {
+export function SidebarContent({
+  activePath,
+  onNavigate,
+}: {
+  activePath: string;
+  onNavigate?: () => void;
+}) {
   return (
-    <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r bg-background md:flex">
+    <>
       {/* Brand lockup — mark + wordmark, free-floating (no border row) */}
       <button
         type="button"
-        onClick={() => navigate('/dashboard')}
+        onClick={() => {
+          navigate('/dashboard');
+          onNavigate?.();
+        }}
         className="mx-3 mt-5 flex items-center rounded-lg px-3 py-2 transition-colors hover:bg-muted/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
       >
         <BrandLogo caption />
@@ -122,11 +138,24 @@ export function AppSidebar({ activePath }: { activePath: string }) {
                 key={item.label}
                 item={item}
                 isActive={activePath === item.path}
+                onNavigate={onNavigate}
               />
             ))}
           </div>
         ))}
       </nav>
+    </>
+  );
+}
+
+/**
+ * Desktop navigation sidebar (hidden below `lg`). `activePath` marks the
+ * current route; tablet uses the AppShell drawer, mobile uses BottomNav.
+ */
+export function AppSidebar({ activePath }: { activePath: string }) {
+  return (
+    <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r bg-background lg:flex">
+      <SidebarContent activePath={activePath} />
     </aside>
   );
 }

@@ -11,8 +11,8 @@ export function MetricTile({
   accent?: string;
 }) {
   return (
-    <Card className="h-full items-center justify-center gap-1 p-6 text-center">
-      <span className={`text-5xl font-bold tracking-tight ${accent}`}>
+    <Card className="h-full items-center justify-center gap-1 p-4 text-center">
+      <span className={`text-4xl font-bold tracking-tight ${accent}`}>
         {String(value).padStart(2, '0')}
       </span>
       <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">

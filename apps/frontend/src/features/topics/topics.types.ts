@@ -8,6 +8,8 @@ export interface ModuleResource {
   id: string;
   kind: ResourceKind;
   label: string;
+  /** External destination (Udemy, blog post, …). Omitted → action badge is hidden. */
+  url?: string;
   /** Finished resources render with the success icon and dim inside active modules. */
   done: boolean;
 }
@@ -18,6 +20,8 @@ export interface TopicModule {
   order: number;
   title: string;
   weightPct: number;
+  /** Estimated time to complete, e.g. "2h 30m". */
+  estTime: string;
   status: ModuleStatus;
   /** Empty for locked (`todo`) modules — they show an unlock hint instead. */
   resources: ModuleResource[];
@@ -27,6 +31,10 @@ export interface TopicMentor {
   name: string;
   role: string;
   online: boolean;
+  /** Average learner rating out of 5, e.g. 4.9. */
+  rating: number;
+  /** Typical reply delay, e.g. "~2h". */
+  avgResponseTime: string;
 }
 
 export interface EnrolledTopicDetail {

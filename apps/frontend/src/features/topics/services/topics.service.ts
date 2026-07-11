@@ -18,6 +18,8 @@ const ENROLLED_TOPIC: EnrolledTopicDetail = {
     name: 'Dr. Aris Thorne',
     role: 'Senior Data Architect',
     online: true,
+    rating: 4.9,
+    avgResponseTime: '~2h',
   },
   moduleCount: 12,
   taskCount: 42,
@@ -27,16 +29,19 @@ const ENROLLED_TOPIC: EnrolledTopicDetail = {
       order: 1,
       title: 'Introduction to Distributed Systems',
       weightPct: 20,
+      estTime: '1h 45m',
       status: 'completed',
       resources: [
         {
           id: 'mapreduce-history',
+          url: 'https://www.udemy.com/course/apache-spark/learn/lecture/mapreduce-history',
           kind: 'video',
           label: 'History of MapReduce and Spark (12:45)',
           done: true,
         },
         {
           id: 'distributed-fundamentals',
+          url: 'https://blog.example.com/distributed-computing-fundamentals',
           kind: 'doc',
           label: 'Distributed Computing Fundamentals',
           done: true,
@@ -48,16 +53,19 @@ const ENROLLED_TOPIC: EnrolledTopicDetail = {
       order: 2,
       title: 'Spark Architecture & RDDs',
       weightPct: 25,
+      estTime: '2h 30m',
       status: 'in_progress',
       resources: [
         {
           id: 'spark-basics',
+          url: 'https://www.udemy.com/course/apache-spark/learn/lecture/spark-basics',
           kind: 'video',
           label: 'Spark Basics & Cluster UI (15:20)',
           done: true,
         },
         {
           id: 'rdd-guide',
+          url: 'https://blog.example.com/rdd-transformation-guide',
           kind: 'doc',
           label: 'RDD Transformation Guide',
           done: false,
@@ -69,16 +77,19 @@ const ENROLLED_TOPIC: EnrolledTopicDetail = {
       order: 3,
       title: 'SparkSQL & DataFrames API',
       weightPct: 25,
+      estTime: '2h 15m',
       status: 'todo',
       resources: [
         {
           id: 'sparksql-intro',
+          url: 'https://www.udemy.com/course/apache-spark/learn/lecture/sparksql-intro',
           kind: 'video',
           label: 'Querying with SparkSQL (18:10)',
           done: false,
         },
         {
           id: 'dataframes-reference',
+          url: 'https://blog.example.com/dataframes-api-reference',
           kind: 'doc',
           label: 'DataFrames API Reference',
           done: false,
@@ -90,16 +101,19 @@ const ENROLLED_TOPIC: EnrolledTopicDetail = {
       order: 4,
       title: 'Structured Streaming & Real-time Ops',
       weightPct: 30,
+      estTime: '3h 10m',
       status: 'todo',
       resources: [
         {
           id: 'streaming-basics',
+          url: 'https://www.udemy.com/course/apache-spark/learn/lecture/streaming-basics',
           kind: 'video',
           label: 'Streaming Pipelines in Practice (21:35)',
           done: false,
         },
         {
           id: 'realtime-ops-guide',
+          url: 'https://blog.example.com/real-time-operations-guide',
           kind: 'doc',
           label: 'Real-time Operations Guide',
           done: false,

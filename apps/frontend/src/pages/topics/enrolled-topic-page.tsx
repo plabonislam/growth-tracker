@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 
+import { SectionHeading } from '@/components/ui/section-heading';
 import { MarkDoneModal } from '@/features/topics/components/mark-done-modal';
 import { ModuleCard } from '@/features/topics/components/module-card';
 import { TopicMentorCard } from '@/features/topics/components/topic-mentor-card';
@@ -52,37 +53,40 @@ export function EnrolledTopicPage({ topicId }: { topicId: string }) {
         {topic && (
           <>
             {/* Title */}
-            <section className="mb-8">
-              <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.15em] text-primary">
-                Enrolled Topic
-              </div>
-              <h1 className="font-serif text-3xl font-bold leading-tight tracking-tight text-primary md:text-4xl">
-                {topic.title}
-              </h1>
-            </section>
+            <SectionHeading
+              as="h1"
+              eyebrow="Enrolled Topic"
+              title={topic.title}
+              className="mb-8"
+            />
 
-            {/* Summary row — progress flexes, mentor column capped at 350px */}
-            <div className="mb-10 grid grid-cols-1 gap-4 md:grid-cols-[1fr_350px]">
+            {/* Summary row — progress 2/3, mentor 1/3 (never below 275px) */}
+            <div className="mb-10 grid grid-cols-1 gap-4 md:grid-cols-[2fr_minmax(275px,1fr)]">
               <TopicProgressCard
                 startedOn={topic.startedOn}
                 estCompletion={topic.estCompletion}
                 progressPct={topic.progressPct}
+                modulesDone={
+                  topic.modules.filter((m) => m.status === 'completed').length
+                }
+                modulesTotal={topic.modules.length}
               />
               <TopicMentorCard mentor={topic.mentor} />
             </div>
 
             {/* Curriculum */}
             <section>
-              <div className="mb-6 flex flex-col items-start gap-2 border-b pb-4 md:flex-row md:items-center md:justify-between">
-                <h2 className="font-serif text-2xl font-bold tracking-tight">
-                  Learning Modules
-                </h2>
-                <span className="rounded-full bg-muted px-3 py-1 text-sm font-medium text-muted-foreground">
-                  {topic.moduleCount} Modules • {topic.taskCount} Tasks
-                </span>
-              </div>
+              <SectionHeading
+                title="Learning Modules"
+                className="mb-6"
+                action={
+                  <span className="rounded-full bg-muted px-3 py-1 text-sm font-medium text-muted-foreground">
+                    {topic.moduleCount} Modules • {topic.taskCount} Tasks
+                  </span>
+                }
+              />
 
-              <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(min(400px,100%),1fr))] items-start gap-4">
                 {topic.modules.map((module) => (
                   <ModuleCard
                     key={module.id}

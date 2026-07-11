@@ -16,9 +16,9 @@ const AVATAR_TONES = ['bg-primary', 'bg-indigo-500', 'bg-emerald-500'];
 
 export function JourneyCard({ journey }: { journey: JourneySummary }) {
   return (
-    <Card className="h-full justify-between gap-6 p-6">
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
-        <div className="space-y-2">
+    <Card className="h-full gap-4 p-5 md:p-6">
+      <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
+        <div className="space-y-1.5">
           <div className="flex flex-wrap items-center gap-3">
             <span className="inline-block rounded bg-primary/10 px-2 py-1 text-[10px] font-bold uppercase tracking-widest text-primary">
               Current Club
@@ -32,8 +32,8 @@ export function JourneyCard({ journey }: { journey: JourneySummary }) {
             {journey.clubName}
           </h3>
         </div>
-        <span className="flex w-fit shrink-0 items-center gap-2 rounded-full bg-amber-500/15 px-3 py-1.5 text-xs font-semibold text-amber-700">
-          <Award className="size-4" />
+        <span className="flex w-fit shrink-0 items-center gap-1.5 rounded-full bg-amber-500/15 px-2.5 py-1 text-xs font-semibold text-amber-700">
+          <Award className="size-3.5" />
           {journey.cohortBadge}
         </span>
       </div>
@@ -43,7 +43,7 @@ export function JourneyCard({ journey }: { journey: JourneySummary }) {
           <span className="text-muted-foreground">Overall Progress</span>
           <span className="text-primary">{journey.progressPct}% Complete</span>
         </div>
-        <div className="h-2.5 w-full overflow-hidden rounded-full bg-muted">
+        <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
           <div
             className="h-full rounded-full bg-primary"
             style={{ width: `${journey.progressPct}%` }}
@@ -51,19 +51,19 @@ export function JourneyCard({ journey }: { journey: JourneySummary }) {
         </div>
       </div>
 
-      <div className="flex items-center gap-3 pt-1">
-        <div className="flex -space-x-3">
+      <div className="flex items-center gap-3">
+        <div className="flex -space-x-2">
           {journey.memberNames.map((name, i) => (
             <span
               key={name}
-              className={`flex size-10 items-center justify-center rounded-full text-xs font-bold text-white ring-4 ring-card ${
+              className={`flex size-8 items-center justify-center rounded-full text-[10px] font-bold text-white ring-2 ring-card ${
                 AVATAR_TONES[i % AVATAR_TONES.length]
               }`}
             >
               {initials(name)}
             </span>
           ))}
-          <span className="flex size-10 items-center justify-center rounded-full bg-muted text-xs font-bold text-muted-foreground ring-4 ring-card">
+          <span className="flex size-8 items-center justify-center rounded-full bg-muted text-[10px] font-bold text-muted-foreground ring-2 ring-card">
             +{journey.extraMembers}
           </span>
         </div>

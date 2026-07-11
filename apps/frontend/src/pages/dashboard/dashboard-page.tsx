@@ -4,15 +4,8 @@ import { JourneyCard } from '@/features/dashboard/components/journey-card';
 import { LearningPathCard } from '@/features/dashboard/components/learning-path-card';
 import { MetricTile } from '@/features/dashboard/components/metric-tile';
 import { useLearnerDashboard } from '@/features/dashboard/hooks/use-dashboard';
+import { SectionHeading } from '@/components/ui/section-heading';
 import { navigate } from '@/lib/navigation';
-
-function SectionTitle({ children }: { children: React.ReactNode }) {
-  return (
-    <h2 className="mb-4 font-serif text-2xl font-bold tracking-tight">
-      {children}
-    </h2>
-  );
-}
 
 export function DashboardPage() {
   const { data, isLoading, isError } = useLearnerDashboard();
@@ -44,7 +37,7 @@ export function DashboardPage() {
           <>
             {/* Journey + metrics — metrics move beside the journey card on xl */}
             <section>
-              <SectionTitle>Your Active Journey</SectionTitle>
+              <SectionHeading title="Your Active Journey" className="mb-4" />
               <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
                 <div className="xl:col-span-2">
                   <JourneyCard journey={data.journey} />
@@ -75,11 +68,11 @@ export function DashboardPage() {
 
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
               <section>
-                <SectionTitle>Upcoming Deadlines</SectionTitle>
+                <SectionHeading title="Upcoming Deadlines" className="mb-4" />
                 <AgendaCard items={data.deadlines} />
               </section>
               <section>
-                <SectionTitle>Community Events</SectionTitle>
+                <SectionHeading title="Community Events" className="mb-4" />
                 <AgendaCard items={data.events} />
               </section>
             </div>

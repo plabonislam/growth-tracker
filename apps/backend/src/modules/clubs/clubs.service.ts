@@ -34,6 +34,7 @@ export class ClubsService {
     return this.repo.insert({
       name: dto.name,
       coordinatorId: coordinatorId!,
+      description: dto.description,
     });
   }
 

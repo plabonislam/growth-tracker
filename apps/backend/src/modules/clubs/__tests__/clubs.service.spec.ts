@@ -109,6 +109,26 @@ describe('ClubsService', () => {
       expect(result).toEqual(club);
     });
 
+    it('passes description through to the repository', async () => {
+      mockRepo.findUserByEmail.mockResolvedValue({
+        id: 'uid-coord',
+        isAuthority: false,
+      });
+      mockRepo.insert.mockResolvedValue(club);
+
+      await service.create({
+        name: 'Frontend Club',
+        coordinatorEmail: 'coord@example.com',
+        description: 'A club for frontend enthusiasts',
+      });
+
+      expect(mockRepo.insert).toHaveBeenCalledWith({
+        name: 'Frontend Club',
+        coordinatorId: 'uid-coord',
+        description: 'A club for frontend enthusiasts',
+      });
+    });
+
     it('throws 404 when coordinatorEmail matches no user', async () => {
       mockRepo.findUserByEmail.mockResolvedValue(null);
 

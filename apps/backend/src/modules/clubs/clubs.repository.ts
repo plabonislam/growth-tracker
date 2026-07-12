@@ -55,7 +55,11 @@ export class ClubsRepository {
     return { ...row, topicCount: topicRow.count, memberCount: memberRow.count };
   }
 
-  async insert(data: { name: string; coordinatorId: string }) {
+  async insert(data: {
+    name: string;
+    coordinatorId: string;
+    description?: string;
+  }) {
     const [row] = await this.db.db.insert(clubsTable).values(data).returning();
     return row;
   }

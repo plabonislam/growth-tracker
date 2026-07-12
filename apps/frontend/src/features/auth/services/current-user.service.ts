@@ -6,7 +6,7 @@ export interface CurrentUser {
 
 /**
  * Stubbed current user. Swap for a real `httpClient.get('/auth/me')` call once
- * the auth session layer exists (see App.tsx CallbackPage / docs/frontend.md).
+ * the auth session layer exists (see pages/auth/callback-page.tsx / docs/frontend.md).
  */
 const MOCK_USER: CurrentUser = {
   id: 'DSI-99238',

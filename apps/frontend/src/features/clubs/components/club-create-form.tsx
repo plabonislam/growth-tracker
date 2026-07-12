@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { CoordinatorSelect } from '@/features/users/components/coordinator-select';
 import { fieldLabelClass } from '@/lib/form-styles';
 import { getApiErrorMessage } from '@/services/http/client';
 import { useCreateClub } from '../hooks/use-clubs';
@@ -108,20 +109,10 @@ export function ClubCreateForm({ onCreated }: { onCreated?: () => void }) {
                   </span>
                 </FormLabel>
                 <FormControl>
-                  <div className="relative">
-                    <UserSearch className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      placeholder="Search by name or email..."
-                      className="pl-10"
-                      {...field}
-                      value={field.value ?? ''}
-                      onChange={(e) =>
-                        field.onChange(
-                          e.target.value === '' ? undefined : e.target.value,
-                        )
-                      }
-                    />
-                  </div>
+                  <CoordinatorSelect
+                    value={field.value}
+                    onChange={field.onChange}
+                  />
                 </FormControl>
                 <FormDescription className="italic">
                   You can choose a coordinator later if you&apos;re not ready.

@@ -1,12 +1,13 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router';
 
 import { ClubJoinModal } from '@/features/clubs/components/club-join-modal';
 import { ExploreClubsGrid } from '@/features/clubs/components/explore-clubs-grid';
 import { useClubs } from '@/features/clubs/hooks/use-clubs';
 import { SectionHeading } from '@/components/ui/section-heading';
-import { navigate } from '@/lib/navigation';
 
 export function ExplorePage() {
+  const navigate = useNavigate();
   const [joinClubId, setJoinClubId] = useState<string | null>(null);
   // Same query key as the grid — TanStack Query dedupes the request.
   const { data: clubs = [], isLoading } = useClubs();

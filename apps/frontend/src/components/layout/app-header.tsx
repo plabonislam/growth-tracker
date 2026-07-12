@@ -1,9 +1,9 @@
 import { Bell, User } from 'lucide-react';
-
-import { navigate } from '@/lib/navigation';
+import { useNavigate } from 'react-router';
 
 /** Authenticated app top bar — avatar, brand, notifications. */
 export function AppHeader() {
+  const navigate = useNavigate();
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/90 backdrop-blur-md">
       <div className="mx-auto flex h-16 w-full max-w-[1800px] items-center justify-between px-4 md:px-6">

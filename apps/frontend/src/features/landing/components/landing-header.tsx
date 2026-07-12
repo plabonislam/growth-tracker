@@ -1,8 +1,8 @@
 import { Bell } from 'lucide-react';
+import { useNavigate } from 'react-router';
 
 import { BrandLogo } from '@/components/layout/brand-logo';
 import { Button } from '@/components/ui/button';
-import { navigate } from '@/lib/navigation';
 
 interface LandingHeaderProps {
   /** Hides the Login button on pages where it's redundant (e.g. login). */
@@ -15,6 +15,7 @@ export function LandingHeader({
   showLogin = true,
   showNotifications = false,
 }: LandingHeaderProps) {
+  const navigate = useNavigate();
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/90 backdrop-blur-md">
       <div className="mx-auto flex w-full max-w-[1800px] items-center justify-between px-4 py-4 md:px-6">

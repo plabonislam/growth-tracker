@@ -5,9 +5,9 @@ import {
   User,
   type LucideIcon,
 } from 'lucide-react';
+import { useNavigate } from 'react-router';
 
 import { cn } from '@/lib/utils';
-import { navigate } from '@/lib/navigation';
 
 interface NavItem {
   label: string;
@@ -26,6 +26,7 @@ const ITEMS: NavItem[] = [
 
 /** Mobile bottom navigation. `activePath` marks the current tab. */
 export function BottomNav({ activePath }: { activePath: string }) {
+  const navigate = useNavigate();
   return (
     <nav className="fixed bottom-0 left-0 z-50 flex h-16 w-full items-center justify-around border-t bg-background px-2 pb-[env(safe-area-inset-bottom)] shadow-[0px_-4px_12px_rgba(0,0,0,0.05)]">
       {ITEMS.map(({ label, icon: Icon, path, comingSoon }) => {

@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router';
+
 import { ActiveTopicCard } from '@/features/dashboard/components/active-topic-card';
 import { AgendaCard } from '@/features/dashboard/components/agenda-card';
 import { JourneyCard } from '@/features/dashboard/components/journey-card';
@@ -5,9 +7,9 @@ import { LearningPathCard } from '@/features/dashboard/components/learning-path-
 import { MetricTile } from '@/features/dashboard/components/metric-tile';
 import { useLearnerDashboard } from '@/features/dashboard/hooks/use-dashboard';
 import { SectionHeading } from '@/components/ui/section-heading';
-import { navigate } from '@/lib/navigation';
 
 export function DashboardPage() {
+  const navigate = useNavigate();
   const { data, isLoading, isError } = useLearnerDashboard();
 
   return (

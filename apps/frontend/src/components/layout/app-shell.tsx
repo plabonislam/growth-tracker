@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Bell, ChevronRight, Menu, X } from 'lucide-react';
+import { Bell, ChevronRight, Menu, Plus, X } from 'lucide-react';
+import { useNavigate } from 'react-router';
 
 import { AppSidebar, SidebarContent } from '@/components/layout/app-sidebar';
 import { BottomNav } from '@/components/layout/bottom-nav';
 import { BrandLogo } from '@/components/layout/brand-logo';
+import { Button } from '@/components/ui/button';
 import { AccountMenu } from '@/features/auth/components/account-menu';
+import { ClubCreateModal } from '@/features/clubs/components/club-create-modal';
 import { SearchCommand } from '@/features/search/components/search-command';
 import { cn } from '@/lib/utils';
-import { navigate } from '@/lib/navigation';
 
 export interface BreadcrumbItem {
   label: string;
@@ -16,6 +18,7 @@ export interface BreadcrumbItem {
 }
 
 function Breadcrumb({ items }: { items: BreadcrumbItem[] }) {
+  const navigate = useNavigate();
   return (
     <nav
       aria-label="Breadcrumb"
@@ -66,7 +69,9 @@ export function AppShell({
   breadcrumb?: BreadcrumbItem[];
   children: React.ReactNode;
 }) {
+  const navigate = useNavigate();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [createClubOpen, setCreateClubOpen] = useState(false);
 
   // Close the tablet drawer on Escape.
   useEffect(() => {
@@ -148,6 +153,19 @@ export function AppShell({
 
             {/* Right — global utilities */}
             <div className="flex shrink-0 items-center gap-1.5">
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => setCreateClubOpen(true)}
+                className="gap-1.5"
+              >
+                <Plus className="size-4" strokeWidth={1.75} />
+                <span className="hidden sm:inline">Create Club</span>
+              </Button>
+              <span
+                aria-hidden
+                className="mx-1 hidden h-5 w-px bg-border sm:block"
+              />
               <button
                 type="button"
                 aria-label="Notifications"
@@ -171,6 +189,11 @@ export function AppShell({
       <div className="md:hidden">
         <BottomNav activePath={activePath} />
       </div>
+
+      <ClubCreateModal
+        open={createClubOpen}
+        onClose={() => setCreateClubOpen(false)}
+      />
     </div>
   );
 }

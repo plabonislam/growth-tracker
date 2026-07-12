@@ -58,7 +58,10 @@ describe('ClubsController', () => {
 
   it('POST /clubs calls create with validated body', async () => {
     mockClubsService.create.mockResolvedValue(club);
-    const dto = { name: 'Frontend Club', coordinatorId: 'uid-coord' };
+    const dto = {
+      name: 'Frontend Club',
+      coordinatorEmail: 'coord@example.com',
+    };
 
     const result = await controller.create(dto);
 

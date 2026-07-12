@@ -27,13 +27,16 @@ function Avatar({ user }: { user: UserResponse }) {
 interface CoordinatorSelectProps
   extends Omit<React.ComponentProps<'div'>, 'onChange' | 'value'> {
   value?: string;
-  onChange: (id: string | undefined) => void;
+  /** Emits the selected user's email — the backend resolves it to an id. */
+  onChange: (email: string | undefined) => void;
 }
 
 /**
  * Type-ahead coordinator picker. Shows a dropdown preview of matching users
  * as you type a name/email, and a confirmation chip once one is selected —
- * so it's clear exactly who got set as coordinator, not just an opaque id.
+ * so it's clear exactly who got set as coordinator, not just an opaque value.
+ * Identifies the selection by email (see `CreateClubSchema.coordinatorEmail`),
+ * not user id — the backend resolves email to id.
  *
  * Accepts and forwards the `id`/`aria-*`/`ref` that `FormControl` (Radix
  * `Slot`) attaches, so the field label stays correctly associated.
@@ -48,7 +51,7 @@ export const CoordinatorSelect = forwardRef<
   const rootRef = useRef<HTMLDivElement>(null);
 
   const selected = useMemo(
-    () => users.find((user) => user.id === value),
+    () => users.find((user) => user.email === value),
     [users, value],
   );
 
@@ -139,7 +142,7 @@ export const CoordinatorSelect = forwardRef<
                   <button
                     type="button"
                     onClick={() => {
-                      onChange(user.id);
+                      onChange(user.email);
                       setQuery('');
                       setOpen(false);
                     }}

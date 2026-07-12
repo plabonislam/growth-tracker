@@ -16,6 +16,7 @@ const mockRepo = {
   findCoordinatorMatch: jest.fn(),
   findMentorMatch: jest.fn(),
   findAuthorityUser: jest.fn(),
+  findUserByEmail: jest.fn(),
   findMembersByClubId: jest.fn(),
   findMembership: jest.fn(),
   updateMembership: jest.fn(),
@@ -86,27 +87,48 @@ describe('ClubsService', () => {
   });
 
   describe('create', () => {
-    it('inserts club and returns it', async () => {
-      mockRepo.findAuthorityUser.mockResolvedValue(null);
+    it('resolves coordinatorEmail to a user id, inserts club, and returns it', async () => {
+      mockRepo.findUserByEmail.mockResolvedValue({
+        id: 'uid-coord',
+        isAuthority: false,
+      });
       mockRepo.insert.mockResolvedValue(club);
 
       const result = await service.create({
         name: 'Frontend Club',
-        coordinatorId: 'uid-coord',
+        coordinatorEmail: 'coord@example.com',
       });
 
-      expect(mockRepo.insert).toHaveBeenCalled();
+      expect(mockRepo.findUserByEmail).toHaveBeenCalledWith(
+        'coord@example.com',
+      );
+      expect(mockRepo.insert).toHaveBeenCalledWith({
+        name: 'Frontend Club',
+        coordinatorId: 'uid-coord',
+      });
       expect(result).toEqual(club);
     });
 
+    it('throws 404 when coordinatorEmail matches no user', async () => {
+      mockRepo.findUserByEmail.mockResolvedValue(null);
+
+      await expect(
+        service.create({
+          name: 'Club',
+          coordinatorEmail: 'nobody@example.com',
+        }),
+      ).rejects.toThrow(NotFoundException);
+      expect(mockRepo.insert).not.toHaveBeenCalled();
+    });
+
     it('throws 400 when coordinator is an Authority user', async () => {
-      mockRepo.findAuthorityUser.mockResolvedValue({
+      mockRepo.findUserByEmail.mockResolvedValue({
         id: 'uid-coord',
         isAuthority: true,
       });
 
       await expect(
-        service.create({ name: 'Club', coordinatorId: 'uid-coord' }),
+        service.create({ name: 'Club', coordinatorEmail: 'coord@example.com' }),
       ).rejects.toThrow(BadRequestException);
       expect(mockRepo.insert).not.toHaveBeenCalled();
     });

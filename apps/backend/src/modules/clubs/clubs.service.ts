@@ -27,12 +27,13 @@ export class ClubsService {
   }
 
   async create(dto: CreateClub) {
-    if (dto.coordinatorId) {
-      await this.assertNotAuthority(dto.coordinatorId);
-    }
+    const coordinatorId = dto.coordinatorEmail
+      ? await this.resolveCoordinatorIdByEmail(dto.coordinatorEmail)
+      : undefined;
+
     return this.repo.insert({
       name: dto.name,
-      coordinatorId: dto.coordinatorId!,
+      coordinatorId: coordinatorId!,
     });
   }
 
@@ -84,5 +85,14 @@ export class ClubsService {
     const found = await this.repo.findAuthorityUser(coordinatorId);
     if (found)
       throw new BadRequestException('Authority users cannot be coordinators');
+  }
+
+  private async resolveCoordinatorIdByEmail(email: string) {
+    const user = await this.repo.findUserByEmail(email);
+    if (!user) throw new NotFoundException('Coordinator not found');
+    if (user.isAuthority) {
+      throw new BadRequestException('Authority users cannot be coordinators');
+    }
+    return user.id;
   }
 }

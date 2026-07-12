@@ -110,6 +110,14 @@ export class ClubsRepository {
     return row ?? null;
   }
 
+  async findUserByEmail(email: string) {
+    const [row] = await this.db.db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.email, email));
+    return row ?? null;
+  }
+
   findMembersByClubId(clubId: string) {
     return this.db.db
       .select()

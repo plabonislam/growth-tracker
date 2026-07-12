@@ -1,5 +1,5 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CheckCircle2, Send } from 'lucide-react';
+import { CheckCircle2, Send, UserSearch } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { CreateClubSchema, type CreateClub } from 'shared';
 

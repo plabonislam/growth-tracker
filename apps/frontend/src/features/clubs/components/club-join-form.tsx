@@ -19,11 +19,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useCurrentUser } from '@/features/auth/hooks/use-current-user';
+import { fieldLabelClass } from '@/lib/form-styles';
 import { cn } from '@/lib/utils';
 import { useSubmitJoinApplication } from '../hooks/use-clubs';
-
-const fieldLabelClass =
-  'text-xs font-bold uppercase tracking-wide text-muted-foreground';
 
 function ReadOnlyField({ label, value }: { label: string; value: string }) {
   return (

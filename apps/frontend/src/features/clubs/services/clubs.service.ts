@@ -1,5 +1,6 @@
-import type { JoinClub } from 'shared';
+import type { ClubResponse, CreateClub, JoinClub } from 'shared';
 
+import { httpClient } from '@/services/http/client';
 import type { Club, ClubDetail, ClubJoinInfo } from '../clubs.types';
 
 /**
@@ -190,4 +191,6 @@ export const clubsService = {
         600,
       ),
     ),
+  createClub: (payload: CreateClub): Promise<ClubResponse> =>
+    httpClient.post<ClubResponse>('/clubs', payload).then((r) => r.data),
 };

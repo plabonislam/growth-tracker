@@ -1,5 +1,5 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
-import type { JoinClub } from 'shared';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { CreateClub, JoinClub } from 'shared';
 
 import { clubsService } from '../services/clubs.service';
 
@@ -38,5 +38,16 @@ export function useSubmitJoinApplication(clubId: string) {
   return useMutation({
     mutationFn: (payload: JoinClub) =>
       clubsService.submitJoinApplication(clubId, payload),
+  });
+}
+
+export function useCreateClub() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: CreateClub) => clubsService.createClub(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: CLUBS_KEYS.list() });
+    },
   });
 }

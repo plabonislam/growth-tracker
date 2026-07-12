@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CheckCircle2, Send } from 'lucide-react';
+import { CheckCircle2, Loader2, Send } from 'lucide-react';
+import { useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { CreateClubSchema, type CreateClub } from 'shared';
 
@@ -18,11 +19,15 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { CoordinatorSelect } from '@/features/users/components/coordinator-select';
 import { fieldLabelClass } from '@/lib/form-styles';
-import { getApiErrorMessage } from '@/services/http/client';
-import { useCreateClub } from '../hooks/use-clubs';
+import { getApiErrorMessage, isConflictError } from '@/services/http/client';
+import { useCheckClubName, useCreateClub } from '../hooks/use-clubs';
+
+const NAME_TAKEN_MESSAGE = 'This club name is already taken';
 
 export function ClubCreateForm({ onCreated }: { onCreated?: () => void }) {
   const mutation = useCreateClub();
+  const checkName = useCheckClubName();
+  const lastCheckedName = useRef<string | null>(null);
 
   const form = useForm<CreateClub>({
     resolver: zodResolver(CreateClubSchema),
@@ -33,8 +38,42 @@ export function ClubCreateForm({ onCreated }: { onCreated?: () => void }) {
     },
   });
 
-  const onSubmit = (values: CreateClub) =>
-    mutation.mutate(values, { onSuccess: () => onCreated?.() });
+  const onSubmit = async (values: CreateClub) => {
+    // The blur check is a soft, early hint — re-verify authoritatively here so
+    // a submit that races ahead of (or skips) the blur check can't slip through.
+    const available = await checkName
+      .mutateAsync(values.name)
+      .catch(() => true);
+    if (!available) {
+      form.setError('name', { type: 'manual', message: NAME_TAKEN_MESSAGE });
+      return;
+    }
+
+    mutation.mutate(values, {
+      onSuccess: () => onCreated?.(),
+      onError: (error) => {
+        // Final backstop for a name that was taken in the instant between
+        // this check and the actual insert (e.g. another tab/user racing us).
+        if (isConflictError(error)) {
+          form.setError('name', {
+            type: 'manual',
+            message: NAME_TAKEN_MESSAGE,
+          });
+        }
+      },
+    });
+  };
+
+  const checkNameOnBlur = async (name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed || trimmed === lastCheckedName.current) return;
+    lastCheckedName.current = trimmed;
+
+    const available = await checkName.mutateAsync(trimmed).catch(() => true);
+    if (!available) {
+      form.setError('name', { type: 'manual', message: NAME_TAKEN_MESSAGE });
+    }
+  };
 
   if (mutation.isSuccess) {
     return (
@@ -72,7 +111,28 @@ export function ClubCreateForm({ onCreated }: { onCreated?: () => void }) {
               <FormItem>
                 <FormLabel className={fieldLabelClass}>Club Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g., Innovation Lab" {...field} />
+                  <div className="relative">
+                    <Input
+                      placeholder="e.g., Innovation Lab"
+                      className="pr-9"
+                      maxLength={100}
+                      {...field}
+                      onChange={(e) => {
+                        field.onChange(e);
+                        lastCheckedName.current = null;
+                        if (form.formState.errors.name?.type === 'manual') {
+                          form.clearErrors('name');
+                        }
+                      }}
+                      onBlur={(e) => {
+                        field.onBlur();
+                        void checkNameOnBlur(e.target.value);
+                      }}
+                    />
+                    {checkName.isPending && (
+                      <Loader2 className="absolute right-3.5 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+                    )}
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -122,8 +182,8 @@ export function ClubCreateForm({ onCreated }: { onCreated?: () => void }) {
             )}
           />
 
-          {mutation.isError && (
-            <p className="text-sm text-destructive">
+          {mutation.isError && !isConflictError(mutation.error) && (
+            <p className="text-sm text-destructive text-center">
               {getApiErrorMessage(
                 mutation.error,
                 'Something went wrong creating the club. Please try again.',
@@ -135,9 +195,13 @@ export function ClubCreateForm({ onCreated }: { onCreated?: () => void }) {
             type="submit"
             size="lg"
             className="group w-full"
-            disabled={mutation.isPending}
+            disabled={mutation.isPending || checkName.isPending}
           >
-            {mutation.isPending ? 'Creating…' : 'Create Club'}
+            {mutation.isPending
+              ? 'Creating…'
+              : checkName.isPending
+                ? 'Checking name…'
+                : 'Create Club'}
             <Send className="size-4 transition-transform group-hover:translate-x-1" />
           </Button>
         </form>

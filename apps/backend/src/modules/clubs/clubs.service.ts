@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -26,13 +27,22 @@ export class ClubsService {
     return club;
   }
 
+  async checkNameAvailable(name: string) {
+    const existing = await this.repo.findByName(name);
+    return { available: !existing };
+  }
+
   async create(dto: CreateClub) {
-    if (dto.coordinatorId) {
-      await this.assertNotAuthority(dto.coordinatorId);
-    }
+    await this.assertNameAvailable(dto.name);
+
+    const coordinatorId = dto.coordinatorEmail
+      ? await this.resolveCoordinatorIdByEmail(dto.coordinatorEmail)
+      : undefined;
+
     return this.repo.insert({
       name: dto.name,
-      coordinatorId: dto.coordinatorId!,
+      coordinatorId: coordinatorId!,
+      description: dto.description,
     });
   }
 
@@ -84,5 +94,20 @@ export class ClubsService {
     const found = await this.repo.findAuthorityUser(coordinatorId);
     if (found)
       throw new BadRequestException('Authority users cannot be coordinators');
+  }
+
+  private async assertNameAvailable(name: string) {
+    const existing = await this.repo.findByName(name);
+    if (existing)
+      throw new ConflictException('A club with this name already exists');
+  }
+
+  private async resolveCoordinatorIdByEmail(email: string) {
+    const user = await this.repo.findUserByEmail(email);
+    if (!user) throw new NotFoundException('Coordinator not found');
+    if (user.isAuthority) {
+      throw new BadRequestException('Authority users cannot be coordinators');
+    }
+    return user.id;
   }
 }

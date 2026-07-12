@@ -3,7 +3,8 @@ import { z } from 'zod';
 export const CreateClubSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
-  coordinatorId: z.string().uuid().optional(),
+  /** Backend resolves this to a user id — see ClubsService.create(). */
+  coordinatorEmail: z.string().email().optional(),
 });
 
 export const UpdateClubSchema = z.object({

@@ -193,4 +193,8 @@ export const clubsService = {
     ),
   createClub: (payload: CreateClub): Promise<ClubResponse> =>
     httpClient.post<ClubResponse>('/clubs', payload).then((r) => r.data),
+  checkClubNameAvailable: (name: string): Promise<boolean> =>
+    httpClient
+      .get<{ available: boolean }>('/clubs/check-name', { params: { name } })
+      .then((r) => r.data.available),
 };

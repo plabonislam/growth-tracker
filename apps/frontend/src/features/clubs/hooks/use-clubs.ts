@@ -51,3 +51,10 @@ export function useCreateClub() {
     },
   });
 }
+
+/** On-blur uniqueness check for the club name field. */
+export function useCheckClubName() {
+  return useMutation({
+    mutationFn: (name: string) => clubsService.checkClubNameAvailable(name),
+  });
+}

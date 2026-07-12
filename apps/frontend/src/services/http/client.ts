@@ -23,3 +23,8 @@ export function getApiErrorMessage(error: unknown, fallback: string): string {
   }
   return fallback;
 }
+
+/** True for a 409 response — e.g. a uniqueness conflict caught server-side. */
+export function isConflictError(error: unknown): boolean {
+  return axios.isAxiosError(error) && error.response?.status === 409;
+}

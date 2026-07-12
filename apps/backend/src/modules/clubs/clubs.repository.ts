@@ -55,7 +55,11 @@ export class ClubsRepository {
     return { ...row, topicCount: topicRow.count, memberCount: memberRow.count };
   }
 
-  async insert(data: { name: string; coordinatorId: string }) {
+  async insert(data: {
+    name: string;
+    coordinatorId: string;
+    description?: string;
+  }) {
     const [row] = await this.db.db.insert(clubsTable).values(data).returning();
     return row;
   }
@@ -107,6 +111,23 @@ export class ClubsRepository {
       .select()
       .from(usersTable)
       .where(and(eq(usersTable.id, userId), eq(usersTable.isAuthority, true)));
+    return row ?? null;
+  }
+
+  async findUserByEmail(email: string) {
+    const [row] = await this.db.db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.email, email));
+    return row ?? null;
+  }
+
+  /** Case-insensitive — matches the `clubs_name_lower_unique` index. */
+  async findByName(name: string) {
+    const [row] = await this.db.db
+      .select()
+      .from(clubsTable)
+      .where(eq(sql`lower(${clubsTable.name})`, name.toLowerCase()));
     return row ?? null;
   }
 

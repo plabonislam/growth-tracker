@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
@@ -16,6 +17,8 @@ const mockRepo = {
   findCoordinatorMatch: jest.fn(),
   findMentorMatch: jest.fn(),
   findAuthorityUser: jest.fn(),
+  findUserByEmail: jest.fn(),
+  findByName: jest.fn(),
   findMembersByClubId: jest.fn(),
   findMembership: jest.fn(),
   updateMembership: jest.fn(),
@@ -85,28 +88,105 @@ describe('ClubsService', () => {
     });
   });
 
+  describe('checkNameAvailable', () => {
+    it('reports available when no club has the name', async () => {
+      mockRepo.findByName.mockResolvedValue(null);
+
+      const result = await service.checkNameAvailable('Frontend Club');
+
+      expect(mockRepo.findByName).toHaveBeenCalledWith('Frontend Club');
+      expect(result).toEqual({ available: true });
+    });
+
+    it('reports unavailable when a club already has the name', async () => {
+      mockRepo.findByName.mockResolvedValue(club);
+
+      const result = await service.checkNameAvailable('Frontend Club');
+
+      expect(result).toEqual({ available: false });
+    });
+  });
+
   describe('create', () => {
-    it('inserts club and returns it', async () => {
-      mockRepo.findAuthorityUser.mockResolvedValue(null);
+    it('resolves coordinatorEmail to a user id, inserts club, and returns it', async () => {
+      mockRepo.findByName.mockResolvedValue(null);
+      mockRepo.findUserByEmail.mockResolvedValue({
+        id: 'uid-coord',
+        isAuthority: false,
+      });
       mockRepo.insert.mockResolvedValue(club);
 
       const result = await service.create({
         name: 'Frontend Club',
-        coordinatorId: 'uid-coord',
+        coordinatorEmail: 'coord@example.com',
       });
 
-      expect(mockRepo.insert).toHaveBeenCalled();
+      expect(mockRepo.findUserByEmail).toHaveBeenCalledWith(
+        'coord@example.com',
+      );
+      expect(mockRepo.insert).toHaveBeenCalledWith({
+        name: 'Frontend Club',
+        coordinatorId: 'uid-coord',
+      });
       expect(result).toEqual(club);
     });
 
+    it('passes description through to the repository', async () => {
+      mockRepo.findByName.mockResolvedValue(null);
+      mockRepo.findUserByEmail.mockResolvedValue({
+        id: 'uid-coord',
+        isAuthority: false,
+      });
+      mockRepo.insert.mockResolvedValue(club);
+
+      await service.create({
+        name: 'Frontend Club',
+        coordinatorEmail: 'coord@example.com',
+        description: 'A club for frontend enthusiasts',
+      });
+
+      expect(mockRepo.insert).toHaveBeenCalledWith({
+        name: 'Frontend Club',
+        coordinatorId: 'uid-coord',
+        description: 'A club for frontend enthusiasts',
+      });
+    });
+
+    it('throws 409 when the name is already taken', async () => {
+      mockRepo.findByName.mockResolvedValue(club);
+
+      await expect(
+        service.create({
+          name: 'Frontend Club',
+          coordinatorEmail: 'coord@example.com',
+        }),
+      ).rejects.toThrow(ConflictException);
+      expect(mockRepo.findUserByEmail).not.toHaveBeenCalled();
+      expect(mockRepo.insert).not.toHaveBeenCalled();
+    });
+
+    it('throws 404 when coordinatorEmail matches no user', async () => {
+      mockRepo.findByName.mockResolvedValue(null);
+      mockRepo.findUserByEmail.mockResolvedValue(null);
+
+      await expect(
+        service.create({
+          name: 'Club',
+          coordinatorEmail: 'nobody@example.com',
+        }),
+      ).rejects.toThrow(NotFoundException);
+      expect(mockRepo.insert).not.toHaveBeenCalled();
+    });
+
     it('throws 400 when coordinator is an Authority user', async () => {
-      mockRepo.findAuthorityUser.mockResolvedValue({
+      mockRepo.findByName.mockResolvedValue(null);
+      mockRepo.findUserByEmail.mockResolvedValue({
         id: 'uid-coord',
         isAuthority: true,
       });
 
       await expect(
-        service.create({ name: 'Club', coordinatorId: 'uid-coord' }),
+        service.create({ name: 'Club', coordinatorEmail: 'coord@example.com' }),
       ).rejects.toThrow(BadRequestException);
       expect(mockRepo.insert).not.toHaveBeenCalled();
     });

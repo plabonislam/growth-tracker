@@ -1,10 +1,11 @@
 import { ArrowDown } from 'lucide-react';
+import { useNavigate } from 'react-router';
 
-import { navigate } from '@/lib/navigation';
 import heroEngineers from '@/assets/hero-engineers.png';
 import { HERO } from '../landing.constants';
 
 export function HeroSection() {
+  const navigate = useNavigate();
   return (
     <section className="relative flex min-h-[85vh] items-center overflow-hidden bg-slate-950">
       {/* Background image + legibility overlay */}

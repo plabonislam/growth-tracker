@@ -1,8 +1,8 @@
 import { LogOut, User } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router';
 
 import { useCurrentUser } from '@/features/auth/hooks/use-current-user';
-import { navigate } from '@/lib/navigation';
 
 function initialsOf(name: string) {
   return name
@@ -13,17 +13,18 @@ function initialsOf(name: string) {
     .join('');
 }
 
-function handleLogout() {
-  localStorage.removeItem('accessToken');
-  localStorage.removeItem('refreshToken');
-  navigate('/login');
-}
-
 /** Navbar avatar button with a Profile / Logout dropdown. */
 export function AccountMenu() {
+  const navigate = useNavigate();
   const { data: user } = useCurrentUser();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
+
+  const handleLogout = () => {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    navigate('/login');
+  };
 
   // Close on outside click or Escape.
   useEffect(() => {

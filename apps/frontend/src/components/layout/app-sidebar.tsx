@@ -7,11 +7,11 @@ import {
   Library,
   type LucideIcon,
 } from 'lucide-react';
+import { useNavigate } from 'react-router';
 
 import { BrandLogo } from '@/components/layout/brand-logo';
 
 import { cn } from '@/lib/utils';
-import { navigate } from '@/lib/navigation';
 
 interface SidebarItem {
   label: string;
@@ -53,6 +53,7 @@ function SidebarLink({
   isActive: boolean;
   onNavigate?: () => void;
 }) {
+  const navigate = useNavigate();
   const { label, icon: Icon, path, comingSoon } = item;
 
   if (comingSoon) {
@@ -110,6 +111,7 @@ export function SidebarContent({
   activePath: string;
   onNavigate?: () => void;
 }) {
+  const navigate = useNavigate();
   return (
     <>
       {/* Brand lockup — mark + wordmark, free-floating (no border row) */}

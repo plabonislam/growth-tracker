@@ -6,9 +6,9 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router';
 
 import { useSearch } from '@/features/search/hooks/use-search';
-import { navigate } from '@/lib/navigation';
 import { cn } from '@/lib/utils';
 
 import type { SearchResult, SearchResultKind } from '../search.types';
@@ -29,6 +29,7 @@ const KIND_ORDER: SearchResultKind[] = ['club', 'topic', 'module'];
  * topics, and modules. Full input-style trigger on `sm+`, icon button below.
  */
 export function SearchCommand() {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
@@ -55,7 +56,7 @@ export function SearchCommand() {
       close();
       navigate(result.path);
     },
-    [close],
+    [close, navigate],
   );
 
   // Global ⌘K / Ctrl+K shortcut.

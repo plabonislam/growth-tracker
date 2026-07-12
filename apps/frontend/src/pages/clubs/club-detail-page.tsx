@@ -1,5 +1,6 @@
 import { ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
+import { useNavigate } from 'react-router';
 
 import { ClubExpectations } from '@/features/clubs/components/club-expectations';
 import { ClubHero } from '@/features/clubs/components/club-hero';
@@ -12,9 +13,9 @@ import {
 } from '@/features/clubs/clubs.constants';
 import type { Topic } from '@/features/clubs/clubs.types';
 import { useClubDetail } from '@/features/clubs/hooks/use-clubs';
-import { navigate } from '@/lib/navigation';
 
 export function ClubDetailPage({ clubId }: { clubId: string }) {
+  const navigate = useNavigate();
   const { data: club, isLoading, isError } = useClubDetail(clubId);
   const [enrollTopic, setEnrollTopic] = useState<Topic | null>(null);
 

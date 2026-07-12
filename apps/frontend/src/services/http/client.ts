@@ -1,14 +1,14 @@
 import axios from 'axios';
 
-import { API_URL } from '@/app/config/env';
+import { tokenStorage } from '@/services/token-storage';
 
 /** Global Axios client. Injects the stored access token; see `pages/auth/callback-page.tsx`. */
 export const httpClient = axios.create({
-  baseURL: API_URL,
+  baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:3000',
 });
 
 httpClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('accessToken');
+  const token = tokenStorage.getAccessToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });

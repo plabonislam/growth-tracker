@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import { useCurrentUser } from '@/features/auth/hooks/use-current-user';
+import { tokenStorage } from '@/services/token-storage';
+import { useAuthStore } from '@/store/auth.store';
 
 function initialsOf(name: string) {
   return name
@@ -21,8 +23,8 @@ export function AccountMenu() {
   const rootRef = useRef<HTMLDivElement>(null);
 
   const handleLogout = () => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
+    tokenStorage.clearTokens();
+    useAuthStore.getState().clear();
     navigate('/login');
   };
 

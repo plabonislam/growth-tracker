@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
@@ -17,6 +18,7 @@ const mockRepo = {
   findMentorMatch: jest.fn(),
   findAuthorityUser: jest.fn(),
   findUserByEmail: jest.fn(),
+  findByName: jest.fn(),
   findMembersByClubId: jest.fn(),
   findMembership: jest.fn(),
   updateMembership: jest.fn(),
@@ -86,8 +88,28 @@ describe('ClubsService', () => {
     });
   });
 
+  describe('checkNameAvailable', () => {
+    it('reports available when no club has the name', async () => {
+      mockRepo.findByName.mockResolvedValue(null);
+
+      const result = await service.checkNameAvailable('Frontend Club');
+
+      expect(mockRepo.findByName).toHaveBeenCalledWith('Frontend Club');
+      expect(result).toEqual({ available: true });
+    });
+
+    it('reports unavailable when a club already has the name', async () => {
+      mockRepo.findByName.mockResolvedValue(club);
+
+      const result = await service.checkNameAvailable('Frontend Club');
+
+      expect(result).toEqual({ available: false });
+    });
+  });
+
   describe('create', () => {
     it('resolves coordinatorEmail to a user id, inserts club, and returns it', async () => {
+      mockRepo.findByName.mockResolvedValue(null);
       mockRepo.findUserByEmail.mockResolvedValue({
         id: 'uid-coord',
         isAuthority: false,
@@ -110,6 +132,7 @@ describe('ClubsService', () => {
     });
 
     it('passes description through to the repository', async () => {
+      mockRepo.findByName.mockResolvedValue(null);
       mockRepo.findUserByEmail.mockResolvedValue({
         id: 'uid-coord',
         isAuthority: false,
@@ -129,7 +152,21 @@ describe('ClubsService', () => {
       });
     });
 
+    it('throws 409 when the name is already taken', async () => {
+      mockRepo.findByName.mockResolvedValue(club);
+
+      await expect(
+        service.create({
+          name: 'Frontend Club',
+          coordinatorEmail: 'coord@example.com',
+        }),
+      ).rejects.toThrow(ConflictException);
+      expect(mockRepo.findUserByEmail).not.toHaveBeenCalled();
+      expect(mockRepo.insert).not.toHaveBeenCalled();
+    });
+
     it('throws 404 when coordinatorEmail matches no user', async () => {
+      mockRepo.findByName.mockResolvedValue(null);
       mockRepo.findUserByEmail.mockResolvedValue(null);
 
       await expect(
@@ -142,6 +179,7 @@ describe('ClubsService', () => {
     });
 
     it('throws 400 when coordinator is an Authority user', async () => {
+      mockRepo.findByName.mockResolvedValue(null);
       mockRepo.findUserByEmail.mockResolvedValue({
         id: 'uid-coord',
         isAuthority: true,

@@ -5,6 +5,7 @@ import { ClubsService } from '../clubs.service';
 const mockClubsService = {
   findAll: jest.fn(),
   findById: jest.fn(),
+  checkNameAvailable: jest.fn(),
   create: jest.fn(),
   update: jest.fn(),
   archive: jest.fn(),
@@ -54,6 +55,19 @@ describe('ClubsController', () => {
 
     expect(mockClubsService.findById).toHaveBeenCalledWith('club-1');
     expect(result).toEqual(club);
+  });
+
+  it('GET /clubs/check-name calls checkNameAvailable with query param', async () => {
+    mockClubsService.checkNameAvailable.mockResolvedValue({
+      available: false,
+    });
+
+    const result = await controller.checkName('Frontend Club');
+
+    expect(mockClubsService.checkNameAvailable).toHaveBeenCalledWith(
+      'Frontend Club',
+    );
+    expect(result).toEqual({ available: false });
   });
 
   it('POST /clubs calls create with validated body', async () => {

@@ -29,7 +29,7 @@ export function ClubCreateForm({ onCreated }: { onCreated?: () => void }) {
     defaultValues: {
       name: '',
       description: '',
-      coordinatorId: undefined,
+      coordinatorEmail: undefined,
     },
   });
 
@@ -99,7 +99,7 @@ export function ClubCreateForm({ onCreated }: { onCreated?: () => void }) {
 
           <FormField
             control={form.control}
-            name="coordinatorId"
+            name="coordinatorEmail"
             render={({ field }) => (
               <FormItem>
                 <FormLabel className={fieldLabelClass}>

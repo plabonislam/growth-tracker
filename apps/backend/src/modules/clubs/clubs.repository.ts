@@ -122,6 +122,15 @@ export class ClubsRepository {
     return row ?? null;
   }
 
+  /** Case-insensitive — matches the `clubs_name_lower_unique` index. */
+  async findByName(name: string) {
+    const [row] = await this.db.db
+      .select()
+      .from(clubsTable)
+      .where(eq(sql`lower(${clubsTable.name})`, name.toLowerCase()));
+    return row ?? null;
+  }
+
   findMembersByClubId(clubId: string) {
     return this.db.db
       .select()

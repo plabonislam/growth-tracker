@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -26,7 +27,14 @@ export class ClubsService {
     return club;
   }
 
+  async checkNameAvailable(name: string) {
+    const existing = await this.repo.findByName(name);
+    return { available: !existing };
+  }
+
   async create(dto: CreateClub) {
+    await this.assertNameAvailable(dto.name);
+
     const coordinatorId = dto.coordinatorEmail
       ? await this.resolveCoordinatorIdByEmail(dto.coordinatorEmail)
       : undefined;
@@ -86,6 +94,12 @@ export class ClubsService {
     const found = await this.repo.findAuthorityUser(coordinatorId);
     if (found)
       throw new BadRequestException('Authority users cannot be coordinators');
+  }
+
+  private async assertNameAvailable(name: string) {
+    const existing = await this.repo.findByName(name);
+    if (existing)
+      throw new ConflictException('A club with this name already exists');
   }
 
   private async resolveCoordinatorIdByEmail(email: string) {

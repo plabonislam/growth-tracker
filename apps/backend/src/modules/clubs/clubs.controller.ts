@@ -1,4 +1,12 @@
-import { Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import {
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { CreateClub, UpdateClub, UpdateMembershipStatus } from 'shared';
 import {
@@ -30,7 +38,14 @@ export class ClubsController {
     return this.clubsService.findAll();
   }
 
-  @Public()
+  @RequireRole('authority')
+  @Get('check-name')
+  @ApiOperation({ summary: 'Check whether a club name is available (public)' })
+  checkName(@Query('name') name: string) {
+    return this.clubsService.checkNameAvailable(name);
+  }
+
+  @RequireRole('authority')
   @Get(':id')
   @ApiOperation({ summary: 'Get a club by id (public)' })
   findOne(@Param('id') id: string) {

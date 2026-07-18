@@ -9,6 +9,7 @@ import {
   DashboardRoute,
   EnrolledTopicRoute,
   ExploreRoute,
+  PendingEnrollmentsRoute,
 } from './route-elements';
 
 export const routes: RouteObject[] = [
@@ -20,6 +21,10 @@ export const routes: RouteObject[] = [
     children: [
       { path: '/explore', element: <ExploreRoute /> },
       { path: '/dashboard', element: <DashboardRoute /> },
+      {
+        path: '/pending-enrollments',
+        element: <PendingEnrollmentsRoute />,
+      },
       { path: '/topics/:topicId', element: <EnrolledTopicRoute /> },
       { path: '/clubs/:clubId', element: <ClubDetailRoute /> },
     ],

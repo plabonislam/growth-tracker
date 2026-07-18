@@ -3,6 +3,7 @@ import { useParams } from 'react-router';
 import { AppShell } from '@/components/layout/app-shell';
 import { ClubDetailPage } from '@/pages/clubs/club-detail-page';
 import { DashboardPage } from '@/pages/dashboard/dashboard-page';
+import { PendingEnrollmentsPage } from '@/pages/enrollments/pending-enrollments-page';
 import { ExplorePage } from '@/pages/explore/explore-page';
 import { EnrolledTopicPage } from '@/pages/topics/enrolled-topic-page';
 
@@ -18,6 +19,14 @@ export function DashboardRoute() {
   return (
     <AppShell activePath="/dashboard">
       <DashboardPage />
+    </AppShell>
+  );
+}
+
+export function PendingEnrollmentsRoute() {
+  return (
+    <AppShell activePath="/pending-enrollments">
+      <PendingEnrollmentsPage />
     </AppShell>
   );
 }

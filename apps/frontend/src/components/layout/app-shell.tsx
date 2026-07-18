@@ -10,6 +10,7 @@ import { AccountMenu } from '@/features/auth/components/account-menu';
 import { ClubCreateModal } from '@/features/clubs/components/club-create-modal';
 import { SearchCommand } from '@/features/search/components/search-command';
 import { cn } from '@/lib/utils';
+import { useAuthStore } from '@/store/auth.store';
 
 export interface BreadcrumbItem {
   label: string;
@@ -70,6 +71,7 @@ export function AppShell({
   children: React.ReactNode;
 }) {
   const navigate = useNavigate();
+  const isAuthority = useAuthStore((s) => s.isAuthority);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [createClubOpen, setCreateClubOpen] = useState(false);
 
@@ -153,19 +155,23 @@ export function AppShell({
 
             {/* Right — global utilities */}
             <div className="flex shrink-0 items-center gap-1.5">
-              <Button
-                type="button"
-                size="sm"
-                onClick={() => setCreateClubOpen(true)}
-                className="gap-1.5"
-              >
-                <Plus className="size-4" strokeWidth={1.75} />
-                <span className="hidden sm:inline">Create Club</span>
-              </Button>
-              <span
-                aria-hidden
-                className="mx-1 hidden h-5 w-px bg-border sm:block"
-              />
+              {isAuthority && (
+                <>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => setCreateClubOpen(true)}
+                    className="gap-1.5"
+                  >
+                    <Plus className="size-4" strokeWidth={1.75} />
+                    <span className="hidden sm:inline">Create Club</span>
+                  </Button>
+                  <span
+                    aria-hidden
+                    className="mx-1 hidden h-5 w-px bg-border sm:block"
+                  />
+                </>
+              )}
               <button
                 type="button"
                 aria-label="Notifications"

@@ -1,84 +1,63 @@
 import type { ClubResponse, CreateClub, JoinClub } from 'shared';
 
 import { httpClient } from '@/services/http/client';
-import type { Club, ClubDetail, ClubJoinInfo } from '../clubs.types';
+import type {
+  Club,
+  ClubDetail,
+  ClubIconKey,
+  ClubJoinInfo,
+  ClubTone,
+} from '../clubs.types';
 
 /**
  * Clubs service.
  *
- * These would normally be `httpClient.get('/clubs')` calls (see
- * docs/frontend.md — Service Pattern); until that endpoint exists we resolve
- * local fixtures so the TanStack Query wiring is real and swappable.
+ * `getClubs` calls the real `GET /clubs`. The other reads still resolve
+ * local fixtures (see docs/frontend.md — Service Pattern) until their
+ * endpoints exist.
  */
 
-const CLUBS: Club[] = [
-  {
-    id: 'software-engineering',
-    name: 'Software Engineering Hub',
-    description:
-      'Master the latest frameworks and architectural patterns with industry experts.',
-    iconKey: 'engineering',
-    tone: 'primary',
-    topics: 12,
-    members: 124,
-    membership: 'active',
-  },
-  {
-    id: 'data-insights',
-    name: 'Data Insights Circle',
-    description:
-      'Exploring big data, visualization, and predictive modeling in a collaborative space.',
-    iconKey: 'data',
-    tone: 'indigo',
-    topics: 8,
-    members: 89,
-    membership: 'on_break',
-  },
-  {
-    id: 'ai-ml',
-    name: 'AI & Machine Learning',
-    description:
-      'Deep dive into neural networks, NLP, and the ethics of artificial intelligence.',
-    iconKey: 'ai',
-    tone: 'amber',
-    topics: 15,
-    members: 210,
-    membership: null,
-  },
-  {
-    id: 'leadership',
-    name: 'Leadership Essentials',
-    description:
-      'Developing the soft skills needed to manage global teams effectively.',
-    iconKey: 'leadership',
-    tone: 'primary',
-    topics: 5,
-    members: 45,
-    membership: 'dropped_out',
-  },
-  {
-    id: 'cybersecurity',
-    name: 'Cybersecurity Guard',
-    description:
-      'From ethical hacking to risk management, stay ahead of modern threats.',
-    iconKey: 'security',
-    tone: 'rose',
-    topics: 20,
-    members: 178,
-    membership: null,
-  },
-  {
-    id: 'ui-ux-design',
-    name: 'UI/UX Design Studio',
-    description:
-      'Discussing accessibility, design systems, and user-centric research methodologies.',
-    iconKey: 'design',
-    tone: 'violet',
-    topics: 10,
-    members: 62,
-    membership: 'active',
-  },
+/** Shape returned by `GET /clubs` — see ClubsRepository.findAllActive(). */
+interface ApiClub {
+  id: string;
+  name: string;
+  description: string | null;
+  archived: boolean;
+  topicCount: number;
+  memberCount: number;
+}
+
+// Backend doesn't track icon/tone per club — rotate through these for
+// visual variety since real clubs don't come with a preset one.
+const ICON_ROTATION: ClubIconKey[] = [
+  'engineering',
+  'data',
+  'ai',
+  'leadership',
+  'security',
+  'design',
 ];
+const TONE_ROTATION: ClubTone[] = [
+  'primary',
+  'indigo',
+  'amber',
+  'rose',
+  'violet',
+];
+
+function toClub(apiClub: ApiClub, index: number): Club {
+  return {
+    id: apiClub.id,
+    name: apiClub.name,
+    description: apiClub.description ?? '',
+    iconKey: ICON_ROTATION[index % ICON_ROTATION.length]!,
+    tone: TONE_ROTATION[index % TONE_ROTATION.length]!,
+    topics: apiClub.topicCount,
+    members: apiClub.memberCount,
+    // GET /clubs is a global listing, not scoped to the current user.
+    membership: null,
+  };
+}
 
 const CLUB_DETAIL: ClubDetail = {
   id: 'data-insights',
@@ -170,8 +149,15 @@ export interface JoinApplicationResult {
   status: 'pending';
 }
 
+/** Shape returned by `POST /clubs/:id/members` — see clubMembershipsTable. */
+interface ApiMembership {
+  id: string;
+  status: 'pending';
+}
+
 export const clubsService = {
-  getClubs: (): Promise<Club[]> => Promise.resolve(CLUBS),
+  getClubs: (): Promise<Club[]> =>
+    httpClient.get<ApiClub[]>('/clubs').then((r) => r.data.map(toClub)),
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   getClubDetail: (_id: string): Promise<ClubDetail> =>
     Promise.resolve(CLUB_DETAIL),
@@ -179,18 +165,12 @@ export const clubsService = {
   getClubJoinInfo: (_id: string): Promise<ClubJoinInfo> =>
     Promise.resolve(CLUB_JOIN_INFO),
   submitJoinApplication: (
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _clubId: string,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _payload: JoinClub,
+    clubId: string,
+    payload: JoinClub,
   ): Promise<JoinApplicationResult> =>
-    new Promise((resolve) =>
-      setTimeout(
-        () =>
-          resolve({ applicationId: crypto.randomUUID(), status: 'pending' }),
-        600,
-      ),
-    ),
+    httpClient
+      .post<ApiMembership>(`/clubs/${clubId}/members`, payload)
+      .then((r) => ({ applicationId: r.data.id, status: r.data.status })),
   createClub: (payload: CreateClub): Promise<ClubResponse> =>
     httpClient.post<ClubResponse>('/clubs', payload).then((r) => r.data),
   checkClubNameAvailable: (name: string): Promise<boolean> =>

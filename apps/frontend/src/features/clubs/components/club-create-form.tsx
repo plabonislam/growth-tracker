@@ -92,8 +92,8 @@ export function ClubCreateForm({ onCreated }: { onCreated?: () => void }) {
 
   return (
     <Card className="overflow-hidden p-0 shadow-md">
-      <div className="border-b p-8 pb-6 text-center">
-        <h2 className="mb-3 font-serif text-2xl font-semibold text-primary">
+      <div className="border-b p-8 pb-6 ">
+        <h2 className="mb-3 font-serif text-2xl font-semibold text-primary text-center">
           Create a New Club
         </h2>
         <p className="mx-auto max-w-xl text-sm text-muted-foreground">
@@ -148,6 +148,7 @@ export function ClubCreateForm({ onCreated }: { onCreated?: () => void }) {
                 <FormControl>
                   <Textarea
                     rows={4}
+                    minLength={30}
                     placeholder="Describe the club's mission, vision, and activities..."
                     {...field}
                   />

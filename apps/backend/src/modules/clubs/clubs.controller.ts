@@ -8,9 +8,15 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import type { CreateClub, UpdateClub, UpdateMembershipStatus } from 'shared';
+import type {
+  CreateClub,
+  JoinClub,
+  UpdateClub,
+  UpdateMembershipStatus,
+} from 'shared';
 import {
   CreateClubSchema,
+  JoinClubSchema,
   UpdateClubSchema,
   UpdateMembershipStatusSchema,
 } from 'shared';
@@ -83,6 +89,17 @@ export class ClubsController {
   })
   findMembers(@Param('id') clubId: string, @CurrentUser() caller: CallerUser) {
     return this.clubsService.findMembers(clubId, caller);
+  }
+
+  @ApiBearerAuth()
+  @Post(':id/members')
+  @ApiOperation({ summary: 'Apply to join a club (authenticated member)' })
+  joinClub(
+    @Param('id') clubId: string,
+    @ZodBody(JoinClubSchema) dto: JoinClub,
+    @CurrentUser() caller: CallerUser,
+  ) {
+    return this.clubsService.submitJoinApplication(clubId, caller.userId, dto);
   }
 
   @ApiBearerAuth()

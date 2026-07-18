@@ -27,9 +27,8 @@ export const clubsTable = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     name: varchar('name', { length: 100 }).notNull(),
     description: text('description'),
-    coordinatorId: uuid('coordinator_id')
-      .references(() => usersTable.id)
-      .notNull(),
+    // Optional — a club can be created without one and get it assigned later.
+    coordinatorId: uuid('coordinator_id').references(() => usersTable.id),
     archived: boolean('archived').default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   },
@@ -49,6 +48,8 @@ export const clubMembershipsTable = pgTable(
       .notNull(),
     status: membershipStatusEnum('status').notNull(),
     droppedReason: text('dropped_reason'),
+    /** Applicant's stated reason for joining — set on the initial application. */
+    expectation: text('expectation'),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   },
   (t) => [unique().on(t.clubId, t.userId)],

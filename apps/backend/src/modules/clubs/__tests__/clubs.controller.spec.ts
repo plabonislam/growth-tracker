@@ -10,6 +10,7 @@ const mockClubsService = {
   update: jest.fn(),
   archive: jest.fn(),
   findMembers: jest.fn(),
+  submitJoinApplication: jest.fn(),
   updateMembershipStatus: jest.fn(),
 };
 
@@ -81,6 +82,30 @@ describe('ClubsController', () => {
 
     expect(mockClubsService.create).toHaveBeenCalledWith(dto);
     expect(result).toEqual(club);
+  });
+
+  it('POST /clubs/:id/members calls submitJoinApplication with caller id', async () => {
+    const application = {
+      id: 'mem-1',
+      clubId: 'club-1',
+      userId: 'uid-coord',
+      status: 'pending',
+    };
+    mockClubsService.submitJoinApplication.mockResolvedValue(application);
+    const dto = {
+      memberId: 'DSI-1',
+      expectation: 'Excited to contribute.',
+      acceptedRules: true,
+    };
+
+    const result = await controller.joinClub('club-1', dto, caller);
+
+    expect(mockClubsService.submitJoinApplication).toHaveBeenCalledWith(
+      'club-1',
+      caller.userId,
+      dto,
+    );
+    expect(result).toEqual(application);
   });
 
   it('PATCH /clubs/:id/members/:userId calls updateMembershipStatus', async () => {

@@ -21,6 +21,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useCurrentUser } from '@/features/auth/hooks/use-current-user';
 import { fieldLabelClass } from '@/lib/form-styles';
 import { cn } from '@/lib/utils';
+import { getApiErrorMessage } from '@/services/http/client';
 import { useSubmitJoinApplication } from '../hooks/use-clubs';
 
 function ReadOnlyField({ label, value }: { label: string; value: string }) {
@@ -191,8 +192,10 @@ export function ClubJoinForm({
 
           {mutation.isError && (
             <p className="text-sm text-destructive">
-              Something went wrong submitting your application. Please try
-              again.
+              {getApiErrorMessage(
+                mutation.error,
+                'Something went wrong submitting your application. Please try again.',
+              )}
             </p>
           )}
 

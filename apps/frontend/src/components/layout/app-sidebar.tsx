@@ -1,6 +1,7 @@
 import {
   Award,
   CalendarDays,
+  CircleCheckBig,
   ClipboardList,
   Compass,
   LayoutDashboard,
@@ -10,8 +11,10 @@ import {
 import { useNavigate } from 'react-router';
 
 import { BrandLogo } from '@/components/layout/brand-logo';
+import { MOCK_PENDING_REQUESTS_TOTAL } from '@/features/enrollments/enrollments.constants';
 
 import { cn } from '@/lib/utils';
+import { useAuthStore } from '@/store/auth.store';
 
 interface SidebarItem {
   label: string;
@@ -19,6 +22,10 @@ interface SidebarItem {
   path?: string;
   /** Feature not built yet — rendered muted with a "Soon" badge. */
   comingSoon?: boolean;
+  /** Numeric badge shown at the end of the row (e.g. pending request count). */
+  count?: number;
+  /** Only rendered for Authority/Coordinator users. */
+  authorityOnly?: boolean;
 }
 
 interface SidebarSection {
@@ -26,23 +33,39 @@ interface SidebarSection {
   items: SidebarItem[];
 }
 
-const SECTIONS: SidebarSection[] = [
-  {
-    items: [
-      { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
-      { label: 'Explore Clubs', icon: Compass, path: '/explore' },
-      { label: 'My Topics', icon: Library, comingSoon: true },
-    ],
-  },
-  {
-    title: 'Learning',
-    items: [
-      { label: 'My Tasks', icon: ClipboardList, comingSoon: true },
-      { label: 'Sessions', icon: CalendarDays, comingSoon: true },
-      { label: 'Certifications', icon: Award, comingSoon: true },
-    ],
-  },
-];
+function buildSections(isAuthority: boolean): SidebarSection[] {
+  const sections: SidebarSection[] = [
+    {
+      items: [
+        { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
+        { label: 'Explore Clubs', icon: Compass, path: '/explore' },
+        { label: 'My Topics', icon: Library, comingSoon: true },
+        {
+          label: 'Pending requests',
+          icon: CircleCheckBig,
+          path: '/pending-enrollments',
+          count: MOCK_PENDING_REQUESTS_TOTAL,
+          authorityOnly: true,
+        },
+      ],
+    },
+    {
+      title: 'Learning',
+      items: [
+        { label: 'My Tasks', icon: ClipboardList, comingSoon: true },
+        { label: 'Sessions', icon: CalendarDays, comingSoon: true },
+        { label: 'Certifications', icon: Award, comingSoon: true },
+      ],
+    },
+  ];
+
+  return sections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => !item.authorityOnly || isAuthority),
+    }))
+    .filter((section) => section.items.length > 0);
+}
 
 function SidebarLink({
   item,
@@ -54,7 +77,7 @@ function SidebarLink({
   onNavigate?: () => void;
 }) {
   const navigate = useNavigate();
-  const { label, icon: Icon, path, comingSoon } = item;
+  const { label, icon: Icon, path, comingSoon, count } = item;
 
   if (comingSoon) {
     return (
@@ -94,7 +117,19 @@ function SidebarLink({
         )}
       />
       <Icon className="size-[18px]" strokeWidth={isActive ? 2.25 : 1.75} />
-      {label}
+      <span className="flex-1 text-left">{label}</span>
+      {count !== undefined && (
+        <span
+          className={cn(
+            'rounded-full px-1.5 py-px text-[11px] font-semibold',
+            isActive
+              ? 'bg-primary text-primary-foreground'
+              : 'bg-muted text-muted-foreground',
+          )}
+        >
+          {count}
+        </span>
+      )}
     </button>
   );
 }
@@ -112,6 +147,8 @@ export function SidebarContent({
   onNavigate?: () => void;
 }) {
   const navigate = useNavigate();
+  const isAuthority = useAuthStore((s) => s.isAuthority);
+  const sections = buildSections(isAuthority);
   return (
     <>
       {/* Brand lockup — mark + wordmark, free-floating (no border row) */}
@@ -128,7 +165,7 @@ export function SidebarContent({
 
       {/* Nav sections */}
       <nav className="flex-1 space-y-7 overflow-y-auto px-3 pb-4 pt-7">
-        {SECTIONS.map((section, i) => (
+        {sections.map((section, i) => (
           <div key={section.title ?? i} className="space-y-0.5">
             {section.title && (
               <p className="px-3 pb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground/70">

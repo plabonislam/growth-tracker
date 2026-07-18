@@ -21,6 +21,7 @@ export class ClubsRepository {
       .select({
         id: clubsTable.id,
         name: clubsTable.name,
+        description: clubsTable.description,
         coordinatorId: clubsTable.coordinatorId,
         archived: clubsTable.archived,
         createdAt: clubsTable.createdAt,
@@ -57,7 +58,7 @@ export class ClubsRepository {
 
   async insert(data: {
     name: string;
-    coordinatorId: string;
+    coordinatorId?: string;
     description?: string;
   }) {
     const [row] = await this.db.db.insert(clubsTable).values(data).returning();
@@ -149,6 +150,23 @@ export class ClubsRepository {
         ),
       );
     return row ?? null;
+  }
+
+  async createMembership(
+    clubId: string,
+    userId: string,
+    data: { expectation?: string },
+  ) {
+    const [row] = await this.db.db
+      .insert(clubMembershipsTable)
+      .values({
+        clubId,
+        userId,
+        status: 'pending',
+        expectation: data.expectation,
+      })
+      .returning();
+    return row;
   }
 
   async updateMembership(

@@ -25,7 +25,7 @@ export const UpdateMembershipStatusSchema = z.object({
 export const ClubResponseSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
-  coordinatorId: z.string().uuid(),
+  coordinatorId: z.string().uuid().nullable(),
   archived: z.boolean(),
   createdAt: z.string(),
 });

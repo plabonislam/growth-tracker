@@ -3,9 +3,15 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
-import type { CreateClub, UpdateClub, UpdateMembershipStatus } from 'shared';
+import type {
+  CreateClub,
+  JoinClub,
+  UpdateClub,
+  UpdateMembershipStatus,
+} from 'shared';
 import { ClubsRepository } from './clubs.repository';
 
 interface Caller {
@@ -15,6 +21,8 @@ interface Caller {
 
 @Injectable()
 export class ClubsService {
+  private readonly logger = new Logger(ClubsService.name);
+
   constructor(private readonly repo: ClubsRepository) {}
 
   findAll() {
@@ -33,17 +41,34 @@ export class ClubsService {
   }
 
   async create(dto: CreateClub) {
-    await this.assertNameAvailable(dto.name);
+    this.logger.log(
+      `create() name="${dto.name}" coordinatorEmail=${dto.coordinatorEmail ?? '(none)'}`,
+    );
 
-    const coordinatorId = dto.coordinatorEmail
-      ? await this.resolveCoordinatorIdByEmail(dto.coordinatorEmail)
-      : undefined;
+    try {
+      await this.assertNameAvailable(dto.name);
 
-    return this.repo.insert({
-      name: dto.name,
-      coordinatorId: coordinatorId!,
-      description: dto.description,
-    });
+      const coordinatorId = dto.coordinatorEmail
+        ? await this.resolveCoordinatorIdByEmail(dto.coordinatorEmail)
+        : undefined;
+
+      const club = await this.repo.insert({
+        name: dto.name,
+        coordinatorId,
+        description: dto.description,
+      });
+
+      this.logger.log(`create() succeeded id=${club.id}`);
+      return club;
+    } catch (error) {
+      this.logger.error(
+        `create() failed for name="${dto.name}": ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+        error instanceof Error ? error.stack : undefined,
+      );
+      throw error;
+    }
   }
 
   async update(id: string, dto: UpdateClub) {
@@ -61,6 +86,42 @@ export class ClubsService {
   async findMembers(clubId: string, caller: Caller) {
     await this.hasClubRole(clubId, caller);
     return this.repo.findMembersByClubId(clubId);
+  }
+
+  async submitJoinApplication(clubId: string, userId: string, dto: JoinClub) {
+    this.logger.log(
+      `submitJoinApplication() clubId=${clubId} userId=${userId}`,
+    );
+
+    try {
+      const club = await this.repo.findById(clubId);
+      if (!club) throw new NotFoundException('Club not found');
+      if (club.archived) {
+        throw new BadRequestException('This club is no longer active');
+      }
+
+      const existing = await this.repo.findMembership(clubId, userId);
+      if (existing) {
+        throw new ConflictException(
+          'You have already applied to or joined this club',
+        );
+      }
+
+      const membership = await this.repo.createMembership(clubId, userId, {
+        expectation: dto.expectation,
+      });
+
+      this.logger.log(`submitJoinApplication() succeeded id=${membership.id}`);
+      return membership;
+    } catch (error) {
+      this.logger.error(
+        `submitJoinApplication() failed for clubId=${clubId} userId=${userId}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+        error instanceof Error ? error.stack : undefined,
+      );
+      throw error;
+    }
   }
 
   async updateMembershipStatus(

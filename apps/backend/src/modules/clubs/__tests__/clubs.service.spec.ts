@@ -21,6 +21,7 @@ const mockRepo = {
   findByName: jest.fn(),
   findMembersByClubId: jest.fn(),
   findMembership: jest.fn(),
+  createMembership: jest.fn(),
   updateMembership: jest.fn(),
 };
 
@@ -247,6 +248,65 @@ describe('ClubsService', () => {
       await expect(service.findMembers('club-1', outsider)).rejects.toThrow(
         ForbiddenException,
       );
+    });
+  });
+
+  describe('submitJoinApplication', () => {
+    const application = {
+      memberId: 'DSI-1',
+      expectation: 'I want to learn frontend engineering.',
+      acceptedRules: true,
+    };
+
+    it('creates a pending membership and returns it', async () => {
+      mockRepo.findById.mockResolvedValue(club);
+      mockRepo.findMembership.mockResolvedValue(null);
+      mockRepo.createMembership.mockResolvedValue({
+        ...membership,
+        status: 'pending',
+        expectation: application.expectation,
+      });
+
+      const result = await service.submitJoinApplication(
+        'club-1',
+        'uid-user1',
+        application,
+      );
+
+      expect(mockRepo.createMembership).toHaveBeenCalledWith(
+        'club-1',
+        'uid-user1',
+        { expectation: application.expectation },
+      );
+      expect(result.status).toBe('pending');
+    });
+
+    it('throws 404 when the club does not exist', async () => {
+      mockRepo.findById.mockResolvedValue(null);
+
+      await expect(
+        service.submitJoinApplication('no-such-club', 'uid-user1', application),
+      ).rejects.toThrow(NotFoundException);
+      expect(mockRepo.createMembership).not.toHaveBeenCalled();
+    });
+
+    it('throws 400 when the club is archived', async () => {
+      mockRepo.findById.mockResolvedValue({ ...club, archived: true });
+
+      await expect(
+        service.submitJoinApplication('club-1', 'uid-user1', application),
+      ).rejects.toThrow(BadRequestException);
+      expect(mockRepo.createMembership).not.toHaveBeenCalled();
+    });
+
+    it('throws 409 when the caller already has a membership', async () => {
+      mockRepo.findById.mockResolvedValue(club);
+      mockRepo.findMembership.mockResolvedValue(membership);
+
+      await expect(
+        service.submitJoinApplication('club-1', 'uid-user1', application),
+      ).rejects.toThrow(ConflictException);
+      expect(mockRepo.createMembership).not.toHaveBeenCalled();
     });
   });
 

@@ -40,13 +40,14 @@ describe('ClubsController', () => {
     controller = module.get<ClubsController>(ClubsController);
   });
 
-  it('GET /clubs calls findAll and returns result', async () => {
-    mockClubsService.findAll.mockResolvedValue([club]);
+  it('GET /clubs calls findAll with caller and returns result', async () => {
+    const clubWithMembership = { ...club, membershipStatus: 'active' };
+    mockClubsService.findAll.mockResolvedValue([clubWithMembership]);
 
-    const result = await controller.findAll();
+    const result = await controller.findAll(caller);
 
-    expect(mockClubsService.findAll).toHaveBeenCalled();
-    expect(result).toEqual([club]);
+    expect(mockClubsService.findAll).toHaveBeenCalledWith(caller);
+    expect(result).toEqual([clubWithMembership]);
   });
 
   it('GET /clubs/:id calls findById with route param', async () => {

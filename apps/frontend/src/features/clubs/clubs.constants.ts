@@ -85,6 +85,11 @@ export const MEMBERSHIP_META: Record<
     label: 'Dropped Out',
     className: 'bg-destructive/10 text-destructive',
   },
+  pending: {
+    label: 'Pending Review',
+    className: 'bg-amber-100 text-amber-700',
+  },
+  rejected: { label: 'Rejected', className: 'bg-muted text-muted-foreground' },
 };
 
 /** Shown when membership is missing (null / undefined / empty). */

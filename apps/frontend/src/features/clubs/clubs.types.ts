@@ -1,5 +1,10 @@
 /** Membership state for the current user relative to a club. */
-export type MembershipStatus = 'active' | 'on_break' | 'dropped_out';
+export type MembershipStatus =
+  | 'active'
+  | 'on_break'
+  | 'dropped_out'
+  | 'pending'
+  | 'rejected';
 
 /** Accent tone applied to a club's icon + top border. */
 export type ClubTone = 'primary' | 'indigo' | 'amber' | 'rose' | 'violet';

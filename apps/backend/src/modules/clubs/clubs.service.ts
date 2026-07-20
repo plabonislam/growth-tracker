@@ -25,8 +25,16 @@ export class ClubsService {
 
   constructor(private readonly repo: ClubsRepository) {}
 
-  findAll() {
-    return this.repo.findAllActive();
+  async findAll(caller: Caller) {
+    const clubs = await this.repo.findAllActive();
+    const memberships = await this.repo.findMembershipsByUserId(caller.userId);
+
+    const membershipMap = new Map(memberships.map((m) => [m.clubId, m.status]));
+
+    return clubs.map((club) => ({
+      ...club,
+      membershipStatus: membershipMap.get(club.id) ?? null,
+    }));
   }
 
   async findById(id: string) {

@@ -10,6 +10,7 @@ import { ClubsService } from '../clubs.service';
 
 const mockRepo = {
   findAllActive: jest.fn(),
+  findMembershipsByUserId: jest.fn(),
   findById: jest.fn(),
   insert: jest.fn(),
   updateById: jest.fn(),
@@ -25,6 +26,7 @@ const mockRepo = {
   updateMembership: jest.fn(),
 };
 
+const caller = { userId: 'uid-user1', isAuthority: false };
 // const authority = { userId: 'uid-authority', isAuthority: true };
 const coordinator = { userId: 'uid-coord', isAuthority: false };
 const outsider = { userId: 'uid-outsider', isAuthority: false };
@@ -61,13 +63,28 @@ describe('ClubsService', () => {
   });
 
   describe('findAll', () => {
-    it('returns only non-archived clubs', async () => {
+    it('returns non-archived clubs with user membership status', async () => {
       mockRepo.findAllActive.mockResolvedValue([club]);
+      mockRepo.findMembershipsByUserId.mockResolvedValue([
+        { clubId: 'club-1', status: 'active' },
+      ]);
 
-      const result = await service.findAll();
+      const result = await service.findAll(caller);
 
       expect(mockRepo.findAllActive).toHaveBeenCalled();
-      expect(result).toEqual([club]);
+      expect(mockRepo.findMembershipsByUserId).toHaveBeenCalledWith(
+        'uid-user1',
+      );
+      expect(result).toEqual([{ ...club, membershipStatus: 'active' }]);
+    });
+
+    it('sets membershipStatus to null when no membership exists', async () => {
+      mockRepo.findAllActive.mockResolvedValue([club]);
+      mockRepo.findMembershipsByUserId.mockResolvedValue([]);
+
+      const result = await service.findAll(caller);
+
+      expect(result).toEqual([{ ...club, membershipStatus: null }]);
     });
   });
 

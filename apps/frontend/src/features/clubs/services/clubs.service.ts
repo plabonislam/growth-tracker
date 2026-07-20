@@ -7,6 +7,7 @@ import type {
   ClubIconKey,
   ClubJoinInfo,
   ClubTone,
+  MembershipStatus,
 } from '../clubs.types';
 
 /**
@@ -25,6 +26,7 @@ interface ApiClub {
   archived: boolean;
   topicCount: number;
   memberCount: number;
+  membershipStatus: MembershipStatus | null;
 }
 
 // Backend doesn't track icon/tone per club — rotate through these for
@@ -54,8 +56,7 @@ function toClub(apiClub: ApiClub, index: number): Club {
     tone: TONE_ROTATION[index % TONE_ROTATION.length]!,
     topics: apiClub.topicCount,
     members: apiClub.memberCount,
-    // GET /clubs is a global listing, not scoped to the current user.
-    membership: null,
+    membership: apiClub.membershipStatus,
   };
 }
 

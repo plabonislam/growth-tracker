@@ -152,6 +152,16 @@ export class ClubsRepository {
     return row ?? null;
   }
 
+  findMembershipsByUserId(userId: string) {
+    return this.db.db
+      .select({
+        clubId: clubMembershipsTable.clubId,
+        status: clubMembershipsTable.status,
+      })
+      .from(clubMembershipsTable)
+      .where(eq(clubMembershipsTable.userId, userId));
+  }
+
   async createMembership(
     clubId: string,
     userId: string,

@@ -21,7 +21,6 @@ import {
   UpdateMembershipStatusSchema,
 } from 'shared';
 import { CurrentUser } from '../../core/decorators/current-user.decorator';
-import { Public } from '../../core/decorators/public.decorator';
 import { RequireRole } from '../../core/decorators/require-role.decorator';
 import { ZodBody } from '../../core/decorators/zod-body.decorator';
 import { ClubsService } from './clubs.service';
@@ -37,11 +36,13 @@ interface CallerUser {
 export class ClubsController {
   constructor(private readonly clubsService: ClubsService) {}
 
-  @Public()
+  @ApiBearerAuth()
   @Get()
-  @ApiOperation({ summary: 'List all active clubs (public)' })
-  findAll() {
-    return this.clubsService.findAll();
+  @ApiOperation({
+    summary: 'List all active clubs with user membership status',
+  })
+  findAll(@CurrentUser() caller: CallerUser) {
+    return this.clubsService.findAll(caller);
   }
 
   @RequireRole('authority')

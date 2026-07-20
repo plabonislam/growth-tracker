@@ -3,7 +3,8 @@ import { MessagesSquare, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CLUB_ICONS, CLUB_TONE } from '../clubs.constants';
-import type { Club } from '../clubs.types';
+
+import type { Club, MembershipStatus } from '../clubs.types';
 import { ClubStatusBadge } from './club-status-badge';
 
 interface ClubCardProps {
@@ -24,7 +25,13 @@ function Stat({ icon: Icon, value }: { icon: typeof Users; value: string }) {
 export function ClubCard({ club, onExplore, onJoin }: ClubCardProps) {
   const tone = CLUB_TONE[club.tone];
   const Icon = CLUB_ICONS[club.iconKey];
-  const isMember = Boolean(club.membership);
+  const HIDE_JOIN_STATUSES: MembershipStatus[] = [
+    'active',
+    'on_break',
+    'pending',
+  ];
+  const hasJoinedOrRequested =
+    club.membership != null && HIDE_JOIN_STATUSES.includes(club.membership);
 
   return (
     <Card className="flex flex-col gap-0 border-t-4 border-t-primary/40 p-6 transition-all hover:-translate-y-1 hover:border-t-primary hover:shadow-md">
@@ -46,7 +53,7 @@ export function ClubCard({ club, onExplore, onJoin }: ClubCardProps) {
       </div>
 
       <div className="mt-auto flex gap-2">
-        {!isMember && (
+        {!hasJoinedOrRequested && (
           <Button className="flex-1" onClick={() => onJoin?.(club)}>
             Join
           </Button>
@@ -54,7 +61,7 @@ export function ClubCard({ club, onExplore, onJoin }: ClubCardProps) {
         <Button
           variant="outline"
           className={`flex-1 border-primary/20 bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary ${
-            isMember ? 'w-full' : ''
+            hasJoinedOrRequested ? 'w-full' : ''
           }`}
           onClick={() => onExplore?.(club)}
         >

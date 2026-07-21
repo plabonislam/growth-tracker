@@ -196,4 +196,34 @@ export class ClubsRepository {
       .returning();
     return row;
   }
+
+  async findPendingClubEnrollments(limit: number = 10, offset: number = 0) {
+    const rows = await this.db.db
+      .select({
+        id: clubMembershipsTable.id,
+        userId: clubMembershipsTable.userId,
+        clubId: clubMembershipsTable.clubId,
+        userName: usersTable.name,
+        userEmail: usersTable.email,
+        clubName: clubsTable.name,
+        status: clubMembershipsTable.status,
+        createdAt: clubMembershipsTable.createdAt,
+      })
+      .from(clubMembershipsTable)
+      .innerJoin(usersTable, eq(clubMembershipsTable.userId, usersTable.id))
+      .innerJoin(clubsTable, eq(clubMembershipsTable.clubId, clubsTable.id))
+      .where(eq(clubMembershipsTable.status, 'pending'))
+      .orderBy((t) => t.createdAt)
+      .limit(limit)
+      .offset(offset);
+    return rows;
+  }
+
+  async countPendingClubEnrollments() {
+    const [result] = await this.db.db
+      .select({ count: count() })
+      .from(clubMembershipsTable)
+      .where(eq(clubMembershipsTable.status, 'pending'));
+    return result?.count ?? 0;
+  }
 }

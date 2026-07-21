@@ -152,6 +152,29 @@ export class ClubsService {
     return updated;
   }
 
+  async getPendingClubEnrollments(limit: number = 10, offset: number = 0) {
+    const [enrollments, total] = await Promise.all([
+      this.repo.findPendingClubEnrollments(limit, offset),
+      this.repo.countPendingClubEnrollments(),
+    ]);
+
+    return {
+      data: enrollments.map((enrollment) => ({
+        id: enrollment.id,
+        userId: enrollment.userId,
+        clubId: enrollment.clubId,
+        requester: {
+          name: enrollment.userName,
+          email: enrollment.userEmail,
+        },
+        target: enrollment.clubName,
+        status: enrollment.status,
+        createdAt: enrollment.createdAt,
+      })),
+      total,
+    };
+  }
+
   private async hasClubRole(clubId: string, caller: Caller) {
     if (caller.isAuthority) return;
     if (await this.repo.findCoordinatorMatch(clubId, caller.userId)) return;

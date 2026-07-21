@@ -52,6 +52,22 @@ export class ClubsController {
     return this.clubsService.checkNameAvailable(name);
   }
 
+  @ApiBearerAuth()
+  @RequireRole('authority')
+  @Get('enrollments/pending')
+  @ApiOperation({
+    summary: 'Get pending club enrollment requests (Authority only)',
+  })
+  getPendingEnrollments(
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+  ) {
+    return this.clubsService.getPendingClubEnrollments(
+      limit ? parseInt(limit) : 10,
+      offset ? parseInt(offset) : 0,
+    );
+  }
+
   @RequireRole('authority')
   @Get(':id')
   @ApiOperation({ summary: 'Get a club by id (public)' })

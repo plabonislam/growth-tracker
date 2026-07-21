@@ -1,5 +1,4 @@
 import type {
-  EnrollmentRequest,
   EnrollmentRequestStatus,
   EnrollmentTone,
 } from './enrollments.types';
@@ -35,63 +34,5 @@ export const ENROLLMENT_STATUS_META: Record<
   },
 };
 
-/** Mock club enrollment requests — UI-only, matches specs/ui/Pending Enrollments.pdf. */
-export const MOCK_CLUB_ENROLLMENT_REQUESTS: EnrollmentRequest[] = [
-  {
-    id: 'ce-1',
-    requester: {
-      name: 'Marcus Holloway',
-      email: 'm.holloway@university.edu',
-    },
-    target: 'Advanced Robotics Club',
-    targetTone: 'teal',
-    dateSubmitted: '24 Oct 2023',
-    timeSubmitted: '09:42 AM',
-    status: 'pending',
-  },
-  {
-    id: 'ce-2',
-    requester: {
-      name: 'Sarah Chen',
-      email: 'sarah.chen@university.edu',
-    },
-    target: 'UX Design Collective',
-    targetTone: 'violet',
-    dateSubmitted: '23 Oct 2023',
-    timeSubmitted: '02:15 PM',
-    status: 'pending',
-  },
-];
-
-/** Mock topic enrollment requests — UI-only, matches specs/ui/Pending Enrollments.pdf. */
-export const MOCK_TOPIC_ENROLLMENT_REQUESTS: EnrollmentRequest[] = [
-  {
-    id: 'te-1',
-    requester: {
-      name: 'James Wilson',
-      email: 'j.wilson@university.edu',
-    },
-    target: 'Sustainable Energy Lab',
-    targetTone: 'teal',
-    dateSubmitted: '23 Oct 2023',
-    timeSubmitted: '11:00 AM',
-    status: 'pending',
-  },
-  {
-    id: 'te-2',
-    requester: {
-      name: 'Elena Rodriguez',
-      email: 'e.rodriguez@university.edu',
-    },
-    target: 'Data Ethics Workshop',
-    targetTone: 'violet',
-    dateSubmitted: '22 Oct 2023',
-    timeSubmitted: '04:55 PM',
-    status: 'pending',
-  },
-];
-
-export const MOCK_CLUB_REQUESTS_TOTAL = 42;
-export const MOCK_TOPIC_REQUESTS_TOTAL = 18;
-export const MOCK_PENDING_REQUESTS_TOTAL =
-  MOCK_CLUB_REQUESTS_TOTAL + MOCK_TOPIC_REQUESTS_TOTAL;
+// Sidebar badge count — still a placeholder until a pending-count endpoint exists.
+export const MOCK_PENDING_REQUESTS_TOTAL = 60;

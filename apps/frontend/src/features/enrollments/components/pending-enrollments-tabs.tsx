@@ -1,32 +1,25 @@
 import { useState } from 'react';
-import { BookOpen, Users } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
-import {
-  MOCK_CLUB_ENROLLMENT_REQUESTS,
-  MOCK_CLUB_REQUESTS_TOTAL,
-  MOCK_TOPIC_ENROLLMENT_REQUESTS,
-  MOCK_TOPIC_REQUESTS_TOTAL,
-} from '../enrollments.constants';
-import type {
-  EnrollmentRequest,
-  PendingEnrollmentsTab,
-} from '../enrollments.types';
-import { EnrollmentRequestTable } from './enrollment-request-table';
+import type { PendingEnrollmentsTab } from '../enrollments.types';
+import { EnrollmentsTable } from './enrollments-table';
 
-const TABS: { key: PendingEnrollmentsTab; label: string }[] = [
-  { key: 'club', label: 'Club enrollments' },
-  { key: 'topic', label: 'Topic enrollments' },
+const TABS: {
+  key: PendingEnrollmentsTab;
+  label: string;
+  targetColumnLabel: string;
+}[] = [
+  { key: 'club', label: 'Club enrollments', targetColumnLabel: 'Club name' },
+  {
+    key: 'topic',
+    label: 'Topic enrollments',
+    targetColumnLabel: 'Target topic',
+  },
 ];
 
 export function PendingEnrollmentsTabs() {
   const [activeTab, setActiveTab] = useState<PendingEnrollmentsTab>('club');
-
-  // UI-only mock — approve/reject just log for now, wired to the backend in a follow-up.
-  const handleApprove = (request: EnrollmentRequest) =>
-    console.log('approve', request.id);
-  const handleReject = (request: EnrollmentRequest) =>
-    console.log('reject', request.id);
+  const active = TABS.find((t) => t.key === activeTab)!;
 
   return (
     <div className="flex flex-col gap-5">
@@ -51,31 +44,11 @@ export function PendingEnrollmentsTabs() {
         ))}
       </div>
 
-      {activeTab === 'club' ? (
-        <EnrollmentRequestTable
-          icon={Users}
-          title="Club enrollment requests"
-          targetColumnLabel="Club name"
-          filterLabel="All clubs"
-          pendingCount={MOCK_CLUB_REQUESTS_TOTAL}
-          requests={MOCK_CLUB_ENROLLMENT_REQUESTS}
-          total={MOCK_CLUB_REQUESTS_TOTAL}
-          onApprove={handleApprove}
-          onReject={handleReject}
-        />
-      ) : (
-        <EnrollmentRequestTable
-          icon={BookOpen}
-          title="Topic enrollment requests"
-          targetColumnLabel="Target topic"
-          filterLabel="All topics"
-          pendingCount={MOCK_TOPIC_REQUESTS_TOTAL}
-          requests={MOCK_TOPIC_ENROLLMENT_REQUESTS}
-          total={MOCK_TOPIC_REQUESTS_TOTAL}
-          onApprove={handleApprove}
-          onReject={handleReject}
-        />
-      )}
+      <EnrollmentsTable
+        key={active.key}
+        type={active.key}
+        targetColumnLabel={active.targetColumnLabel}
+      />
     </div>
   );
 }

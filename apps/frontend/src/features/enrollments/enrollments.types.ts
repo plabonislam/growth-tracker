@@ -10,6 +10,9 @@ interface RequesterInfo {
 /** A single pending request row — `target` is the club or topic name being applied to. */
 export interface EnrollmentRequest {
   id: string;
+  userId?: string;
+  clubId?: string;
+  topicId?: string;
   requester: RequesterInfo;
   target: string;
   targetTone: EnrollmentTone;

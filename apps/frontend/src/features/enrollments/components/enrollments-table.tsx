@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { RefreshCw } from 'lucide-react';
+import { Inbox, RefreshCw } from 'lucide-react';
 
 import { DataTable } from '@/components/data-table/data-table';
 import { Button } from '@/components/ui/button';
@@ -35,14 +35,42 @@ export function EnrollmentsTable({
     [targetColumnLabel],
   );
 
+  const requests = data?.requests ?? [];
+
+  // Once the query has resolved with no pending requests, hide the table
+  // entirely and show a meaningful empty state instead.
+  if (!isLoading && requests.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 rounded-xl border bg-card px-6 py-16 text-center">
+        <Inbox className="size-10 text-muted-foreground" />
+        <div className="space-y-1">
+          <p className="text-sm font-medium">No pending requests</p>
+          <p className="text-sm text-muted-foreground">
+            There are no requests awaiting review right now.
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="text-xs font-medium"
+          onClick={() => refetch()}
+          disabled={isFetching}
+        >
+          <RefreshCw
+            className={isFetching ? 'size-4 animate-spin' : 'size-4'}
+          />
+          Refresh
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <DataTable
       columns={columns}
-      data={data?.requests ?? []}
+      data={requests}
       isLoading={isLoading}
       emptyState="No pending requests."
-      searchColumnId="requester"
-      searchPlaceholder="Search applicants…"
       pageCount={Math.max(1, Math.ceil((data?.total ?? 0) / pageSize))}
       pagination={{ pageIndex, pageSize }}
       onPaginationChange={setPagination}

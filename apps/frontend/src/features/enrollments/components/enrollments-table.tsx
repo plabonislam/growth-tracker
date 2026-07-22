@@ -36,6 +36,7 @@ export function EnrollmentsTable({
   );
 
   const requests = data?.requests ?? [];
+  const pendingCount = data?.total ?? 0;
 
   // Once the query has resolved with no pending requests, hide the table
   // entirely and show a meaningful empty state instead.
@@ -66,28 +67,50 @@ export function EnrollmentsTable({
   }
 
   return (
-    <DataTable
-      columns={columns}
-      data={requests}
-      isLoading={isLoading}
-      emptyState="No pending requests."
-      pageCount={Math.max(1, Math.ceil((data?.total ?? 0) / pageSize))}
-      pagination={{ pageIndex, pageSize }}
-      onPaginationChange={setPagination}
-      toolbar={() => (
+    <div className="flex flex-col gap-5">
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5">
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary ring-1 ring-inset ring-primary/10">
+            <Inbox className="size-5" strokeWidth={1.75} />
+          </span>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h2 className="text-[15px] font-semibold leading-none tracking-tight text-foreground">
+                Pending Requests
+              </h2>
+              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-muted px-1.5 text-xs font-medium tabular-nums text-muted-foreground">
+                {pendingCount}
+              </span>
+            </div>
+            <p className="mt-1.5 text-[13px] leading-none text-muted-foreground">
+              Applications awaiting your review
+            </p>
+          </div>
+        </div>
+
         <Button
-          variant="outline"
+          variant="ghost"
           size="sm"
-          className="text-xs font-medium"
+          className="gap-2 text-muted-foreground hover:text-foreground"
           onClick={() => refetch()}
           disabled={isFetching}
         >
           <RefreshCw
             className={isFetching ? 'size-4 animate-spin' : 'size-4'}
           />
-          Refresh
+          <span className="hidden sm:inline">Refresh</span>
         </Button>
-      )}
-    />
+      </div>
+
+      <DataTable
+        columns={columns}
+        data={requests}
+        isLoading={isLoading}
+        emptyState="No pending requests."
+        pageCount={Math.max(1, Math.ceil(pendingCount / pageSize))}
+        pagination={{ pageIndex, pageSize }}
+        onPaginationChange={setPagination}
+      />
+    </div>
   );
 }

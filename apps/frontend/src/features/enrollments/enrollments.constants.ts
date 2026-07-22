@@ -33,6 +33,3 @@ export const ENROLLMENT_STATUS_META: Record<
     dotClassName: 'bg-destructive',
   },
 };
-
-// Sidebar badge count — still a placeholder until a pending-count endpoint exists.
-export const MOCK_PENDING_REQUESTS_TOTAL = 60;

@@ -84,8 +84,16 @@ export class AuthService {
   }
 
   async getMe(userId: string) {
+    // `id` is intentionally omitted — the client already has it from the JWT
+    // `sub` claim (see frontend auth.store). This endpoint supplies only the
+    // profile fields the token doesn't carry.
     const [user] = await this.db.db
-      .select()
+      .select({
+        name: usersTable.name,
+        email: usersTable.email,
+        avatarUrl: usersTable.avatarUrl,
+        isAuthority: usersTable.isAuthority,
+      })
       .from(usersTable)
       .where(eq(usersTable.id, userId));
 

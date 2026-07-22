@@ -83,7 +83,7 @@ export function ClubJoinForm({
   const form = useForm<JoinClub>({
     resolver: zodResolver(JoinClubSchema),
     values: {
-      memberId: user?.id ?? '',
+      memberId: '',
       expectation: '',
       acceptedRules: false,
     },

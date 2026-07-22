@@ -18,7 +18,9 @@ export const UpdateClubSchema = z.object({
 });
 
 export const UpdateMembershipStatusSchema = z.object({
-  status: z.enum(['active', 'on_break', 'dropped_out']),
+  // 'active' approves a pending application; 'rejected' declines it.
+  // 'on_break' / 'dropped_out' are operational transitions for existing members.
+  status: z.enum(['active', 'on_break', 'dropped_out', 'rejected']),
   droppedReason: z.string().optional(),
 });
 
@@ -30,7 +32,11 @@ export const ClubResponseSchema = z.object({
   createdAt: z.string(),
 });
 
-/** Payload a member submits to apply for a club. */
+/**
+ * Payload a member submits to apply for a club. The applicant's authenticated
+ * identity is taken from the JWT server-side; `memberId` is a self-entered
+ * reference number, not the account id.
+ */
 export const JoinClubSchema = z.object({
   memberId: z.string().min(1, 'Your ID is required').max(32, 'ID is too long'),
   expectation: z

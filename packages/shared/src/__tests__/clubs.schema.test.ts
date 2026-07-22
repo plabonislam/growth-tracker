@@ -37,10 +37,10 @@ describe('UpdateMembershipStatusSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('rejects rejected', () => {
+  it('accepts rejected', () => {
     const result = UpdateMembershipStatusSchema.safeParse({
       status: 'rejected',
     });
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 });

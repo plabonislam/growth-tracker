@@ -37,6 +37,25 @@ export class TopicsRepository {
     return row;
   }
 
+  /**
+   * Create a topic and assign its mentor in a single transaction so a failed
+   * mentor assignment (e.g. an invalid `mentorId`) never leaves an orphaned,
+   * mentor-less topic behind.
+   */
+  async insertWithMentor(
+    data: { clubId: string; name: string; certificationRequired: boolean },
+    mentorId: string,
+  ) {
+    return this.db.db.transaction(async (tx) => {
+      const [row] = await tx.insert(topicsTable).values(data).returning();
+      await tx
+        .insert(topicMentorsTable)
+        .values({ topicId: row.id, userId: mentorId })
+        .onConflictDoNothing();
+      return row;
+    });
+  }
+
   async updateById(id: string, data: Record<string, unknown>) {
     const [row] = await this.db.db
       .update(topicsTable)

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { and, count, eq, sql } from 'drizzle-orm';
+import { MembershipStatus } from 'shared';
 
 import { DatabaseService } from '../../core/database/database.service';
 import {
@@ -26,7 +27,7 @@ export class ClubsRepository {
         archived: clubsTable.archived,
         createdAt: clubsTable.createdAt,
         topicCount: sql<number>`cast(count(distinct case when ${topicsTable.archived} = false then ${topicsTable.id} end) as int)`,
-        memberCount: sql<number>`cast(count(distinct ${clubMembershipsTable.id}) as int)`,
+        memberCount: sql<number>`cast(count(distinct case when ${clubMembershipsTable.status}::text = ${MembershipStatus.active} then ${clubMembershipsTable.id} end) as int)`,
       })
       .from(clubsTable)
       .leftJoin(topicsTable, eq(topicsTable.clubId, clubsTable.id))
@@ -50,7 +51,12 @@ export class ClubsRepository {
       this.db.db
         .select({ count: count() })
         .from(clubMembershipsTable)
-        .where(eq(clubMembershipsTable.clubId, id)),
+        .where(
+          and(
+            eq(clubMembershipsTable.clubId, id),
+            eq(clubMembershipsTable.status, MembershipStatus.active),
+          ),
+        ),
     ]);
     if (!row) return null;
     return { ...row, topicCount: topicRow.count, memberCount: memberRow.count };

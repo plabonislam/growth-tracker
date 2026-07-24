@@ -50,7 +50,11 @@ describe('TopicsController', () => {
 
   it('POST /clubs/:clubId/topics delegates to create with caller context', async () => {
     mockTopicsService.create.mockResolvedValue(topic);
-    const dto = { name: 'React Basics', certificationRequired: false };
+    const dto = {
+      name: 'React Basics',
+      certificationRequired: false,
+      mentorId: '11111111-1111-1111-1111-111111111111',
+    };
 
     const result = await controller.create('club-1', dto, caller);
 

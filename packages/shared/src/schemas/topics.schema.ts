@@ -3,6 +3,8 @@ import { z } from 'zod';
 export const CreateTopicSchema = z.object({
   name: z.string().min(1),
   certificationRequired: z.boolean().default(false),
+  /** A topic must be created with a mentor — the backend assigns them atomically. */
+  mentorId: z.string().uuid('Select a mentor'),
 });
 
 export const UpdateTopicSchema = z.object({

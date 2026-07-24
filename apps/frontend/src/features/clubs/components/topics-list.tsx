@@ -1,12 +1,14 @@
 import { Plus } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import type { Topic } from '../clubs.types';
+import type { Topic, TopicAction } from '../clubs.types';
 import { TopicItem } from './topic-item';
 
 interface TopicsListProps {
   topics: Topic[];
-  onTopicAction?: (topic: Topic) => void;
+  onTopicAction?: (topic: Topic, action: TopicAction) => void;
+  /** True for an authority or the club's coordinator — see `TopicItem`. */
+  canEditTopics?: boolean;
   /** When provided, renders a "Create topic" action in the section header. */
   onCreateTopic?: () => void;
 }
@@ -14,6 +16,7 @@ interface TopicsListProps {
 export function TopicsList({
   topics,
   onTopicAction,
+  canEditTopics,
   onCreateTopic,
 }: TopicsListProps) {
   return (
@@ -54,7 +57,12 @@ export function TopicsList({
       ) : (
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {topics.map((topic) => (
-            <TopicItem key={topic.id} topic={topic} onAction={onTopicAction} />
+            <TopicItem
+              key={topic.id}
+              topic={topic}
+              canEditTopic={canEditTopics}
+              onAction={onTopicAction}
+            />
           ))}
         </div>
       )}

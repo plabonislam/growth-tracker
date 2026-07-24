@@ -57,6 +57,13 @@ export interface Topic {
   enrolled: boolean;
 }
 
+/**
+ * What the topic card's action does, decided by the caller's role:
+ * authority/coordinator edit the topic, its mentor manages modules,
+ * everyone else enrolls or opens.
+ */
+export type TopicAction = 'edit' | 'manage-modules' | 'open' | 'enroll';
+
 export interface ClubDetail {
   id: string;
   name: string;
@@ -69,6 +76,8 @@ export interface ClubDetail {
   mentorsCount: number;
   /** `null` until an authority assigns a coordinator to the club. */
   coordinatorName: string | null;
+  /** Compared against the caller to unlock coordinator-only affordances. */
+  coordinatorId: string | null;
   expectationsIntro: string;
   expectations: string[];
   mentorshipFocus: string;

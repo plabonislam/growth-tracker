@@ -49,6 +49,7 @@ interface ApiClubDetail {
   sessionCount: number;
   mentorCount: number;
   coordinatorName: string | null;
+  coordinatorId: string | null;
 }
 
 /** Compact member count, e.g. 1240 → "1.2k". */
@@ -68,6 +69,7 @@ function toClubDetail(api: ApiClubDetail): ClubDetail {
     sessionsCount: api.sessionCount,
     mentorsCount: api.mentorCount,
     coordinatorName: api.coordinatorName,
+    coordinatorId: api.coordinatorId,
     // Not surfaced on the current detail layout — kept for type completeness.
     expectationsIntro: '',
     expectations: [],

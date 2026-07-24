@@ -11,7 +11,7 @@ import {
   TOPIC_ENROLLMENT_COMMITMENTS,
   TOPIC_ENROLLMENT_REVIEW_NOTE,
 } from '@/features/clubs/clubs.constants';
-import type { Topic } from '@/features/clubs/clubs.types';
+import type { Topic, TopicAction } from '@/features/clubs/clubs.types';
 import { useClubDetail, useClubTopics } from '@/features/clubs/hooks/use-clubs';
 import { useAuthStore } from '@/store/auth.store';
 
@@ -39,16 +39,16 @@ export function ClubDetailPage({ clubId }: { clubId: string }) {
   const [enrollTopic, setEnrollTopic] = useState<Topic | null>(null);
   const [creatingTopic, setCreatingTopic] = useState(false);
 
-  const handleTopicAction = (topic: Topic) => {
-    if (topic.mentor?.id === userId) {
-      navigate(`/topics/${topic.id}`); // "Edit" — mentor manages the topic
+  // Authority and the club's own coordinator administer its topics.
+  const canEditTopics = isAuthority || (club?.coordinatorId ?? null) === userId;
+
+  const handleTopicAction = (topic: Topic, action: TopicAction) => {
+    if (action === 'enroll') {
+      setEnrollTopic(topic);
       return;
     }
-    if (topic.enrolled) {
-      navigate(`/topics/${topic.id}`); // "Open" — enrolled topic view
-      return;
-    }
-    setEnrollTopic(topic);
+    // 'edit', 'manage-modules' and 'open' all resolve to the topic route.
+    navigate(`/topics/${topic.id}`);
   };
 
   return (
@@ -109,6 +109,7 @@ export function ClubDetailPage({ clubId }: { clubId: string }) {
               <TopicsList
                 topics={topics}
                 onTopicAction={handleTopicAction}
+                canEditTopics={canEditTopics}
                 onCreateTopic={
                   isAuthority ? () => setCreatingTopic(true) : undefined
                 }

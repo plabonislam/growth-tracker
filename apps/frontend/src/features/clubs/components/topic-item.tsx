@@ -1,18 +1,32 @@
-import { BookOpen, Clock } from 'lucide-react';
-
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { CLUB_TONE, MENTOR_ROLE_META, TOPIC_ICONS } from '../clubs.constants';
 import type { Topic } from '../clubs.types';
 
-function mentorInitials(name: string) {
-  return name
-    .replace(/^Dr\.?\s+/i, '')
-    .split(' ')
-    .map((part) => part[0])
-    .join('')
-    .slice(0, 2)
-    .toUpperCase();
+/** Deterministic two-stop gradient for a mentor avatar, keyed by name. */
+const AVATAR_GRADIENTS = [
+  'linear-gradient(135deg,#FBD89A,#F26B1F)',
+  'linear-gradient(135deg,#B8D4F8,#1F6FEB)',
+  'linear-gradient(135deg,#D5C9FB,#7C5CFC)',
+  'linear-gradient(135deg,#A7E5CC,#10B981)',
+  'linear-gradient(135deg,#F9A8D4,#BE185D)',
+];
+
+function gradientFor(name: string) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++)
+    hash = (hash + name.charCodeAt(i)) % 997;
+  return AVATAR_GRADIENTS[hash % AVATAR_GRADIENTS.length];
+}
+
+/** Caps meta line — "N modules · N hours", omitting whatever the API lacks. */
+function metaLabel(topic: Topic): string {
+  const parts: string[] = [];
+  if (topic.modules != null) {
+    parts.push(
+      `${topic.modules} ${topic.modules === 1 ? 'module' : 'modules'}`,
+    );
+  }
+  if (topic.hours != null) parts.push(`${topic.hours} hours`);
+  return parts.length ? parts.join(' · ') : 'Curriculum topic';
 }
 
 interface TopicItemProps {
@@ -21,53 +35,40 @@ interface TopicItemProps {
 }
 
 export function TopicItem({ topic, onAction }: TopicItemProps) {
-  const tone = CLUB_TONE[topic.tone];
-  const Icon = TOPIC_ICONS[topic.iconKey];
-
   return (
-    <Card className="flex flex-col justify-between gap-4 border-slate-100 p-4 transition-shadow hover:shadow-md md:flex-row md:items-center md:p-6">
-      <div className="flex items-start gap-4">
-        <div
-          className={`flex size-12 shrink-0 items-center justify-center rounded-lg ${tone.bgSoft}`}
-        >
-          <Icon className={`size-6 ${tone.text}`} />
-        </div>
-        <div>
-          <h4 className="mb-1 font-serif text-lg font-semibold">
-            {topic.title}
-          </h4>
-          <div className="flex flex-wrap gap-4 text-muted-foreground">
-            <span className="flex items-center gap-1 text-sm">
-              <BookOpen className="size-4" />
-              {topic.modules} Modules
-            </span>
-            <span className="flex items-center gap-1 text-sm">
-              <Clock className="size-4" />
-              {topic.hours} hrs
-            </span>
-          </div>
-          <div className="mt-2 flex items-center gap-2">
-            <span className="flex size-6 items-center justify-center rounded-full bg-muted text-[10px] font-bold text-muted-foreground">
-              {mentorInitials(topic.mentor.name)}
-            </span>
-            <span className="text-sm font-medium">{topic.mentor.name}</span>
-            <span
-              className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
-                MENTOR_ROLE_META[topic.mentor.role]
-              }`}
-            >
-              {topic.mentor.role}
-            </span>
-          </div>
-        </div>
-      </div>
+    <Card className="flex flex-col gap-2.5 p-5 transition-shadow hover:shadow-md">
+      <span className="text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground">
+        {metaLabel(topic)}
+      </span>
+      <h4 className="font-serif text-base font-bold leading-snug text-foreground">
+        {topic.title}
+      </h4>
 
-      <Button
-        className="w-full px-8 md:w-auto"
-        onClick={() => onAction?.(topic)}
-      >
-        {topic.enrolled ? 'Open' : 'Enroll'}
-      </Button>
+      <div className="mt-auto flex items-center justify-between border-t pt-3">
+        <div className="flex min-w-0 items-center gap-2">
+          {topic.mentor ? (
+            <>
+              <span
+                aria-hidden
+                className="size-6 shrink-0 rounded-full"
+                style={{ background: gradientFor(topic.mentor.name) }}
+              />
+              <span className="truncate text-sm text-foreground">
+                {topic.mentor.name}
+              </span>
+            </>
+          ) : (
+            <span className="text-sm text-muted-foreground">Mentor TBD</span>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={() => onAction?.(topic)}
+          className="shrink-0 text-sm font-semibold text-primary transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+        >
+          {topic.enrolled ? 'Open' : 'Enroll'}
+        </button>
+      </div>
     </Card>
   );
 }

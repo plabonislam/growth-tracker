@@ -1,4 +1,11 @@
-import type { ClubResponse, CreateClub, JoinClub } from 'shared';
+import type {
+  ClubResponse,
+  CreateClub,
+  CreateTopic,
+  JoinClub,
+  TopicListItem,
+  TopicResponse,
+} from 'shared';
 
 import { httpClient } from '@/services/http/client';
 import type {
@@ -8,6 +15,8 @@ import type {
   ClubJoinInfo,
   ClubTone,
   MembershipStatus,
+  Topic,
+  TopicIconKey,
 } from '../clubs.types';
 
 /**
@@ -29,6 +38,44 @@ interface ApiClub {
   membershipStatus: MembershipStatus | null;
 }
 
+/** Shape returned by `GET /clubs/:id` — see ClubsRepository.findById(). */
+interface ApiClubDetail {
+  id: string;
+  name: string;
+  description: string | null;
+  archived: boolean;
+  topicCount: number;
+  memberCount: number;
+  sessionCount: number;
+  mentorCount: number;
+  coordinatorName: string | null;
+}
+
+/** Compact member count, e.g. 1240 → "1.2k". */
+function formatCount(n: number): string {
+  if (n < 1000) return String(n);
+  return `${(n / 1000).toFixed(1).replace(/\.0$/, '')}k`;
+}
+
+function toClubDetail(api: ApiClubDetail): ClubDetail {
+  return {
+    id: api.id,
+    name: api.name,
+    description: api.description ?? '',
+    tone: 'primary',
+    topicsCount: api.topicCount,
+    membersLabel: formatCount(api.memberCount),
+    sessionsCount: api.sessionCount,
+    mentorsCount: api.mentorCount,
+    coordinatorName: api.coordinatorName,
+    // Not surfaced on the current detail layout — kept for type completeness.
+    expectationsIntro: '',
+    expectations: [],
+    mentorshipFocus: '',
+    topics: [],
+  };
+}
+
 // Backend doesn't track icon/tone per club — rotate through these for
 // visual variety since real clubs don't come with a preset one.
 const ICON_ROTATION: ClubIconKey[] = [
@@ -47,6 +94,26 @@ const TONE_ROTATION: ClubTone[] = [
   'violet',
 ];
 
+// Topics carry no icon/tone in the DB — rotate for visual variety, same as clubs.
+const TOPIC_ICON_ROTATION: TopicIconKey[] = ['analytics', 'neural', 'pipeline'];
+
+/**
+ * Map a `GET /clubs/:clubId/topics` row to the UI `Topic`. Icon/tone aren't
+ * stored, so they rotate for visual variety; the mentor role is presentation
+ * metadata the API doesn't track, so it's left off the badge.
+ */
+function toTopic(apiTopic: TopicListItem, index: number): Topic {
+  return {
+    id: apiTopic.id,
+    title: apiTopic.name,
+    iconKey: TOPIC_ICON_ROTATION[index % TOPIC_ICON_ROTATION.length]!,
+    tone: TONE_ROTATION[index % TONE_ROTATION.length]!,
+    modules: apiTopic.moduleCount,
+    mentor: apiTopic.mentor ? { name: apiTopic.mentor.name } : undefined,
+    enrolled: false,
+  };
+}
+
 function toClub(apiClub: ApiClub, index: number): Club {
   return {
     id: apiClub.id,
@@ -59,74 +126,6 @@ function toClub(apiClub: ApiClub, index: number): Club {
     membership: apiClub.membershipStatus,
   };
 }
-
-const CLUB_DETAIL: ClubDetail = {
-  id: 'data-insights',
-  name: 'Advanced Data Analytics Club',
-  tone: 'primary',
-  topicsCount: 12,
-  membersLabel: '1.2k',
-  expectationsIntro:
-    'This club focuses on bridging the gap between theoretical data science and practical industry application. Members are expected to:',
-  expectations: [
-    'Commit 4-6 hours weekly for research and peer discussions.',
-    'Contribute to at least one group project per quarter.',
-    'Maintain a collaborative and mentorship-driven attitude.',
-  ],
-  mentorshipFocus: 'Guided by industry leads from top tech firms.',
-  topics: [
-    {
-      id: 'statistical-forecasting',
-      title: 'Statistical Forecasting Models',
-      iconKey: 'analytics',
-      tone: 'primary',
-      modules: 8,
-      hours: 4.5,
-      mentor: { name: 'Dr. Marcus Chen', role: 'Lead Mentor' },
-      enrolled: true,
-    },
-    {
-      id: 'neural-networks',
-      title: 'Neural Network Architectures',
-      iconKey: 'neural',
-      tone: 'amber',
-      modules: 15,
-      hours: 12,
-      mentor: { name: 'Sarah Jenkins', role: 'Expert' },
-      enrolled: false,
-    },
-    {
-      id: 'data-pipelines',
-      title: 'Scalable Data Pipelines',
-      iconKey: 'pipeline',
-      tone: 'indigo',
-      modules: 6,
-      hours: 3,
-      mentor: { name: 'David Volek', role: 'Specialist' },
-      enrolled: false,
-    },
-    {
-      id: 'exploratory-analysis',
-      title: 'Exploratory Data Analysis',
-      iconKey: 'analytics',
-      tone: 'violet',
-      modules: 5,
-      hours: 2.5,
-      mentor: { name: 'Amara Osei', role: 'Expert' },
-      enrolled: false,
-    },
-    {
-      id: 'ml-deployment',
-      title: 'ML Model Deployment & Serving',
-      iconKey: 'neural',
-      tone: 'rose',
-      modules: 10,
-      hours: 8,
-      mentor: { name: 'Dr. Elena Petrova', role: 'Lead Mentor' },
-      enrolled: false,
-    },
-  ],
-};
 
 const CLUB_JOIN_INFO: ClubJoinInfo = {
   id: 'data-science-masters',
@@ -159,9 +158,10 @@ interface ApiMembership {
 export const clubsService = {
   getClubs: (): Promise<Club[]> =>
     httpClient.get<ApiClub[]>('/clubs').then((r) => r.data.map(toClub)),
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  getClubDetail: (_id: string): Promise<ClubDetail> =>
-    Promise.resolve(CLUB_DETAIL),
+  getClubDetail: (id: string): Promise<ClubDetail> =>
+    httpClient
+      .get<ApiClubDetail>(`/clubs/${id}`)
+      .then((r) => toClubDetail(r.data)),
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   getClubJoinInfo: (_id: string): Promise<ClubJoinInfo> =>
     Promise.resolve(CLUB_JOIN_INFO),
@@ -174,6 +174,14 @@ export const clubsService = {
       .then((r) => ({ applicationId: r.data.id, status: r.data.status })),
   createClub: (payload: CreateClub): Promise<ClubResponse> =>
     httpClient.post<ClubResponse>('/clubs', payload).then((r) => r.data),
+  getTopicsByClub: (clubId: string): Promise<Topic[]> =>
+    httpClient
+      .get<TopicListItem[]>(`/clubs/${clubId}/topics`)
+      .then((r) => r.data.map(toTopic)),
+  createTopic: (clubId: string, payload: CreateTopic): Promise<TopicResponse> =>
+    httpClient
+      .post<TopicResponse>(`/clubs/${clubId}/topics`, payload)
+      .then((r) => r.data),
   checkClubNameAvailable: (name: string): Promise<boolean> =>
     httpClient
       .get<{ available: boolean }>('/clubs/check-name', { params: { name } })

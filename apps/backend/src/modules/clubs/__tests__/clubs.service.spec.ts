@@ -137,6 +137,7 @@ describe('ClubsService', () => {
       const result = await service.create({
         name: 'Frontend Club',
         coordinatorEmail: 'coord@example.com',
+        description: 'A club for frontend enthusiasts to learn and grow',
       });
 
       expect(mockRepo.findUserByEmail).toHaveBeenCalledWith(
@@ -145,6 +146,7 @@ describe('ClubsService', () => {
       expect(mockRepo.insert).toHaveBeenCalledWith({
         name: 'Frontend Club',
         coordinatorId: 'uid-coord',
+        description: 'A club for frontend enthusiasts to learn and grow',
       });
       expect(result).toEqual(club);
     });
@@ -177,6 +179,7 @@ describe('ClubsService', () => {
         service.create({
           name: 'Frontend Club',
           coordinatorEmail: 'coord@example.com',
+          description: 'A club for frontend enthusiasts to learn and grow',
         }),
       ).rejects.toThrow(ConflictException);
       expect(mockRepo.findUserByEmail).not.toHaveBeenCalled();
@@ -191,6 +194,7 @@ describe('ClubsService', () => {
         service.create({
           name: 'Club',
           coordinatorEmail: 'nobody@example.com',
+          description: 'A club for frontend enthusiasts to learn and grow',
         }),
       ).rejects.toThrow(NotFoundException);
       expect(mockRepo.insert).not.toHaveBeenCalled();
@@ -204,7 +208,11 @@ describe('ClubsService', () => {
       });
 
       await expect(
-        service.create({ name: 'Club', coordinatorEmail: 'coord@example.com' }),
+        service.create({
+          name: 'Club',
+          coordinatorEmail: 'coord@example.com',
+          description: 'A club for frontend enthusiasts to learn and grow',
+        }),
       ).rejects.toThrow(BadRequestException);
       expect(mockRepo.insert).not.toHaveBeenCalled();
     });

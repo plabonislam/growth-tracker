@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const CreateClubSchema = z.object({
   name: z.string().min(1).max(100, 'Club name must be 100 characters or fewer'),
-  description: z.string().optional(),
+  description: z.string().min(40, 'Description must be at least 40 characters'),
   /** Backend resolves this to a user id — see ClubsService.create(). */
   coordinatorEmail: z.string().email().optional(),
 });

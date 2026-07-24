@@ -25,7 +25,22 @@ export const TopicResponseSchema = z.object({
   createdAt: z.string(),
 });
 
+/** The topic's assigned mentor, as surfaced on list/detail views. */
+export const TopicMentorSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  avatarUrl: z.string().nullable(),
+});
+
+/** A topic enriched for list rendering — includes mentor and module count. */
+export const TopicListItemSchema = TopicResponseSchema.extend({
+  moduleCount: z.number().int().nonnegative(),
+  mentor: TopicMentorSchema.nullable(),
+});
+
 export type CreateTopic = z.infer<typeof CreateTopicSchema>;
 export type UpdateTopic = z.infer<typeof UpdateTopicSchema>;
 export type AssignMentor = z.infer<typeof AssignMentorSchema>;
 export type TopicResponse = z.infer<typeof TopicResponseSchema>;
+export type TopicMentor = z.infer<typeof TopicMentorSchema>;
+export type TopicListItem = z.infer<typeof TopicListItemSchema>;

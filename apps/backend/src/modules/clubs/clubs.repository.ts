@@ -7,6 +7,7 @@ import {
   clubMembershipsTable,
   clubsTable,
 } from '../../core/database/schema/clubs.schema';
+import { sessionsTable } from '../../core/database/schema/sessions.schema';
 import {
   topicMentorsTable,
   topicsTable,
@@ -40,26 +41,52 @@ export class ClubsRepository {
   }
 
   async findById(id: string) {
-    const [[row], [topicRow], [memberRow]] = await Promise.all([
-      this.db.db.select().from(clubsTable).where(eq(clubsTable.id, id)),
-      this.db.db
-        .select({ count: count() })
-        .from(topicsTable)
-        .where(
-          and(eq(topicsTable.clubId, id), eq(topicsTable.archived, false)),
-        ),
-      this.db.db
-        .select({ count: count() })
-        .from(clubMembershipsTable)
-        .where(
-          and(
-            eq(clubMembershipsTable.clubId, id),
-            eq(clubMembershipsTable.status, MembershipStatus.active),
+    const [[row], [topicRow], [memberRow], [sessionRow], [mentorRow]] =
+      await Promise.all([
+        this.db.db
+          .select({ club: clubsTable, coordinatorName: usersTable.name })
+          .from(clubsTable)
+          .leftJoin(usersTable, eq(usersTable.id, clubsTable.coordinatorId))
+          .where(eq(clubsTable.id, id)),
+        this.db.db
+          .select({ count: count() })
+          .from(topicsTable)
+          .where(
+            and(eq(topicsTable.clubId, id), eq(topicsTable.archived, false)),
           ),
-        ),
-    ]);
+        this.db.db
+          .select({ count: count() })
+          .from(clubMembershipsTable)
+          .where(
+            and(
+              eq(clubMembershipsTable.clubId, id),
+              eq(clubMembershipsTable.status, MembershipStatus.active),
+            ),
+          ),
+        this.db.db
+          .select({ count: count() })
+          .from(sessionsTable)
+          .where(eq(sessionsTable.clubId, id)),
+        // A mentor assigned to several topics is still one mentor.
+        this.db.db
+          .select({
+            count: sql<number>`cast(count(distinct ${topicMentorsTable.userId}) as int)`,
+          })
+          .from(topicMentorsTable)
+          .innerJoin(topicsTable, eq(topicMentorsTable.topicId, topicsTable.id))
+          .where(
+            and(eq(topicsTable.clubId, id), eq(topicsTable.archived, false)),
+          ),
+      ]);
     if (!row) return null;
-    return { ...row, topicCount: topicRow.count, memberCount: memberRow.count };
+    return {
+      ...row.club,
+      coordinatorName: row.coordinatorName,
+      topicCount: topicRow.count,
+      memberCount: memberRow.count,
+      sessionCount: sessionRow.count,
+      mentorCount: mentorRow.count,
+    };
   }
 
   async insert(data: {

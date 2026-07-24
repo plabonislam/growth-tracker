@@ -2,8 +2,8 @@ import { ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 
-import { ClubExpectations } from '@/features/clubs/components/club-expectations';
 import { ClubHero } from '@/features/clubs/components/club-hero';
+import { CreateTopicModal } from '@/features/clubs/components/create-topic-modal';
 import { TopicEnrollModal } from '@/features/clubs/components/topic-enroll-modal';
 import { TopicsList } from '@/features/clubs/components/topics-list';
 import {
@@ -12,12 +12,31 @@ import {
   TOPIC_ENROLLMENT_REVIEW_NOTE,
 } from '@/features/clubs/clubs.constants';
 import type { Topic } from '@/features/clubs/clubs.types';
-import { useClubDetail } from '@/features/clubs/hooks/use-clubs';
+import { useClubDetail, useClubTopics } from '@/features/clubs/hooks/use-clubs';
+import { useAuthStore } from '@/store/auth.store';
+
+/**
+ * Enrollment blurb — degrades gracefully while the topics list endpoint omits
+ * mentor and curriculum stats (see `Topic`).
+ */
+function buildTopicAbout(topic: Topic): string {
+  const lead = topic.mentor
+    ? `This topic is led by ${topic.mentor.name}`
+    : 'This topic';
+  const span =
+    topic.modules != null
+      ? ` and spans ${topic.modules} modules${topic.hours != null ? ` (~${topic.hours} hrs)` : ''}`
+      : '';
+  return `${lead}${span}. Enroll to access its modules, tasks, and the peer-review process.`;
+}
 
 export function ClubDetailPage({ clubId }: { clubId: string }) {
   const navigate = useNavigate();
+  const isAuthority = useAuthStore((s) => s.isAuthority);
   const { data: club, isLoading, isError } = useClubDetail(clubId);
+  const { data: topics = [], isLoading: topicsLoading } = useClubTopics(clubId);
   const [enrollTopic, setEnrollTopic] = useState<Topic | null>(null);
+  const [creatingTopic, setCreatingTopic] = useState(false);
 
   const handleTopicAction = (topic: Topic) => {
     if (topic.enrolled) {
@@ -29,7 +48,7 @@ export function ClubDetailPage({ clubId }: { clubId: string }) {
 
   return (
     <div className="pb-24">
-      <main className="mx-auto max-w-[1800px] px-4 py-6 md:px-8">
+      <main className="mx-auto w-full max-w-[1800px] px-4 py-6 md:px-6 lg:px-12 lg:py-8">
         {/* In-content back affordance — keeps global chrome constant */}
         <button
           type="button"
@@ -47,35 +66,49 @@ export function ClubDetailPage({ clubId }: { clubId: string }) {
         )}
 
         {isLoading && (
-          <div className="space-y-6">
-            <div className="h-[240px] animate-pulse rounded-xl bg-muted md:h-[320px]" />
-            <div className="h-64 animate-pulse rounded-xl bg-muted" />
+          <div className="space-y-8">
+            <div className="h-48 animate-pulse rounded-2xl bg-muted md:h-56" />
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-40 animate-pulse rounded-xl bg-muted"
+                />
+              ))}
+            </div>
           </div>
         )}
 
         {club && (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-12">
-            <div className="md:col-span-12">
-              <ClubHero
-                name={club.name}
-                tone={club.tone}
-                topicsCount={club.topicsCount}
-                membersLabel={club.membersLabel}
-              />
-            </div>
-            <div className="md:col-span-4">
-              <ClubExpectations
-                expectationsIntro={club.expectationsIntro}
-                expectations={club.expectations}
-                mentorshipFocus={club.mentorshipFocus}
-              />
-            </div>
-            <div className="md:col-span-8">
+          <div className="flex flex-col gap-4 md:gap-5 lg:gap-6">
+            <ClubHero
+              name={club.name}
+              tagline={club.description}
+              topicsCount={club.topicsCount}
+              membersLabel={club.membersLabel}
+              sessionsCount={club.sessionsCount}
+              mentorsCount={club.mentorsCount}
+              coordinatorName={club.coordinatorName}
+            />
+
+            {topicsLoading ? (
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-40 animate-pulse rounded-xl bg-muted"
+                  />
+                ))}
+              </div>
+            ) : (
               <TopicsList
-                topics={club.topics}
+                topics={topics}
                 onTopicAction={handleTopicAction}
+                onCreateTopic={
+                  isAuthority ? () => setCreatingTopic(true) : undefined
+                }
               />
-            </div>
+            )}
           </div>
         )}
       </main>
@@ -86,13 +119,19 @@ export function ClubDetailPage({ clubId }: { clubId: string }) {
           onClose={() => setEnrollTopic(null)}
           topicName={enrollTopic.title}
           stats={{ modules: enrollTopic.modules }}
-          about={`This topic is led by ${enrollTopic.mentor.name} and spans ${enrollTopic.modules} modules (~${enrollTopic.hours} hrs). Enroll to access its modules, tasks, and the peer-review process.`}
+          about={buildTopicAbout(enrollTopic)}
           commitments={TOPIC_ENROLLMENT_COMMITMENTS}
           finalAcknowledgement={TOPIC_ENROLLMENT_ACKNOWLEDGEMENT}
           reviewNote={TOPIC_ENROLLMENT_REVIEW_NOTE}
           onSubmit={() => setEnrollTopic(null)}
         />
       )}
+
+      <CreateTopicModal
+        clubId={clubId}
+        open={creatingTopic}
+        onClose={() => setCreatingTopic(false)}
+      />
     </div>
   );
 }

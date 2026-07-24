@@ -37,7 +37,8 @@ export type MentorRole = 'Lead Mentor' | 'Expert' | 'Specialist';
 
 export interface Mentor {
   name: string;
-  role: MentorRole;
+  /** Presentation-only badge; absent for mentors sourced from the API. */
+  role?: MentorRole;
 }
 
 export interface Topic {
@@ -45,9 +46,11 @@ export interface Topic {
   title: string;
   iconKey: TopicIconKey;
   tone: ClubTone;
-  modules: number;
-  hours: number;
-  mentor: Mentor;
+  /** Curriculum stats aren't returned by the topics list endpoint yet. */
+  modules?: number;
+  hours?: number;
+  /** Absent until the list endpoint exposes the assigned mentor. */
+  mentor?: Mentor;
   /** Enrolled topics show "Open"; otherwise "Enroll". */
   enrolled: boolean;
 }
@@ -55,9 +58,15 @@ export interface Topic {
 export interface ClubDetail {
   id: string;
   name: string;
+  /** Short club description shown under the hero title. */
+  description: string;
   tone: ClubTone;
   topicsCount: number;
   membersLabel: string;
+  sessionsCount: number;
+  mentorsCount: number;
+  /** `null` until an authority assigns a coordinator to the club. */
+  coordinatorName: string | null;
   expectationsIntro: string;
   expectations: string[];
   mentorshipFocus: string;

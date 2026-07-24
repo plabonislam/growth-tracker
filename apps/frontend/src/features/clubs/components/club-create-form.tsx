@@ -142,20 +142,33 @@ export function ClubCreateForm({ onCreated }: { onCreated?: () => void }) {
           <FormField
             control={form.control}
             name="description"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className={fieldLabelClass}>Description</FormLabel>
-                <FormControl>
-                  <Textarea
-                    rows={4}
-                    minLength={30}
-                    placeholder="Describe the club's mission, vision, and activities..."
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
+            render={({ field }) => {
+              const count = field.value?.length ?? 0;
+              return (
+                <FormItem>
+                  <div className="flex items-center justify-between gap-2">
+                    <FormLabel className={fieldLabelClass}>
+                      Description
+                    </FormLabel>
+                    <span
+                      className={`text-xs tabular-nums ${
+                        count >= 40 ? 'text-primary' : 'text-muted-foreground'
+                      }`}
+                    >
+                      {count < 40 ? `${count}/40 min` : `${count} characters`}
+                    </span>
+                  </div>
+                  <FormControl>
+                    <Textarea
+                      rows={4}
+                      placeholder="Describe the club's mission, vision, and activities..."
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              );
+            }}
           />
 
           <FormField

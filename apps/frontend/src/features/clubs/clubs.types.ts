@@ -36,6 +36,8 @@ export type TopicIconKey = 'analytics' | 'neural' | 'pipeline';
 export type MentorRole = 'Lead Mentor' | 'Expert' | 'Specialist';
 
 export interface Mentor {
+  /** User id — compared against the caller to decide mentor-only affordances. */
+  id: string;
   name: string;
   /** Presentation-only badge; absent for mentors sourced from the API. */
   role?: MentorRole;

@@ -33,12 +33,17 @@ function buildTopicAbout(topic: Topic): string {
 export function ClubDetailPage({ clubId }: { clubId: string }) {
   const navigate = useNavigate();
   const isAuthority = useAuthStore((s) => s.isAuthority);
+  const userId = useAuthStore((s) => s.userId);
   const { data: club, isLoading, isError } = useClubDetail(clubId);
   const { data: topics = [], isLoading: topicsLoading } = useClubTopics(clubId);
   const [enrollTopic, setEnrollTopic] = useState<Topic | null>(null);
   const [creatingTopic, setCreatingTopic] = useState(false);
 
   const handleTopicAction = (topic: Topic) => {
+    if (topic.mentor?.id === userId) {
+      navigate(`/topics/${topic.id}`); // "Edit" — mentor manages the topic
+      return;
+    }
     if (topic.enrolled) {
       navigate(`/topics/${topic.id}`); // "Open" — enrolled topic view
       return;

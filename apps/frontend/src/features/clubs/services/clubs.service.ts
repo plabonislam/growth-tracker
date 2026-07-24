@@ -109,7 +109,9 @@ function toTopic(apiTopic: TopicListItem, index: number): Topic {
     iconKey: TOPIC_ICON_ROTATION[index % TOPIC_ICON_ROTATION.length]!,
     tone: TONE_ROTATION[index % TONE_ROTATION.length]!,
     modules: apiTopic.moduleCount,
-    mentor: apiTopic.mentor ? { name: apiTopic.mentor.name } : undefined,
+    mentor: apiTopic.mentor
+      ? { id: apiTopic.mentor.id, name: apiTopic.mentor.name }
+      : undefined,
     enrolled: false,
   };
 }

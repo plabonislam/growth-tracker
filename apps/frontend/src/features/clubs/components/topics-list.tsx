@@ -31,14 +31,13 @@ export function TopicsList({
         {onCreateTopic && (
           <Button
             type="button"
-            size="sm"
             onClick={onCreateTopic}
-            aria-label="Create topic"
+            aria-label="Create Topic"
             className="shrink-0 gap-1.5 max-[479px]:size-9 max-[479px]:p-0"
           >
             <Plus className="size-4" strokeWidth={2.5} />
             {/* Collapses to an icon button under 480px */}
-            <span className="hidden min-[480px]:inline">Create topic</span>
+            <span className="hidden min-[480px]:inline">Create Topic</span>
           </Button>
         )}
       </div>

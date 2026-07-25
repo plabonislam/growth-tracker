@@ -9,6 +9,7 @@ import { NAVBAR_ACTIONS_SLOT_ID } from '@/components/layout/navbar-actions';
 import { Button } from '@/components/ui/button';
 import { AccountMenu } from '@/features/auth/components/account-menu';
 import { ClubCreateModal } from '@/features/clubs/components/club-create-modal';
+import { CreateTopicModal } from '@/features/clubs/components/create-topic-modal';
 import { SearchCommand } from '@/features/search/components/search-command';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth.store';
@@ -76,6 +77,14 @@ export function AppShell({
   const isAuthority = useAuthStore((s) => s.isAuthority);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [createClubOpen, setCreateClubOpen] = useState(false);
+  const [createTopicOpen, setCreateTopicOpen] = useState(false);
+
+  // The navbar's primary action is context-aware: Create Club on Explore,
+  // Create Topic on a club detail page (`/clubs/:clubId`). The club detail
+  // route shares Explore's `activePath`, so key off the real URL instead.
+  const clubDetailId = location.pathname.match(/^\/clubs\/([^/]+)$/)?.[1];
+  const showCreateClub = isAuthority && location.pathname === '/explore';
+  const showCreateTopic = isAuthority && Boolean(clubDetailId);
 
   // Create Club lives in the navbar but only on the Explore page itself — the
   // club detail page shares Explore's `activePath`, so key off the real URL.
@@ -184,6 +193,23 @@ export function AppShell({
                   />
                 </>
               )}
+              {showCreateTopic && (
+                <>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => setCreateTopicOpen(true)}
+                    className="gap-1.5"
+                  >
+                    <Plus className="size-4" strokeWidth={1.75} />
+                    <span className="hidden sm:inline">Create Topic</span>
+                  </Button>
+                  <span
+                    aria-hidden
+                    className="mx-1 hidden h-5 w-px bg-border sm:block"
+                  />
+                </>
+              )}
               <button
                 type="button"
                 aria-label="Notifications"
@@ -212,6 +238,14 @@ export function AppShell({
         open={createClubOpen}
         onClose={() => setCreateClubOpen(false)}
       />
+
+      {clubDetailId && (
+        <CreateTopicModal
+          clubId={clubDetailId}
+          open={createTopicOpen}
+          onClose={() => setCreateTopicOpen(false)}
+        />
+      )}
     </div>
   );
 }

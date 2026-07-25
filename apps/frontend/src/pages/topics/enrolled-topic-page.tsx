@@ -1,31 +1,19 @@
-import { useEffect, useState } from 'react';
+import { LearnerTopicView } from '@/features/topics/components/learner-topic-view';
+import { MentorTopicView } from '@/features/topics/components/mentor-topic-view';
+import { useTopic } from '@/features/topics/hooks/use-topics';
+import { useAuthStore } from '@/store/auth.store';
 
-import { SectionHeading } from '@/components/ui/section-heading';
-import { MarkDoneModal } from '@/features/topics/components/mark-done-modal';
-import { ModuleCard } from '@/features/topics/components/module-card';
-import { TopicMentorCard } from '@/features/topics/components/topic-mentor-card';
-import { TopicProgressCard } from '@/features/topics/components/topic-progress-card';
-import { useEnrolledTopic } from '@/features/topics/hooks/use-topics';
-import type { TopicModule } from '@/features/topics/topics.types';
-
+/**
+ * Topic route — picks the view by the caller's relationship to the topic.
+ * Its own mentor authors the curriculum (modules only); everyone else works
+ * through it. The role split lives here so neither view carries the other's
+ * concerns.
+ */
 export function EnrolledTopicPage({ topicId }: { topicId: string }) {
-  const { data: topic, isLoading, isError } = useEnrolledTopic(topicId);
-  const [markDoneModule, setMarkDoneModule] = useState<TopicModule | null>(
-    null,
-  );
-  const [showToast, setShowToast] = useState(false);
+  const userId = useAuthStore((s) => s.userId);
+  const { data: topic, isLoading, isError } = useTopic(topicId);
 
-  // Auto-dismiss the confirmation toast.
-  useEffect(() => {
-    if (!showToast) return;
-    const timer = setTimeout(() => setShowToast(false), 3000);
-    return () => clearTimeout(timer);
-  }, [showToast]);
-
-  const handleMarkDoneSubmit = () => {
-    setMarkDoneModule(null);
-    setShowToast(true);
-  };
+  const isMentor = topic?.mentor != null && topic.mentor.id === userId;
 
   return (
     <div className="pb-16">
@@ -36,83 +24,22 @@ export function EnrolledTopicPage({ topicId }: { topicId: string }) {
           </p>
         )}
 
+        {/* Hold the role decision until the topic resolves — rendering the
+            learner view first would flash the wrong page at the mentor. */}
         {isLoading && (
           <div className="space-y-8">
             <div className="h-24 w-2/3 animate-pulse rounded-xl bg-muted" />
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="h-56 animate-pulse rounded-xl bg-muted" />
-              <div className="h-56 animate-pulse rounded-xl bg-muted" />
-            </div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div className="h-64 animate-pulse rounded-xl bg-muted" />
-              <div className="h-64 animate-pulse rounded-xl bg-muted" />
-            </div>
+            <div className="h-56 animate-pulse rounded-xl bg-muted" />
           </div>
         )}
 
-        {topic && (
-          <>
-            {/* Title */}
-            <SectionHeading
-              as="h1"
-              eyebrow="Enrolled Topic"
-              title={topic.title}
-              className="mb-8"
-            />
-
-            {/* Summary row — progress 2/3, mentor 1/3 (never below 275px) */}
-            <div className="mb-10 grid grid-cols-1 gap-4 md:grid-cols-[2fr_minmax(275px,1fr)]">
-              <TopicProgressCard
-                startedOn={topic.startedOn}
-                estCompletion={topic.estCompletion}
-                progressPct={topic.progressPct}
-                modulesDone={
-                  topic.modules.filter((m) => m.status === 'completed').length
-                }
-                modulesTotal={topic.modules.length}
-              />
-              <TopicMentorCard mentor={topic.mentor} />
-            </div>
-
-            {/* Curriculum */}
-            <section>
-              <SectionHeading
-                title="Learning Modules"
-                className="mb-6"
-                action={
-                  <span className="rounded-full bg-muted px-3 py-1 text-sm font-medium text-muted-foreground">
-                    {topic.moduleCount} Modules • {topic.taskCount} Tasks
-                  </span>
-                }
-              />
-
-              <div className="grid grid-cols-[repeat(auto-fit,minmax(min(400px,100%),1fr))] items-start gap-4">
-                {topic.modules.map((module) => (
-                  <ModuleCard
-                    key={module.id}
-                    module={module}
-                    onMarkDone={setMarkDoneModule}
-                  />
-                ))}
-              </div>
-            </section>
-          </>
-        )}
+        {topic &&
+          (isMentor ? (
+            <MentorTopicView topic={topic} />
+          ) : (
+            <LearnerTopicView topicId={topicId} />
+          ))}
       </main>
-
-      <MarkDoneModal
-        open={markDoneModule !== null}
-        onClose={() => setMarkDoneModule(null)}
-        onSubmit={handleMarkDoneSubmit}
-      />
-
-      {showToast && (
-        <div className="fixed bottom-10 left-1/2 z-[100] -translate-x-1/2">
-          <div className="flex items-center gap-2 rounded-full bg-slate-900 px-6 py-3 text-sm text-white shadow-xl">
-            ✅ Module marked as done! Awaiting mentor review
-          </div>
-        </div>
-      )}
     </div>
   );
 }

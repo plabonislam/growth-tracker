@@ -5,6 +5,7 @@ import { ClubDetailPage } from '@/pages/clubs/club-detail-page';
 import { DashboardPage } from '@/pages/dashboard/dashboard-page';
 import { PendingEnrollmentsPage } from '@/pages/enrollments/pending-enrollments-page';
 import { ExplorePage } from '@/pages/explore/explore-page';
+import { CreateModulePage } from '@/pages/topics/create-module-page';
 import { EnrolledTopicPage } from '@/pages/topics/enrolled-topic-page';
 
 export function ExploreRoute() {
@@ -42,6 +43,22 @@ export function EnrolledTopicRoute() {
       ]}
     >
       <EnrolledTopicPage topicId={topicId!} />
+    </AppShell>
+  );
+}
+
+export function CreateModuleRoute() {
+  const { topicId } = useParams();
+  return (
+    <AppShell
+      activePath="/dashboard"
+      breadcrumb={[
+        { label: 'Dashboard', path: '/dashboard' },
+        { label: 'Enrolled Topic', path: `/topics/${topicId}` },
+        { label: 'New Module' },
+      ]}
+    >
+      <CreateModulePage topicId={topicId!} />
     </AppShell>
   );
 }

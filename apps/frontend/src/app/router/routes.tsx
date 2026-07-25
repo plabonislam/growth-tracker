@@ -6,6 +6,7 @@ import { CallbackPage } from '@/pages/auth/callback-page';
 import { ProtectedRoute } from './protected-route';
 import {
   ClubDetailRoute,
+  CreateModuleRoute,
   DashboardRoute,
   EnrolledTopicRoute,
   ExploreRoute,
@@ -26,6 +27,10 @@ export const routes: RouteObject[] = [
         element: <PendingEnrollmentsRoute />,
       },
       { path: '/topics/:topicId', element: <EnrolledTopicRoute /> },
+      {
+        path: '/topics/:topicId/modules/new',
+        element: <CreateModuleRoute />,
+      },
       { path: '/clubs/:clubId', element: <ClubDetailRoute /> },
     ],
   },

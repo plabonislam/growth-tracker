@@ -5,6 +5,7 @@ import { useLocation, useNavigate } from 'react-router';
 import { AppSidebar, SidebarContent } from '@/components/layout/app-sidebar';
 import { BottomNav } from '@/components/layout/bottom-nav';
 import { BrandLogo } from '@/components/layout/brand-logo';
+import { NAVBAR_ACTIONS_SLOT_ID } from '@/components/layout/navbar-actions';
 import { Button } from '@/components/ui/button';
 import { AccountMenu } from '@/features/auth/components/account-menu';
 import { ClubCreateModal } from '@/features/clubs/components/club-create-modal';
@@ -84,6 +85,11 @@ export function AppShell({
   const clubDetailId = location.pathname.match(/^\/clubs\/([^/]+)$/)?.[1];
   const showCreateClub = isAuthority && location.pathname === '/explore';
   const showCreateTopic = isAuthority && Boolean(clubDetailId);
+
+  // Create Club lives in the navbar but only on the Explore page itself — the
+  // club detail page shares Explore's `activePath`, so key off the real URL.
+  // (Create Topic lives inside the club detail page's curriculum header.)
+  const showCreateClub = isAuthority && location.pathname === '/explore';
 
   // Close the tablet drawer on Escape.
   useEffect(() => {
@@ -165,6 +171,11 @@ export function AppShell({
 
             {/* Right — global utilities */}
             <div className="flex shrink-0 items-center gap-1.5">
+              {/* Page-owned actions portal in here — see `NavbarActions` */}
+              <div
+                id={NAVBAR_ACTIONS_SLOT_ID}
+                className="flex items-center gap-1.5 empty:hidden not-empty:mr-1.5 not-empty:border-r not-empty:pr-3"
+              />
               {showCreateClub && (
                 <>
                   <Button

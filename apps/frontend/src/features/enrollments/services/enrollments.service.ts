@@ -1,3 +1,5 @@
+import { EnrollmentStatus, MembershipStatus } from 'shared';
+
 import { httpClient } from '@/services/http/client';
 import type { EnrollmentRequest } from '../enrollments.types';
 
@@ -39,6 +41,26 @@ export interface UpdateEnrollmentParams {
 const RESOURCE_PATH: Record<EnrollmentType, string> = {
   club: 'clubs',
   topic: 'topics',
+};
+
+/**
+ * "Approve" means different things per resource: a club *membership* becomes
+ * `active` (there is no `approved` member state), while a topic *enrollment*
+ * becomes `approved`. Sending `approved` to the club endpoint fails its Zod
+ * schema with a 400.
+ */
+const API_STATUS: Record<
+  EnrollmentType,
+  Record<'approved' | 'rejected', string>
+> = {
+  club: {
+    approved: MembershipStatus.active,
+    rejected: MembershipStatus.rejected,
+  },
+  topic: {
+    approved: EnrollmentStatus.approved,
+    rejected: EnrollmentStatus.rejected,
+  },
 };
 
 const TONE_ROTATION = ['teal', 'violet', 'amber', 'rose', 'indigo'] as const;
@@ -101,7 +123,7 @@ export const enrollmentsService = {
     droppedReason,
   }: UpdateEnrollmentParams) =>
     httpClient.patch(`/${RESOURCE_PATH[type]}/${targetId}/members/${userId}`, {
-      status,
+      status: API_STATUS[type][status],
       droppedReason,
     }),
 };

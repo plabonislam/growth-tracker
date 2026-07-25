@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { CreateClub, JoinClub } from 'shared';
+import type { CreateClub, CreateTopic, JoinClub } from 'shared';
 
 import { clubsService } from '../services/clubs.service';
 
@@ -9,6 +9,7 @@ export const CLUBS_KEYS = {
   list: () => [...CLUBS_KEYS.all, 'list'] as const,
   detail: (id: string) => [...CLUBS_KEYS.all, 'detail', id] as const,
   joinInfo: (id: string) => [...CLUBS_KEYS.all, 'join-info', id] as const,
+  topics: (id: string) => [...CLUBS_KEYS.all, 'topics', id] as const,
 };
 
 export function useClubs() {
@@ -23,6 +24,15 @@ export function useClubDetail(id: string) {
     queryKey: CLUBS_KEYS.detail(id),
     queryFn: () => clubsService.getClubDetail(id),
     enabled: Boolean(id),
+  });
+}
+
+/** Live topics for a club — `GET /clubs/:clubId/topics`. */
+export function useClubTopics(clubId: string) {
+  return useQuery({
+    queryKey: CLUBS_KEYS.topics(clubId),
+    queryFn: () => clubsService.getTopicsByClub(clubId),
+    enabled: Boolean(clubId),
   });
 }
 
@@ -48,6 +58,20 @@ export function useCreateClub() {
     mutationFn: (payload: CreateClub) => clubsService.createClub(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: CLUBS_KEYS.list() });
+    },
+  });
+}
+
+export function useCreateTopic(clubId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: CreateTopic) =>
+      clubsService.createTopic(clubId, payload),
+    onSuccess: () => {
+      // Refresh the club's live topics list so the new topic appears.
+      queryClient.invalidateQueries({ queryKey: CLUBS_KEYS.topics(clubId) });
+      queryClient.invalidateQueries({ queryKey: CLUBS_KEYS.detail(clubId) });
     },
   });
 }

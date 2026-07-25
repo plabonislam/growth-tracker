@@ -36,8 +36,11 @@ export type TopicIconKey = 'analytics' | 'neural' | 'pipeline';
 export type MentorRole = 'Lead Mentor' | 'Expert' | 'Specialist';
 
 export interface Mentor {
+  /** User id — compared against the caller to decide mentor-only affordances. */
+  id: string;
   name: string;
-  role: MentorRole;
+  /** Presentation-only badge; absent for mentors sourced from the API. */
+  role?: MentorRole;
 }
 
 export interface Topic {
@@ -45,19 +48,36 @@ export interface Topic {
   title: string;
   iconKey: TopicIconKey;
   tone: ClubTone;
-  modules: number;
-  hours: number;
-  mentor: Mentor;
+  /** Curriculum stats aren't returned by the topics list endpoint yet. */
+  modules?: number;
+  hours?: number;
+  /** Absent until the list endpoint exposes the assigned mentor. */
+  mentor?: Mentor;
   /** Enrolled topics show "Open"; otherwise "Enroll". */
   enrolled: boolean;
 }
 
+/**
+ * What the topic card's action does, decided by the caller's role:
+ * authority/coordinator edit the topic, its mentor manages modules,
+ * everyone else enrolls or opens.
+ */
+export type TopicAction = 'edit' | 'manage-modules' | 'open' | 'enroll';
+
 export interface ClubDetail {
   id: string;
   name: string;
+  /** Short club description shown under the hero title. */
+  description: string;
   tone: ClubTone;
   topicsCount: number;
   membersLabel: string;
+  sessionsCount: number;
+  mentorsCount: number;
+  /** `null` until an authority assigns a coordinator to the club. */
+  coordinatorName: string | null;
+  /** Compared against the caller to unlock coordinator-only affordances. */
+  coordinatorId: string | null;
   expectationsIntro: string;
   expectations: string[];
   mentorshipFocus: string;

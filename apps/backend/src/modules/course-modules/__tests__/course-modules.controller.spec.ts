@@ -53,7 +53,13 @@ describe('CourseModulesController', () => {
 
   it('POST /topics/:topicId/modules delegates to create with caller', async () => {
     mockService.create.mockResolvedValue(mod);
-    const dto = { title: 'Intro', weight: 10, order: 1 };
+    const dto = {
+      title: 'Intro',
+      body: 'What the module covers',
+      weight: 10,
+      estTime: 90,
+      order: 1,
+    };
 
     const result = await controller.create('topic-1', dto, caller);
 
@@ -78,7 +84,11 @@ describe('CourseModulesController', () => {
       url: 'https://example.com',
     };
     mockService.addResource.mockResolvedValue(resource);
-    const dto = { title: 'Video', url: 'https://example.com' };
+    const dto = {
+      title: 'Video',
+      url: 'https://example.com',
+      kind: 'video' as const,
+    };
 
     const result = await controller.addResource('mod-1', dto, caller);
 

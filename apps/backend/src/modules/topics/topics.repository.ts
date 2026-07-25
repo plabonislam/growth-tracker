@@ -84,7 +84,21 @@ export class TopicsRepository {
       .select()
       .from(topicsTable)
       .where(eq(topicsTable.id, id));
-    return row ?? null;
+    if (!row) return null;
+
+    // First mentor wins when a topic has more than one assigned — same rule
+    // as findByClub, so a topic's mentor reads identically in list and detail.
+    const [mentor] = await this.db.db
+      .select({
+        id: usersTable.id,
+        name: usersTable.name,
+        avatarUrl: usersTable.avatarUrl,
+      })
+      .from(topicMentorsTable)
+      .innerJoin(usersTable, eq(usersTable.id, topicMentorsTable.userId))
+      .where(eq(topicMentorsTable.topicId, id));
+
+    return { ...row, mentor: mentor ?? null };
   }
 
   async insert(data: {

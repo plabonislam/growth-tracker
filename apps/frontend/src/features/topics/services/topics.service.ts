@@ -1,4 +1,12 @@
-import type { EnrolledTopicDetail } from '../topics.types';
+import type { ModuleResponse } from 'shared';
+
+import { httpClient } from '@/services/http/client';
+import type {
+  CurriculumModule,
+  EnrolledTopicDetail,
+  TopicDetail,
+  TopicMentorRef,
+} from '../topics.types';
 
 /**
  * Topics service.
@@ -123,8 +131,46 @@ const ENROLLED_TOPIC: EnrolledTopicDetail = {
   ],
 };
 
+/** Shape returned by `GET /topics/:id` — see TopicsRepository.findById(). */
+interface ApiTopicDetail {
+  id: string;
+  clubId: string;
+  name: string;
+  certificationRequired: boolean | null;
+  mentor: TopicMentorRef | null;
+}
+
+function toTopicDetail(api: ApiTopicDetail): TopicDetail {
+  return {
+    id: api.id,
+    clubId: api.clubId,
+    name: api.name,
+    certificationRequired: api.certificationRequired ?? false,
+    mentor: api.mentor,
+  };
+}
+
+function toCurriculumModule(api: ModuleResponse): CurriculumModule {
+  return {
+    id: api.id,
+    title: api.title,
+    body: api.body,
+    weight: api.weight,
+    estTime: api.estTime,
+    order: api.order,
+  };
+}
+
 export const topicsService = {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   getEnrolledTopic: (_id: string): Promise<EnrolledTopicDetail> =>
     Promise.resolve(ENROLLED_TOPIC),
+  getTopic: (id: string): Promise<TopicDetail> =>
+    httpClient
+      .get<ApiTopicDetail>(`/topics/${id}`)
+      .then((r) => toTopicDetail(r.data)),
+  getTopicModules: (id: string): Promise<CurriculumModule[]> =>
+    httpClient
+      .get<ModuleResponse[]>(`/topics/${id}/modules`)
+      .then((r) => r.data.map(toCurriculumModule)),
 };

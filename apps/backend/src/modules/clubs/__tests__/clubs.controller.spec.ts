@@ -97,7 +97,6 @@ describe('ClubsController', () => {
     const dto = {
       memberId: 'DSI-1',
       expectation: 'Excited to contribute.',
-      acceptedRules: true,
     };
 
     const result = await controller.joinClub('club-1', dto, caller);

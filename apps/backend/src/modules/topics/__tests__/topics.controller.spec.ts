@@ -52,6 +52,7 @@ describe('TopicsController', () => {
     mockTopicsService.create.mockResolvedValue(topic);
     const dto = {
       name: 'React Basics',
+      description: 'Hooks, state, and the render cycle.',
       certificationRequired: false,
       mentorId: '11111111-1111-1111-1111-111111111111',
     };

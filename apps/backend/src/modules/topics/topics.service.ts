@@ -38,6 +38,7 @@ export class TopicsService {
       {
         clubId,
         name: dto.name,
+        description: dto.description,
         certificationRequired: dto.certificationRequired ?? false,
       },
       dto.mentorId,

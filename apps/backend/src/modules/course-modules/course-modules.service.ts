@@ -52,8 +52,10 @@ export class CourseModulesService {
         'One or more module IDs do not belong to this topic',
       );
     }
+    // 0-based, matching what `create` writes — the client renders position as
+    // `order + 1`, so numbering from 1 here would shift every module by one.
     for (let i = 0; i < dto.moduleIds.length; i++) {
-      await this.repo.updateOrder(dto.moduleIds[i], i + 1);
+      await this.repo.updateOrder(dto.moduleIds[i], i);
     }
   }
 

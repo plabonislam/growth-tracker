@@ -1,4 +1,4 @@
-import { ArrowUpRight, Clock, Pencil } from 'lucide-react';
+import { ArrowUpRight, Clock, Pencil, Trash2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -81,6 +81,7 @@ export function ModuleCard<T extends ModuleCardModule>({
   emptyResourcesLabel,
   onMarkDone,
   onEdit,
+  onDelete,
 }: {
   module: T;
   /** Shown in place of the resource list when there are none. */
@@ -88,6 +89,8 @@ export function ModuleCard<T extends ModuleCardModule>({
   onMarkDone?: (module: T) => void;
   /** Omitted for anyone but the topic's mentor — hides the edit control. */
   onEdit?: (module: T) => void;
+  /** Omitted for anyone but the topic's mentor — hides the delete control. */
+  onDelete?: (module: T) => void;
 }) {
   const meta = module.status ? MODULE_STATUS_META[module.status] : null;
 
@@ -110,7 +113,7 @@ export function ModuleCard<T extends ModuleCardModule>({
         <span className="rounded-full bg-muted px-2.5 py-0.5 text-[10px] font-bold uppercase text-muted-foreground">
           Weight: {module.weightPct}%
         </span>
-        {(module.estTime || onEdit) && (
+        {(module.estTime || onEdit || onDelete) && (
           <div className="ml-auto flex items-center gap-1.5">
             {module.estTime && (
               <span className="flex items-center gap-1 rounded-full bg-muted px-2.5 py-0.5 text-[10px] font-bold uppercase text-muted-foreground">
@@ -129,6 +132,19 @@ export function ModuleCard<T extends ModuleCardModule>({
                 onClick={() => onEdit(module)}
               >
                 <Pencil className="size-3.5" />
+              </Button>
+            )}
+            {onDelete && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={`Delete ${module.title}`}
+                title="Delete module"
+                className="size-7 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                onClick={() => onDelete(module)}
+              >
+                <Trash2 className="size-3.5" />
               </Button>
             )}
           </div>

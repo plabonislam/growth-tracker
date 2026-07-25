@@ -218,9 +218,11 @@ describe('CourseModulesService', () => {
         mentor,
       );
 
-      expect(mockRepo.updateOrder).toHaveBeenCalledWith('mod-3', 1);
-      expect(mockRepo.updateOrder).toHaveBeenCalledWith('mod-1', 2);
-      expect(mockRepo.updateOrder).toHaveBeenCalledWith('mod-2', 3);
+      // 0-based, the same convention `create` writes and the client renders
+      // as `order + 1`.
+      expect(mockRepo.updateOrder).toHaveBeenCalledWith('mod-3', 0);
+      expect(mockRepo.updateOrder).toHaveBeenCalledWith('mod-1', 1);
+      expect(mockRepo.updateOrder).toHaveBeenCalledWith('mod-2', 2);
     });
 
     it('throws 400 when moduleIds contains an id not belonging to the topic', async () => {

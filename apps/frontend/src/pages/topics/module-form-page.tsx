@@ -78,6 +78,12 @@ export function ModuleFormPage({
   const editing = moduleId
     ? modules.find((module) => module.id === moduleId)
     : undefined;
+  // One past the highest position in use, rather than the module count: a gap
+  // left by a delete would make the count collide with an existing module.
+  const nextOrder = modules.reduce(
+    (next, module) => Math.max(next, module.order + 1),
+    0,
+  );
   const totalWeight = modules.reduce((sum, m) => sum + m.weight, 0);
   // What the *other* modules hold: editing measures its weight against the
   // topic minus its own share, so re-saving an unchanged module always fits.
@@ -185,7 +191,7 @@ export function ModuleFormPage({
         // the module rather than keeping the previous one's answers.
         key={editing?.id ?? 'new'}
         topicId={topicId}
-        nextOrder={modules.length}
+        nextOrder={nextOrder}
         allocatedWeight={allocatedWeight}
         module={editing}
         onDone={backToTopic}

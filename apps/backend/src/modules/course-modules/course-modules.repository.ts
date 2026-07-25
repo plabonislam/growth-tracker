@@ -79,10 +79,18 @@ export class CourseModulesRepository {
     return row;
   }
 
+  /**
+   * A module owns its resources — they are created through it and mean nothing
+   * without it — so both go in one transaction. The resources rows also hold a
+   * foreign key to the module, which would otherwise refuse the delete.
+   */
   async deleteById(id: string) {
-    await this.db.db
-      .delete(courseModulesTable)
-      .where(eq(courseModulesTable.id, id));
+    await this.db.db.transaction(async (tx) => {
+      await tx
+        .delete(moduleResourcesTable)
+        .where(eq(moduleResourcesTable.moduleId, id));
+      await tx.delete(courseModulesTable).where(eq(courseModulesTable.id, id));
+    });
   }
 
   async getWeightSum(topicId: string): Promise<number> {

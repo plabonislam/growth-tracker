@@ -203,6 +203,13 @@ export const topicsService = {
     payload: CreateResource,
   ): Promise<void> =>
     httpClient.post(`/modules/${moduleId}/resources`, payload).then(() => {}),
+  deleteModule: (moduleId: string): Promise<void> =>
+    httpClient.delete(`/modules/${moduleId}`).then(() => {}),
+  /** Rewrites every module's position from the order of the ids given. */
+  reorderModules: (topicId: string, moduleIds: string[]): Promise<void> =>
+    httpClient
+      .patch(`/topics/${topicId}/modules/reorder`, { moduleIds })
+      .then(() => {}),
   deleteModuleResource: (moduleId: string, resourceId: string): Promise<void> =>
     httpClient
       .delete(`/modules/${moduleId}/resources/${resourceId}`)

@@ -81,15 +81,35 @@ export class CourseModulesRepository {
 
   /**
    * A module owns its resources — they are created through it and mean nothing
-   * without it — so both go in one transaction. The resources rows also hold a
+   * without it — so both go in one transaction. The resource rows also hold a
    * foreign key to the module, which would otherwise refuse the delete.
+   *
+   * The topic's remaining modules are renumbered in the same transaction: the
+   * position a deleted module held would otherwise stay empty, leaving a
+   * curriculum of three reading "Module 01, Module 03". Positions are 0-based,
+   * matching what `insert` and `updateOrder` write.
    */
-  async deleteById(id: string) {
+  async deleteById(id: string, topicId: string) {
     await this.db.db.transaction(async (tx) => {
       await tx
         .delete(moduleResourcesTable)
         .where(eq(moduleResourcesTable.moduleId, id));
       await tx.delete(courseModulesTable).where(eq(courseModulesTable.id, id));
+      await tx.execute(sql`
+        WITH ranked AS (
+          SELECT id,
+                 row_number() OVER (
+                   ORDER BY ${courseModulesTable.order}, ${courseModulesTable.createdAt}, id
+                 ) - 1 AS new_order
+          FROM ${courseModulesTable}
+          WHERE ${courseModulesTable.topicId} = ${topicId}
+        )
+        UPDATE ${courseModulesTable} AS m
+        SET ${sql.identifier('order')} = ranked.new_order
+        FROM ranked
+        WHERE m.id = ranked.id
+          AND m.${sql.identifier('order')} IS DISTINCT FROM ranked.new_order
+      `);
     });
   }
 

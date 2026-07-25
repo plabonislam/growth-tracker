@@ -183,7 +183,9 @@ describe('CourseModulesService', () => {
 
       await service.delete('mod-1', mentor);
 
-      expect(mockRepo.deleteById).toHaveBeenCalledWith('mod-1');
+      // The topic travels with the id: the repository renumbers the survivors
+      // in the same transaction, so no gap is ever readable.
+      expect(mockRepo.deleteById).toHaveBeenCalledWith('mod-1', 'topic-1');
     });
 
     it('throws 403 when caller is not Mentor/Authority', async () => {

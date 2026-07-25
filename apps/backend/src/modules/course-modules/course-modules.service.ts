@@ -62,7 +62,9 @@ export class CourseModulesService {
   async delete(id: string, caller: Caller) {
     const mod = await this.findById(id);
     await this.assertMentorOrAuthority(mod.topicId, caller);
-    await this.repo.deleteById(id);
+    // The topic goes along so the survivors can be renumbered in the same
+    // transaction — a hole in the sequence is never visible to a reader.
+    await this.repo.deleteById(id, mod.topicId);
   }
 
   async update(id: string, dto: UpdateModule, caller: Caller) {

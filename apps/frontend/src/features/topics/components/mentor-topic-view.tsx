@@ -70,31 +70,23 @@ export function MentorTopicView({
   const confirmDelete = () => {
     if (!pendingDelete) return;
     const { id, title } = pendingDelete;
-    // The survivors, already in display order — the API rewrites each one's
-    // position from this list, closing the gap the deleted module leaves.
-    const remainingIds = sorted
-      .filter((module) => module.id !== id)
-      .map((module) => module.id);
 
-    deleteMutation.mutate(
-      { moduleId: id, remainingIds },
-      {
-        onSuccess: () => {
-          toast.success(`Module “${title}” deleted`);
-          setPendingDelete(null);
-        },
-        onError: (error) => {
-          toast.error(
-            getApiErrorMessage(
-              error,
-              'Couldn’t delete the module. Please try again.',
-            ),
-          );
-          // Left open on failure, so the mentor can retry without hunting for
-          // the card again.
-        },
+    deleteMutation.mutate(id, {
+      onSuccess: () => {
+        toast.success(`Module “${title}” deleted`);
+        setPendingDelete(null);
       },
-    );
+      onError: (error) => {
+        toast.error(
+          getApiErrorMessage(
+            error,
+            'Couldn’t delete the module. Please try again.',
+          ),
+        );
+        // Left open on failure, so the mentor can retry without hunting for
+        // the card again.
+      },
+    });
   };
 
   return (

@@ -211,6 +211,15 @@ describe('buildCreateModuleWithResourcesSchema', () => {
     expect(result.success).toBe(true);
   });
 
+  // How editing uses it: the topic sums to 100, but the module being edited
+  // holds 30 of that, so the budget it is measured against is the other 70.
+  it('accepts an unchanged weight when the module is excluded from the budget', () => {
+    const result = buildCreateModuleWithResourcesSchema(100 - 30).safeParse(
+      withResources,
+    );
+    expect(result.success).toBe(true);
+  });
+
   it('rejects a weight that would push the topic past 100', () => {
     const result =
       buildCreateModuleWithResourcesSchema(80).safeParse(withResources);

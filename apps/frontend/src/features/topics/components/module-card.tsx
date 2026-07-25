@@ -1,4 +1,4 @@
-import { ArrowUpRight, Clock } from 'lucide-react';
+import { ArrowUpRight, Clock, Pencil } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -80,11 +80,14 @@ export function ModuleCard<T extends ModuleCardModule>({
   module,
   emptyResourcesLabel,
   onMarkDone,
+  onEdit,
 }: {
   module: T;
   /** Shown in place of the resource list when there are none. */
   emptyResourcesLabel?: string;
   onMarkDone?: (module: T) => void;
+  /** Omitted for anyone but the topic's mentor — hides the edit control. */
+  onEdit?: (module: T) => void;
 }) {
   const meta = module.status ? MODULE_STATUS_META[module.status] : null;
 
@@ -107,11 +110,28 @@ export function ModuleCard<T extends ModuleCardModule>({
         <span className="rounded-full bg-muted px-2.5 py-0.5 text-[10px] font-bold uppercase text-muted-foreground">
           Weight: {module.weightPct}%
         </span>
-        {module.estTime && (
-          <span className="ml-auto flex items-center gap-1 rounded-full bg-muted px-2.5 py-0.5 text-[10px] font-bold uppercase text-muted-foreground">
-            <Clock className="size-3" />
-            {module.estTime}
-          </span>
+        {(module.estTime || onEdit) && (
+          <div className="ml-auto flex items-center gap-1.5">
+            {module.estTime && (
+              <span className="flex items-center gap-1 rounded-full bg-muted px-2.5 py-0.5 text-[10px] font-bold uppercase text-muted-foreground">
+                <Clock className="size-3" />
+                {module.estTime}
+              </span>
+            )}
+            {onEdit && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label={`Edit ${module.title}`}
+                title="Edit module"
+                className="size-7 text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                onClick={() => onEdit(module)}
+              >
+                <Pencil className="size-3.5" />
+              </Button>
+            )}
+          </div>
         )}
       </div>
       <div>

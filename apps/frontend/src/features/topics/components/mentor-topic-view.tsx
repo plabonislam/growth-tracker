@@ -40,10 +40,13 @@ function toCardModule(module: CurriculumModule): ModuleCardModule {
 export function MentorTopicView({
   topic,
   onCreateModule,
+  onEditModule,
 }: {
   topic: TopicDetail;
   /** Fired by the "Create Module" action in the curriculum header. */
   onCreateModule?: () => void;
+  /** Fired by a card's edit control. Omitted hides the control. */
+  onEditModule?: (module: CurriculumModule) => void;
 }) {
   const { data: modules = [], isLoading, isError } = useTopicModules(topic.id);
 
@@ -113,6 +116,9 @@ export function MentorTopicView({
               key={module.id}
               module={toCardModule(module)}
               emptyResourcesLabel="No resources attached yet."
+              // Only this view renders for the topic's mentor, so the control
+              // needs no further permission check of its own.
+              onEdit={onEditModule && (() => onEditModule(module))}
             />
           ))}
         </div>

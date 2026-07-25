@@ -2,7 +2,11 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { CheckCircle2, Loader2, Send } from 'lucide-react';
 import { useRef } from 'react';
 import { useForm } from 'react-hook-form';
-import { CreateClubSchema, type CreateClub } from 'shared';
+import {
+  CLUB_DESCRIPTION_LENGTH,
+  CreateClubSchema,
+  type CreateClub,
+} from 'shared';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -19,6 +23,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { CoordinatorSelect } from '@/features/users/components/coordinator-select';
 import { fieldLabelClass } from '@/lib/form-styles';
+import { cn } from '@/lib/utils';
 import { getApiErrorMessage, isConflictError } from '@/services/http/client';
 import { useCheckClubName, useCreateClub } from '../hooks/use-clubs';
 
@@ -143,7 +148,11 @@ export function ClubCreateForm({ onCreated }: { onCreated?: () => void }) {
             control={form.control}
             name="description"
             render={({ field }) => {
-              const count = field.value?.length ?? 0;
+              // Trimmed, the same string the schema measures — a raw count
+              // would read as met while a field of spaces was still rejected.
+              const count = (field.value ?? '').trim().length;
+              const belowMin = count < CLUB_DESCRIPTION_LENGTH.min;
+              const overMax = count > CLUB_DESCRIPTION_LENGTH.max;
               return (
                 <FormItem>
                   <div className="flex items-center justify-between gap-2">
@@ -151,11 +160,18 @@ export function ClubCreateForm({ onCreated }: { onCreated?: () => void }) {
                       Description
                     </FormLabel>
                     <span
-                      className={`text-xs tabular-nums ${
-                        count >= 40 ? 'text-primary' : 'text-muted-foreground'
-                      }`}
+                      className={cn(
+                        'text-xs tabular-nums',
+                        overMax
+                          ? 'text-destructive'
+                          : belowMin
+                            ? 'text-muted-foreground'
+                            : 'text-primary',
+                      )}
                     >
-                      {count < 40 ? `${count}/40 min` : `${count} characters`}
+                      {belowMin
+                        ? `${count}/${CLUB_DESCRIPTION_LENGTH.min} min`
+                        : `${count}/${CLUB_DESCRIPTION_LENGTH.max}`}
                     </span>
                   </div>
                   <FormControl>

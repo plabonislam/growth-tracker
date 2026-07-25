@@ -1,12 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CheckCircle2, ChevronDown, Gavel, Send } from 'lucide-react';
-import { useState } from 'react';
+import { CheckCircle2, Send } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { JoinClubSchema, type JoinClub } from 'shared';
+import { JOIN_EXPECTATION_LENGTH, JoinClubSchema, type JoinClub } from 'shared';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Form,
   FormControl,
@@ -35,48 +33,7 @@ function ReadOnlyField({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ReviewRules({ rules }: { rules: string[] }) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <div className="overflow-hidden rounded-xl border bg-muted/20">
-      <button
-        type="button"
-        onClick={() => setOpen((prev) => !prev)}
-        className="flex w-full items-center justify-between bg-muted/40 p-4 transition-colors hover:bg-muted/60"
-      >
-        <span className="flex items-center gap-2 font-semibold">
-          <Gavel className="size-5 text-primary" />
-          Review Club Rules
-        </span>
-        <ChevronDown
-          className={cn(
-            'size-5 transition-transform duration-300',
-            open && 'rotate-180',
-          )}
-        />
-      </button>
-      {open && (
-        <ul className="space-y-3 border-t p-6 text-sm text-muted-foreground">
-          {rules.map((rule) => (
-            <li key={rule} className="flex gap-3">
-              <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" />
-              {rule}
-            </li>
-          ))}
-        </ul>
-      )}
-    </div>
-  );
-}
-
-export function ClubJoinForm({
-  clubId,
-  rules,
-}: {
-  clubId: string;
-  rules?: string[];
-}) {
+export function ClubJoinForm({ clubId }: { clubId: string }) {
   const { data: user } = useCurrentUser();
   const mutation = useSubmitJoinApplication(clubId);
 
@@ -85,7 +42,6 @@ export function ClubJoinForm({
     values: {
       memberId: '',
       expectation: '',
-      acceptedRules: false,
     },
   });
 
@@ -122,15 +78,30 @@ export function ClubJoinForm({
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 p-8">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          {/* items-start: an error under the ID adds a row to that column, and
+              a stretched neighbour would spread the extra height across its own
+              label and value box, dragging both out of line. */}
+          <div className="grid grid-cols-1 items-start gap-6 md:grid-cols-2">
             <FormField
               control={form.control}
               name="memberId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className={fieldLabelClass}>ID #</FormLabel>
+                  <FormLabel className={fieldLabelClass}>DSI-ID</FormLabel>
                   <FormControl>
-                    <Input placeholder="DSI-99238" {...field} />
+                    <Input
+                      placeholder="DSI-99238"
+                      // Hints the mobile keyboard to open in caps; the handler
+                      // below is what actually guarantees it.
+                      autoCapitalize="characters"
+                      {...field}
+                      // The prefix is written `DSI-`, so typing "dsi" becomes
+                      // "DSI" as it is entered. Case-preserving, so the caret
+                      // stays where the applicant left it.
+                      onChange={(event) =>
+                        field.onChange(event.target.value.toUpperCase())
+                      }
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -144,50 +115,44 @@ export function ClubJoinForm({
           <FormField
             control={form.control}
             name="expectation"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className={fieldLabelClass}>
-                  Joining Expectations
-                </FormLabel>
-                <FormControl>
-                  <Textarea
-                    rows={4}
-                    placeholder="Briefly describe what you aim to achieve and contribute to the club community..."
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {rules && rules.length > 0 && <ReviewRules rules={rules} />}
-
-          <FormField
-            control={form.control}
-            name="acceptedRules"
-            render={({ field }) => (
-              <FormItem className="rounded-lg border border-primary/10 bg-primary/5 p-4">
-                <div className="flex items-start gap-3">
+            render={({ field }) => {
+              // Trimmed, the same string the schema measures — a raw count
+              // would read as met while a field of spaces was still rejected.
+              const count = (field.value ?? '').trim().length;
+              const remaining = JOIN_EXPECTATION_LENGTH.min - count;
+              return (
+                <FormItem>
+                  <div className="flex items-center justify-between gap-3">
+                    <FormLabel className={fieldLabelClass}>
+                      Joining Expectations
+                    </FormLabel>
+                    {/* Counts toward the floor first, since that is the bound
+                        an applicant actually meets; the cap only matters once
+                        the writing runs long. */}
+                    <span
+                      className={cn(
+                        'text-xs font-semibold tabular-nums',
+                        count > JOIN_EXPECTATION_LENGTH.max
+                          ? 'text-destructive'
+                          : 'text-muted-foreground',
+                      )}
+                    >
+                      {remaining > 0
+                        ? `${remaining} more to go`
+                        : `${count} of ${JOIN_EXPECTATION_LENGTH.max}`}
+                    </span>
+                  </div>
                   <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
+                    <Textarea
+                      rows={4}
+                      placeholder="Briefly describe what you aim to achieve and contribute to the club community..."
+                      {...field}
                     />
                   </FormControl>
-                  <FormLabel className="text-sm font-normal leading-relaxed text-muted-foreground">
-                    I confirm that I have read and agree to the Terms of
-                    Participation and the{' '}
-                    <span className="font-semibold text-primary">
-                      Club Rules
-                    </span>{' '}
-                    outlined above. I understand that membership is subject to
-                    review by the board.
-                  </FormLabel>
-                </div>
-                <FormMessage />
-              </FormItem>
-            )}
+                  <FormMessage />
+                </FormItem>
+              );
+            }}
           />
 
           {mutation.isError && (

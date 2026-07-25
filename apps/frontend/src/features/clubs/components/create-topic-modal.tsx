@@ -4,7 +4,12 @@ import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { createPortal } from 'react-dom';
 import { toast } from 'sonner';
-import { CreateTopicSchema, type CreateTopic } from 'shared';
+import {
+  CreateTopicSchema,
+  TOPIC_DESCRIPTION_LENGTH,
+  type CreateTopic,
+  type CreateTopicInput,
+} from 'shared';
 
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -17,10 +22,20 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { MentorSelect } from '@/features/users/components/mentor-select';
 import { fieldLabelClass } from '@/lib/form-styles';
+import { cn } from '@/lib/utils';
 import { getApiErrorMessage } from '@/services/http/client';
 import { useCreateTopic } from '../hooks/use-clubs';
+
+/** What the form holds while empty; also what each reopen resets it to. */
+const EMPTY_TOPIC: CreateTopicInput = {
+  name: '',
+  description: '',
+  mentorId: '',
+  certificationRequired: false,
+};
 
 type CreateTopicModalProps = {
   clubId: string;
@@ -35,9 +50,11 @@ export function CreateTopicModal({
 }: CreateTopicModalProps) {
   const mutation = useCreateTopic(clubId);
 
-  const form = useForm<CreateTopic>({
+  // Typed input-first: `certificationRequired` carries a schema default, so what
+  // the fields hold and what `handleSubmit` receives are different shapes.
+  const form = useForm<CreateTopicInput, unknown, CreateTopic>({
     resolver: zodResolver(CreateTopicSchema),
-    defaultValues: { name: '', mentorId: '', certificationRequired: false },
+    defaultValues: EMPTY_TOPIC,
   });
 
   useEffect(() => {
@@ -59,8 +76,7 @@ export function CreateTopicModal({
 
   // Reset the form each time the modal opens so stale input never lingers.
   useEffect(() => {
-    if (open)
-      form.reset({ name: '', mentorId: '', certificationRequired: false });
+    if (open) form.reset(EMPTY_TOPIC);
   }, [open, form]);
 
   if (!open) return null;
@@ -136,6 +152,49 @@ export function CreateTopicModal({
                   <FormMessage />
                 </FormItem>
               )}
+            />
+
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => {
+                // Trimmed, the same string the schema measures — a raw count
+                // would read as met while a field of spaces was still rejected.
+                const count = (field.value ?? '').trim().length;
+                const remaining = TOPIC_DESCRIPTION_LENGTH.min - count;
+                return (
+                  <FormItem>
+                    <div className="flex items-center justify-between gap-3">
+                      <FormLabel className={fieldLabelClass}>
+                        Description
+                      </FormLabel>
+                      {/* Counts toward the floor first, since that is the bound
+                          a coordinator actually meets; the cap only matters
+                          once the writing runs long. */}
+                      <span
+                        className={cn(
+                          'text-xs font-semibold tabular-nums',
+                          count > TOPIC_DESCRIPTION_LENGTH.max
+                            ? 'text-destructive'
+                            : 'text-muted-foreground',
+                        )}
+                      >
+                        {remaining > 0
+                          ? `${remaining} more to go`
+                          : `${count} of ${TOPIC_DESCRIPTION_LENGTH.max}`}
+                      </span>
+                    </div>
+                    <FormControl>
+                      <Textarea
+                        rows={3}
+                        placeholder="What this track covers and who it is for…"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
             />
 
             <FormField

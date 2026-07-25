@@ -1,6 +1,7 @@
 import { Plus } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { SectionHeading } from '@/components/ui/section-heading';
 import type { Topic, TopicAction } from '../clubs.types';
 import { TopicItem } from './topic-item';
 
@@ -21,29 +22,27 @@ export function TopicsList({
 }: TopicsListProps) {
   return (
     <section>
-      <div className="mb-3 flex items-center justify-between gap-2.5 md:mb-3.5">
-        <div className="flex min-w-0 items-baseline gap-2.5">
-          <h3 className="font-serif text-[15px] font-bold text-foreground md:text-[17px] lg:text-xl">
-            Explore curriculum
-          </h3>
-          <span className="shrink-0 text-[11.5px] text-muted-foreground md:text-[12.5px] lg:text-[13px]">
-            {topics.length} {topics.length === 1 ? 'topic' : 'topics'}
-          </span>
-        </div>
-
-        {onCreateTopic && (
-          <Button
-            type="button"
-            onClick={onCreateTopic}
-            aria-label="Create Topic"
-            className="shrink-0 gap-1.5 max-[479px]:size-9 max-[479px]:p-0"
-          >
-            <Plus className="size-4" strokeWidth={2.5} />
-            {/* Collapses to an icon button under 480px */}
-            <span className="hidden min-[480px]:inline">Create Topic</span>
-          </Button>
-        )}
-      </div>
+      <SectionHeading
+        as="h1"
+        title="Explore curriculum"
+        // flex-row: title and action share a line at every width, which is what
+        // the button's icon-only collapse under 480px is built for.
+        className="mb-3 flex-row items-center md:mb-3.5"
+        action={
+          onCreateTopic && (
+            <Button
+              type="button"
+              onClick={onCreateTopic}
+              aria-label="Create Topic"
+              className="gap-1.5 max-[479px]:size-9 max-[479px]:p-0"
+            >
+              <Plus className="size-4" strokeWidth={2.5} />
+              {/* Collapses to an icon button under 480px */}
+              <span className="hidden min-[480px]:inline">Create Topic</span>
+            </Button>
+          )
+        }
+      />
 
       {topics.length === 0 ? (
         <div className="rounded-xl border border-dashed border-input px-5 py-10 text-center md:py-12 lg:py-14">

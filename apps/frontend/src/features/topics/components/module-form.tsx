@@ -5,6 +5,7 @@ import { useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import {
   buildCreateModuleWithResourcesSchema,
+  MODULE_BODY_LENGTH,
   type CreateModuleWithResources,
 } from 'shared';
 
@@ -30,9 +31,11 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { formatDuration } from '@/lib/format-duration';
 import { fieldLabelClass } from '@/lib/form-styles';
+import { cn } from '@/lib/utils';
 import { getApiErrorMessage } from '@/services/http/client';
-import { useCreateModule } from '../hooks/use-topics';
+import { useCreateModule, useUpdateModule } from '../hooks/use-topics';
 import { RESOURCE_KIND_META, RESOURCE_KINDS } from '../topics.constants';
+import type { CurriculumModule } from '../topics.types';
 
 /** Matches `CreateModuleWithResourcesSchema`'s `resources` cap. */
 const MAX_RESOURCES = 10;
@@ -47,12 +50,27 @@ const EMPTY_RESOURCE = { title: '', url: '', kind: 'doc' } as const;
 const numberInputClass =
   'pr-14 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none';
 
-type CreateModuleFormProps = {
+/**
+ * Radix's trigger box is shorter and tighter than our `Input`, so the kind
+ * picker sat low next to Title and Link. Match the input's height, radius,
+ * padding, and focus ring. (`data-[size=default]:` because the base height
+ * carries that modifier and would otherwise outrank a bare `h-11`.)
+ */
+const selectTriggerClass =
+  'w-full rounded-lg border bg-background px-4 text-base data-[size=default]:h-11 md:text-sm focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30';
+
+type ModuleFormProps = {
   topicId: string;
-  /** Position for the new module — the count of modules already on the topic. */
+  /** Position for a new module — the count of modules already on the topic. */
   nextOrder: number;
-  /** Weight already allocated across the topic, 0–100. */
+  /**
+   * Weight held by every *other* module on the topic, 0–100. When editing, the
+   * edited module's own share is left out, so re-saving it unchanged never
+   * reads as overspending.
+   */
   allocatedWeight: number;
+  /** The module being edited. Absent authors a new one. */
+  module?: CurriculumModule;
   onDone: () => void;
   onCancel: () => void;
 };
@@ -93,14 +111,25 @@ function SectionCard({
   );
 }
 
-export function CreateModuleForm({
+/**
+ * Authors a module, and edits one. Both run through the same form so a mentor
+ * revisits exactly the page they filled in, with their answers already in it.
+ */
+export function ModuleForm({
   topicId,
   nextOrder,
   allocatedWeight,
+  module,
   onDone,
   onCancel,
-}: CreateModuleFormProps) {
-  const mutation = useCreateModule(topicId);
+}: ModuleFormProps) {
+  const isEditing = module != null;
+
+  // Both are declared unconditionally — hooks cannot be called by branch — and
+  // the mode decides which one submit runs.
+  const createMutation = useCreateModule(topicId);
+  const updateMutation = useUpdateModule(topicId);
+  const mutation = isEditing ? updateMutation : createMutation;
 
   const remainingBefore = Math.max(0, 100 - allocatedWeight);
 
@@ -111,15 +140,28 @@ export function CreateModuleForm({
 
   const form = useForm<CreateModuleWithResources>({
     resolver: zodResolver(schema),
-    defaultValues: {
-      title: '',
-      body: '',
-      weight: undefined,
-      estTime: undefined,
-      // One row up front: it is required, so an empty state would only be a
-      // dead end the mentor has to click out of.
-      resources: [{ ...EMPTY_RESOURCE }],
-    },
+    defaultValues: module
+      ? {
+          title: module.title,
+          body: module.body ?? '',
+          weight: module.weight,
+          // Blank rather than 0 when the mentor never set one.
+          estTime: module.estTime ?? undefined,
+          resources: module.resources.map((resource) => ({
+            title: resource.title,
+            url: resource.url,
+            kind: resource.kind,
+          })),
+        }
+      : {
+          title: '',
+          body: '',
+          weight: undefined,
+          estTime: undefined,
+          // One row up front: it is required, so an empty state would only be a
+          // dead end the mentor has to click out of.
+          resources: [{ ...EMPTY_RESOURCE }],
+        },
   });
 
   const resources = useFieldArray({ control: form.control, name: 'resources' });
@@ -136,6 +178,12 @@ export function CreateModuleForm({
 
   const weightValue = useWatch({ control: form.control, name: 'weight' });
   const estTimeValue = useWatch({ control: form.control, name: 'estTime' });
+  const bodyValue = useWatch({ control: form.control, name: 'body' });
+
+  // Counted after trimming, the same string the schema measures — a counter that
+  // credited padding would read as valid while the field was still rejected.
+  const bodyLength = (bodyValue ?? '').trim().length;
+  const bodyRemaining = MODULE_BODY_LENGTH.min - bodyLength;
 
   const pendingWeight =
     typeof weightValue === 'number' && Number.isFinite(weightValue)
@@ -146,6 +194,13 @@ export function CreateModuleForm({
   const atMaxResources = resources.fields.length >= MAX_RESOURCES;
   const atMinResources = resources.fields.length <= MIN_RESOURCES;
 
+  // A bound on the list itself, not on a row, so no `FormField` renders it. The
+  // resolver nests it under `root` while rows are registered and reports it
+  // directly once the list is empty — the case that trips the lower bound.
+  const resourcesError =
+    form.formState.errors.resources?.root?.message ??
+    form.formState.errors.resources?.message;
+
   const addResource = () => {
     if (atMaxResources) return;
     setFocusIndex(resources.fields.length);
@@ -155,52 +210,72 @@ export function CreateModuleForm({
   const handleCancel = () => {
     if (
       form.formState.isDirty &&
-      !window.confirm('Discard this module? Your changes won’t be saved.')
+      !window.confirm(
+        isEditing
+          ? 'Discard your changes? They won’t be saved.'
+          : 'Discard this module? Your changes won’t be saved.',
+      )
     ) {
       return;
     }
     onCancel();
   };
 
+  /** Shared by both modes — only the verb in the copy differs. */
+  const handleSaved = ({
+    module: saved,
+    failedResources,
+  }: {
+    module: CurriculumModule;
+    failedResources: number;
+  }) => {
+    toast.success(
+      `Module “${saved.title}” ${isEditing ? 'updated' : 'created'}`,
+    );
+    if (failedResources > 0) {
+      toast.warning(
+        `${failedResources} resource${failedResources === 1 ? 's' : ''} couldn’t be saved. Check the module’s resources.`,
+      );
+    }
+    onDone();
+  };
+
+  const handleFailed = (error: unknown) =>
+    toast.error(
+      getApiErrorMessage(
+        error,
+        isEditing
+          ? 'Couldn’t save the module. Please try again.'
+          : 'Couldn’t create the module. Please try again.',
+      ),
+    );
+
+  // The schema trims every text field and `zodResolver` hands `handleSubmit` the
+  // parsed values, so these arrive ready to send.
   const onSubmit = ({
     resources: rows,
-    body,
-    title,
-    ...module
-  }: CreateModuleWithResources) =>
-    mutation.mutate(
-      {
-        module: {
-          ...module,
-          title: title.trim(),
-          body: body.trim(),
-          order: nextOrder,
+    ...fields
+  }: CreateModuleWithResources) => {
+    if (module) {
+      // `order` is left out: editing never moves a module, and position is
+      // rearranged through the reorder endpoint instead.
+      updateMutation.mutate(
+        {
+          moduleId: module.id,
+          module: fields,
+          resources: rows,
+          originalResources: module.resources,
         },
-        resources: rows.map((row) => ({
-          title: row.title.trim(),
-          url: row.url.trim(),
-          kind: row.kind,
-        })),
-      },
-      {
-        onSuccess: ({ module: created, failedResources }) => {
-          toast.success(`Module “${created.title}” created`);
-          if (failedResources > 0) {
-            toast.warning(
-              `${failedResources} resource${failedResources === 1 ? '' : 's'} couldn’t be attached. Add them again from the module.`,
-            );
-          }
-          onDone();
-        },
-        onError: (error) =>
-          toast.error(
-            getApiErrorMessage(
-              error,
-              'Couldn’t create the module. Please try again.',
-            ),
-          ),
-      },
+        { onSuccess: handleSaved, onError: handleFailed },
+      );
+      return;
+    }
+
+    createMutation.mutate(
+      { module: { ...fields, order: nextOrder }, resources: rows },
+      { onSuccess: handleSaved, onError: handleFailed },
     );
+  };
 
   return (
     <SectionCard>
@@ -239,9 +314,26 @@ export function CreateModuleForm({
                     name="body"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className={fieldLabelClass}>
-                          Learning content
-                        </FormLabel>
+                        <div className="flex items-center justify-between gap-3">
+                          <FormLabel className={fieldLabelClass}>
+                            Learning content
+                          </FormLabel>
+                          {/* Counts toward the floor first, since that is the
+                              bound a mentor actually meets; the cap only
+                              matters once the writing runs long. */}
+                          <span
+                            className={cn(
+                              'text-xs font-semibold tabular-nums',
+                              bodyLength > MODULE_BODY_LENGTH.max
+                                ? 'text-destructive'
+                                : 'text-muted-foreground',
+                            )}
+                          >
+                            {bodyRemaining > 0
+                              ? `${bodyRemaining} more to go`
+                              : `${bodyLength} of ${MODULE_BODY_LENGTH.max}`}
+                          </span>
+                        </div>
                         <FormControl>
                           <Textarea
                             rows={4}
@@ -252,7 +344,8 @@ export function CreateModuleForm({
                           />
                         </FormControl>
                         <FormDescription>
-                          Learners read this before opening the resources.
+                          Learners read this before opening the resources — at
+                          least 30 characters.
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -303,12 +396,17 @@ export function CreateModuleForm({
                           </span>
                         </div>
 
+                        {/* `remainingBefore` excludes this module when editing,
+                            so the arithmetic reads the same either way: what is
+                            left over once this module takes its share. */}
                         <FormDescription>
                           {remainingBefore === 0
-                            ? 'The topic is already at 100%.'
+                            ? isEditing
+                              ? 'The topic’s other modules already use all 100%.'
+                              : 'The topic is already at 100%.'
                             : pendingWeight > 0
                               ? `${Math.max(0, remainingBefore - pendingWeight)}% of the topic left after this module.`
-                              : `Share of the topic’s progress. ${remainingBefore}% unallocated.`}
+                              : `Share of the topic’s progress. ${remainingBefore}% available to this module.`}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -414,7 +512,9 @@ export function CreateModuleForm({
                       </Button>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-[1fr_1fr_11rem]">
+                    {/* items-start: a validation message under one field must
+                        not stretch its neighbours and shift their labels. */}
+                    <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-[1fr_1fr_11rem]">
                       <FormField
                         control={form.control}
                         name={`resources.${index}.title`}
@@ -471,7 +571,7 @@ export function CreateModuleForm({
                               onValueChange={field.onChange}
                             >
                               <FormControl>
-                                <SelectTrigger className="w-full">
+                                <SelectTrigger className={selectTriggerClass}>
                                   <SelectValue />
                                 </SelectTrigger>
                               </FormControl>
@@ -492,6 +592,12 @@ export function CreateModuleForm({
                 ))}
               </ul>
 
+              {resourcesError && (
+                <p className="mt-3 text-sm text-destructive">
+                  {resourcesError}
+                </p>
+              )}
+
               {atMaxResources && (
                 <p className="mt-3 text-[13px] text-muted-foreground">
                   That’s the limit of {MAX_RESOURCES}. Remove one to add
@@ -506,7 +612,13 @@ export function CreateModuleForm({
                 disabled={mutation.isPending}
                 className="w-50"
               >
-                {mutation.isPending ? 'Creating…' : 'Create module'}
+                {isEditing
+                  ? mutation.isPending
+                    ? 'Saving…'
+                    : 'Save changes'
+                  : mutation.isPending
+                    ? 'Creating…'
+                    : 'Create module'}
               </Button>
               <Button
                 type="button"

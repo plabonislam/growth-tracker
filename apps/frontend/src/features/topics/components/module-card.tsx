@@ -89,7 +89,7 @@ export function ModuleCard<T extends ModuleCardModule>({
   const meta = module.status ? MODULE_STATUS_META[module.status] : null;
 
   return (
-    <Card className="h-full gap-4 rounded-lg p-6 transition-shadow hover:shadow-md">
+    <Card className="h-full w-full max-w-[800px] gap-4 rounded-lg p-6 transition-shadow hover:shadow-md">
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-[11px] font-bold uppercase text-muted-foreground">
           Module {String(module.order).padStart(2, '0')}
@@ -114,16 +114,17 @@ export function ModuleCard<T extends ModuleCardModule>({
           </span>
         )}
       </div>
+      <div>
+        <h4 className="font-serif text-xl font-semibold leading-tight">
+          {module.title}
+        </h4>
 
-      <h4 className="font-serif text-xl font-semibold leading-tight">
-        {module.title}
-      </h4>
-
-      {module.description && (
-        <p className="line-clamp-2 text-[13px] leading-relaxed text-muted-foreground">
-          {module.description}
-        </p>
-      )}
+        {module.description && (
+          <p className="line-clamp-2 text-[13px] leading-relaxed text-muted-foreground">
+            {module.description}
+          </p>
+        )}
+      </div>
 
       <div className="flex-1 space-y-4 pt-1">
         {module.resources.length === 0

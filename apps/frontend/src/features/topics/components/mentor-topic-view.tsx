@@ -107,7 +107,7 @@ export function MentorTopicView({
       )}
 
       {sorted.length > 0 && (
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(400px,100%),1fr))] items-start gap-4">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(400px),1fr))] items-start gap-4">
           {sorted.map((module) => (
             <ModuleCard
               key={module.id}

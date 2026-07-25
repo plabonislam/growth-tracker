@@ -3,51 +3,33 @@ import { Plus } from 'lucide-react';
 import { NavbarActions } from '@/components/layout/navbar-actions';
 import { SectionHeading } from '@/components/ui/section-heading';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { formatDuration } from '@/lib/format-duration';
+import { ModuleCard, type ModuleCardModule } from './module-card';
 import { useTopicModules } from '../hooks/use-topics';
 import type { CurriculumModule, TopicDetail } from '../topics.types';
 
-/** "95" → "1h 35m"; whole hours drop the minutes. */
-function formatEstTime(minutes: number | null): string | null {
-  if (minutes == null) return null;
-  if (minutes < 60) return `${minutes}m`;
-  const hours = Math.floor(minutes / 60);
-  const rest = minutes % 60;
-  return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`;
-}
-
-function ModuleRow({ module }: { module: CurriculumModule }) {
-  const estTime = formatEstTime(module.estTime);
-
-  return (
-    <Card className="flex items-start gap-4 p-5">
-      {/* Order is the mentor's primary handle on a curriculum */}
-      <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-lg bg-muted font-serif text-sm font-bold text-muted-foreground">
-        {String(module.order + 1).padStart(2, '0')}
-      </span>
-
-      <div className="min-w-0 flex-1">
-        <h4 className="font-serif text-base font-bold leading-snug text-foreground">
-          {module.title}
-        </h4>
-        {module.body && (
-          <p className="mt-1 line-clamp-2 text-[13px] leading-relaxed text-muted-foreground">
-            {module.body}
-          </p>
-        )}
-        <div className="mt-2.5 flex flex-wrap items-center gap-2">
-          <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            {module.weight}% weight
-          </span>
-          {estTime && (
-            <span className="rounded-full bg-muted px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-              {estTime}
-            </span>
-          )}
-        </div>
-      </div>
-    </Card>
-  );
+/**
+ * Onto the shape the learner's module card reads, so a mentor sees their
+ * curriculum exactly as it will be published. Progress is the one thing left
+ * out — there is no status or completion state to speak of while authoring.
+ */
+function toCardModule(module: CurriculumModule): ModuleCardModule {
+  return {
+    id: module.id,
+    // Stored 0-based, rendered 1-based.
+    order: module.order + 1,
+    title: module.title,
+    weightPct: module.weight,
+    // Blank when the mentor left it out — the card drops the chip.
+    estTime: formatDuration(module.estTime) ?? '',
+    description: module.body,
+    resources: module.resources.map((resource) => ({
+      id: resource.id,
+      kind: resource.kind,
+      label: resource.title,
+      url: resource.url,
+    })),
+  };
 }
 
 /**
@@ -66,6 +48,7 @@ export function MentorTopicView({
   const { data: modules = [], isLoading, isError } = useTopicModules(topic.id);
 
   const sorted = [...modules].sort((a, b) => a.order - b.order);
+  const allocatedWeight = sorted.reduce((sum, m) => sum + m.weight, 0);
 
   return (
     <section>
@@ -88,6 +71,14 @@ export function MentorTopicView({
         title="Curriculum Modules"
         subtitle="Manage and organize your learning content into learning modules"
         className="mb-6"
+        action={
+          sorted.length > 0 && (
+            <span className="rounded-full bg-muted px-3 py-1 text-sm font-medium text-muted-foreground">
+              {sorted.length} Module{sorted.length === 1 ? '' : 's'} •{' '}
+              {allocatedWeight}% Allocated
+            </span>
+          )
+        }
       />
 
       {isError && (
@@ -97,9 +88,9 @@ export function MentorTopicView({
       )}
 
       {isLoading && (
-        <div className="space-y-4">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-28 animate-pulse rounded-xl bg-muted" />
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(400px,100%),1fr))] items-start gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-56 animate-pulse rounded-lg bg-muted" />
           ))}
         </div>
       )}
@@ -116,9 +107,13 @@ export function MentorTopicView({
       )}
 
       {sorted.length > 0 && (
-        <div className="flex flex-col gap-4">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(400px,100%),1fr))] items-start gap-4">
           {sorted.map((module) => (
-            <ModuleRow key={module.id} module={module} />
+            <ModuleCard
+              key={module.id}
+              module={toCardModule(module)}
+              emptyResourcesLabel="No resources attached yet."
+            />
           ))}
         </div>
       )}

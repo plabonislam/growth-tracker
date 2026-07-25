@@ -1,3 +1,5 @@
+import { useNavigate } from 'react-router';
+
 import { LearnerTopicView } from '@/features/topics/components/learner-topic-view';
 import { MentorTopicView } from '@/features/topics/components/mentor-topic-view';
 import { useTopic } from '@/features/topics/hooks/use-topics';
@@ -10,6 +12,7 @@ import { useAuthStore } from '@/store/auth.store';
  * concerns.
  */
 export function EnrolledTopicPage({ topicId }: { topicId: string }) {
+  const navigate = useNavigate();
   const userId = useAuthStore((s) => s.userId);
   const { data: topic, isLoading, isError } = useTopic(topicId);
 
@@ -35,7 +38,10 @@ export function EnrolledTopicPage({ topicId }: { topicId: string }) {
 
         {topic &&
           (isMentor ? (
-            <MentorTopicView topic={topic} />
+            <MentorTopicView
+              topic={topic}
+              onCreateModule={() => navigate(`/topics/${topicId}/modules/new`)}
+            />
           ) : (
             <LearnerTopicView topicId={topicId} />
           ))}

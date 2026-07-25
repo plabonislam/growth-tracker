@@ -1,4 +1,9 @@
-import type { ModuleResponse } from 'shared';
+import type {
+  CreateModule,
+  CreateResource,
+  ModuleResponse,
+  ModuleWithResourcesResponse,
+} from 'shared';
 
 import { httpClient } from '@/services/http/client';
 import type {
@@ -150,7 +155,9 @@ function toTopicDetail(api: ApiTopicDetail): TopicDetail {
   };
 }
 
-function toCurriculumModule(api: ModuleResponse): CurriculumModule {
+function toCurriculumModule(
+  api: ModuleResponse | ModuleWithResourcesResponse,
+): CurriculumModule {
   return {
     id: api.id,
     title: api.title,
@@ -158,6 +165,8 @@ function toCurriculumModule(api: ModuleResponse): CurriculumModule {
     weight: api.weight,
     estTime: api.estTime,
     order: api.order,
+    // Absent on the create response — resources are attached in a second pass.
+    resources: 'resources' in api ? api.resources : [],
   };
 }
 
@@ -171,6 +180,18 @@ export const topicsService = {
       .then((r) => toTopicDetail(r.data)),
   getTopicModules: (id: string): Promise<CurriculumModule[]> =>
     httpClient
-      .get<ModuleResponse[]>(`/topics/${id}/modules`)
+      .get<ModuleWithResourcesResponse[]>(`/topics/${id}/modules`)
       .then((r) => r.data.map(toCurriculumModule)),
+  createModule: (
+    topicId: string,
+    payload: CreateModule,
+  ): Promise<CurriculumModule> =>
+    httpClient
+      .post<ModuleResponse>(`/topics/${topicId}/modules`, payload)
+      .then((r) => toCurriculumModule(r.data)),
+  addModuleResource: (
+    moduleId: string,
+    payload: CreateResource,
+  ): Promise<void> =>
+    httpClient.post(`/modules/${moduleId}/resources`, payload).then(() => {}),
 };

@@ -1,3 +1,8 @@
+import type { ResourceKind } from 'shared';
+
+/** Resource kind, resolved to an icon + action label in `topics.constants.ts`. */
+export type { ResourceKind };
+
 /** A topic's assigned mentor, as returned by `GET /topics/:id`. */
 export interface TopicMentorRef {
   id: string;
@@ -14,6 +19,14 @@ export interface TopicDetail {
   mentor: TopicMentorRef | null;
 }
 
+/** A link attached to a module, as the mentor authored it. */
+export interface CurriculumResource {
+  id: string;
+  title: string;
+  url: string;
+  kind: ResourceKind;
+}
+
 /**
  * A curriculum module as the mentor authors it (`GET /topics/:id/modules`) —
  * no learner progress, unlike `TopicModule`.
@@ -26,14 +39,13 @@ export interface CurriculumModule {
   weight: number;
   /** Estimated minutes to complete; `null` when the mentor left it blank. */
   estTime: number | null;
+  /** 0-based — the card renders it 1-based. */
   order: number;
+  resources: CurriculumResource[];
 }
 
 /** Completion state of a module inside an enrolled topic. */
 export type ModuleStatus = 'completed' | 'in_progress' | 'todo';
-
-/** Resource kind, resolved to an icon + action label in `topics.constants.ts`. */
-export type ResourceKind = 'video' | 'doc';
 
 export interface ModuleResource {
   id: string;

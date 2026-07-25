@@ -68,7 +68,13 @@ describe('CourseModulesService', () => {
   });
 
   describe('create', () => {
-    const createDto = { title: 'Intro', weight: 15, order: 1 };
+    const createDto = {
+      title: 'Intro',
+      body: 'What the module covers',
+      weight: 15,
+      estTime: 90,
+      order: 1,
+    };
 
     it('inserts module and returns it', async () => {
       mockRepo.findTopicMentor.mockResolvedValue({
@@ -235,7 +241,11 @@ describe('CourseModulesService', () => {
   });
 
   describe('addResource', () => {
-    const resourceDto = { title: 'Video', url: 'https://example.com/video' };
+    const resourceDto = {
+      title: 'Video',
+      url: 'https://example.com/video',
+      kind: 'video' as const,
+    };
     const resource = {
       id: 'res-1',
       moduleId: 'mod-1',

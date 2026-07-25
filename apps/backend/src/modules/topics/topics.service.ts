@@ -28,11 +28,20 @@ export class TopicsService {
 
   async create(clubId: string, dto: CreateTopic, caller: Caller) {
     await this.assertCoordinatorOrAuthority(clubId, caller);
-    return this.repo.insert({
-      clubId,
-      name: dto.name,
-      certificationRequired: dto.certificationRequired ?? false,
-    });
+    // Validate the mentor before creating the topic so we never leave an
+    // orphaned, mentor-less topic behind if the mentor is ineligible.
+    await this.assertNotClubCoordinator(clubId, dto.mentorId);
+
+    // Topic + mentor are written in one transaction — a failed mentor
+    // assignment must not leave a mentor-less topic behind.
+    return this.repo.insertWithMentor(
+      {
+        clubId,
+        name: dto.name,
+        certificationRequired: dto.certificationRequired ?? false,
+      },
+      dto.mentorId,
+    );
   }
 
   async update(id: string, dto: UpdateTopic, caller: Caller) {
@@ -50,17 +59,7 @@ export class TopicsService {
   async assignMentor(topicId: string, userId: string, caller: Caller) {
     const topic = await this.findById(topicId);
     await this.assertCoordinatorOrAuthority(topic.clubId, caller);
-
-    const isCoordinator = await this.repo.findCoordinatorMatch(
-      topic.clubId,
-      userId,
-    );
-    if (isCoordinator) {
-      throw new BadRequestException(
-        'Club coordinator cannot be assigned as mentor',
-      );
-    }
-
+    await this.assertNotClubCoordinator(topic.clubId, userId);
     await this.repo.insertMentor(topicId, userId);
   }
 
@@ -72,6 +71,15 @@ export class TopicsService {
     if (!assignment) throw new NotFoundException('Mentor assignment not found');
 
     await this.repo.deleteMentor(topicId, userId);
+  }
+
+  private async assertNotClubCoordinator(clubId: string, userId: string) {
+    const isCoordinator = await this.repo.findCoordinatorMatch(clubId, userId);
+    if (isCoordinator) {
+      throw new BadRequestException(
+        'Club coordinator cannot be assigned as mentor',
+      );
+    }
   }
 
   private async assertCoordinatorOrAuthority(clubId: string, caller: Caller) {

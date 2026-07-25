@@ -138,18 +138,36 @@ export class ClubsService {
     dto: UpdateMembershipStatus,
     caller: Caller,
   ) {
-    await this.hasClubRole(clubId, caller);
+    this.logger.log(
+      `updateMembershipStatus() clubId=${clubId} userId=${userId} status=${dto.status} caller=${caller.userId}`,
+    );
 
-    const membership = await this.repo.findMembership(clubId, userId);
-    if (!membership) throw new NotFoundException('Membership not found');
+    try {
+      await this.hasClubRole(clubId, caller);
 
-    const updated = await this.repo.updateMembership(clubId, userId, {
-      status: dto.status,
-      droppedReason: dto.droppedReason,
-    });
+      const membership = await this.repo.findMembership(clubId, userId);
+      if (!membership) throw new NotFoundException('Membership not found');
 
-    // TODO: T5 — NotificationsService.create({ type: 'membership_changed', ... })
-    return updated;
+      const updated = await this.repo.updateMembership(clubId, userId, {
+        status: dto.status,
+        droppedReason: dto.droppedReason,
+      });
+
+      this.logger.log(
+        `updateMembershipStatus() succeeded clubId=${clubId} userId=${userId} ${membership.status} -> ${dto.status}`,
+      );
+
+      // TODO: T5 — NotificationsService.create({ type: 'membership_changed', ... })
+      return updated;
+    } catch (error) {
+      this.logger.error(
+        `updateMembershipStatus() failed for clubId=${clubId} userId=${userId} status=${dto.status}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+        error instanceof Error ? error.stack : undefined,
+      );
+      throw error;
+    }
   }
 
   async getPendingClubEnrollments(limit: number = 10, offset: number = 0) {

@@ -11,7 +11,7 @@ import {
 import { useNavigate } from 'react-router';
 
 import { BrandLogo } from '@/components/layout/brand-logo';
-import { MOCK_PENDING_REQUESTS_TOTAL } from '@/features/enrollments/enrollments.constants';
+import { usePendingEnrollmentsCount } from '@/features/enrollments/hooks/use-enrollments';
 
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth.store';
@@ -33,7 +33,10 @@ interface SidebarSection {
   items: SidebarItem[];
 }
 
-function buildSections(isAuthority: boolean): SidebarSection[] {
+function buildSections(
+  isAuthority: boolean,
+  pendingCount: number,
+): SidebarSection[] {
   const sections: SidebarSection[] = [
     {
       items: [
@@ -44,7 +47,7 @@ function buildSections(isAuthority: boolean): SidebarSection[] {
           label: 'Pending requests',
           icon: CircleCheckBig,
           path: '/pending-enrollments',
-          count: MOCK_PENDING_REQUESTS_TOTAL,
+          count: pendingCount > 0 ? pendingCount : undefined,
           authorityOnly: true,
         },
       ],
@@ -148,7 +151,10 @@ export function SidebarContent({
 }) {
   const navigate = useNavigate();
   const isAuthority = useAuthStore((s) => s.isAuthority);
-  const sections = buildSections(isAuthority);
+  const { total: pendingCount } = usePendingEnrollmentsCount({
+    enabled: isAuthority,
+  });
+  const sections = buildSections(isAuthority, pendingCount);
   return (
     <>
       {/* Brand lockup — mark + wordmark, free-floating (no border row) */}

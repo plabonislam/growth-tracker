@@ -1,5 +1,14 @@
-import { integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+  integer,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from 'drizzle-orm/pg-core';
 import { topicsTable } from './topics.schema';
+
+export const resourceKindEnum = pgEnum('resource_kind', ['video', 'doc']);
 
 export const courseModulesTable = pgTable('course_modules', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -21,4 +30,6 @@ export const moduleResourcesTable = pgTable('module_resources', {
     .notNull(),
   title: text('title').notNull(),
   url: text('url').notNull(),
+  // Defaulted so rows written before mentors could pick a kind stay valid.
+  kind: resourceKindEnum('kind').notNull().default('doc'),
 });

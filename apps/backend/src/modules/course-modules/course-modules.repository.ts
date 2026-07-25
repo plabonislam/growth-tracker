@@ -11,12 +11,40 @@ import { topicMentorsTable } from '../../core/database/schema/topics.schema';
 export class CourseModulesRepository {
   constructor(private readonly db: DatabaseService) {}
 
-  findByTopic(topicId: string) {
-    return this.db.db
+  /**
+   * Modules with their resources attached. Two queries rather than a join —
+   * a join would fan each module out per resource and need regrouping anyway.
+   */
+  async findByTopic(topicId: string) {
+    const modules = await this.db.db
       .select()
       .from(courseModulesTable)
       .where(eq(courseModulesTable.topicId, topicId))
       .orderBy(asc(courseModulesTable.order));
+
+    if (modules.length === 0) return [];
+
+    const resources = await this.db.db
+      .select()
+      .from(moduleResourcesTable)
+      .where(
+        inArray(
+          moduleResourcesTable.moduleId,
+          modules.map((m) => m.id),
+        ),
+      );
+
+    const byModule = new Map<string, typeof resources>();
+    for (const resource of resources) {
+      const bucket = byModule.get(resource.moduleId);
+      if (bucket) bucket.push(resource);
+      else byModule.set(resource.moduleId, [resource]);
+    }
+
+    return modules.map((module) => ({
+      ...module,
+      resources: byModule.get(module.id) ?? [],
+    }));
   }
 
   async findById(id: string) {

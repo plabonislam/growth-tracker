@@ -21,11 +21,17 @@ export const MODULE_STATUS_META: Record<
   },
 };
 
-/** Resource kind → icon + action link label. */
+/** Resource kind → icon, action link label, and the name mentors pick by. */
 export const RESOURCE_KIND_META: Record<
   ResourceKind,
-  { icon: LucideIcon; action: string }
+  { icon: LucideIcon; action: string; label: string }
 > = {
-  video: { icon: CirclePlay, action: 'Watch' },
-  doc: { icon: FileText, action: 'View' },
+  video: { icon: CirclePlay, action: 'Watch', label: 'Video' },
+  doc: { icon: FileText, action: 'View', label: 'Document' },
 };
+
+/** Ordered for the resource type picker. */
+export const RESOURCE_KINDS = [
+  'video',
+  'doc',
+] as const satisfies ResourceKind[];

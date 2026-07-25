@@ -1,11 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { and, count, eq, sql } from 'drizzle-orm';
+import { MembershipStatus } from 'shared';
 
 import { DatabaseService } from '../../core/database/database.service';
 import {
   clubMembershipsTable,
   clubsTable,
 } from '../../core/database/schema/clubs.schema';
+import { sessionsTable } from '../../core/database/schema/sessions.schema';
 import {
   topicMentorsTable,
   topicsTable,
@@ -26,7 +28,7 @@ export class ClubsRepository {
         archived: clubsTable.archived,
         createdAt: clubsTable.createdAt,
         topicCount: sql<number>`cast(count(distinct case when ${topicsTable.archived} = false then ${topicsTable.id} end) as int)`,
-        memberCount: sql<number>`cast(count(distinct ${clubMembershipsTable.id}) as int)`,
+        memberCount: sql<number>`cast(count(distinct case when ${clubMembershipsTable.status}::text = ${MembershipStatus.active} then ${clubMembershipsTable.id} end) as int)`,
       })
       .from(clubsTable)
       .leftJoin(topicsTable, eq(topicsTable.clubId, clubsTable.id))
@@ -39,21 +41,52 @@ export class ClubsRepository {
   }
 
   async findById(id: string) {
-    const [[row], [topicRow], [memberRow]] = await Promise.all([
-      this.db.db.select().from(clubsTable).where(eq(clubsTable.id, id)),
-      this.db.db
-        .select({ count: count() })
-        .from(topicsTable)
-        .where(
-          and(eq(topicsTable.clubId, id), eq(topicsTable.archived, false)),
-        ),
-      this.db.db
-        .select({ count: count() })
-        .from(clubMembershipsTable)
-        .where(eq(clubMembershipsTable.clubId, id)),
-    ]);
+    const [[row], [topicRow], [memberRow], [sessionRow], [mentorRow]] =
+      await Promise.all([
+        this.db.db
+          .select({ club: clubsTable, coordinatorName: usersTable.name })
+          .from(clubsTable)
+          .leftJoin(usersTable, eq(usersTable.id, clubsTable.coordinatorId))
+          .where(eq(clubsTable.id, id)),
+        this.db.db
+          .select({ count: count() })
+          .from(topicsTable)
+          .where(
+            and(eq(topicsTable.clubId, id), eq(topicsTable.archived, false)),
+          ),
+        this.db.db
+          .select({ count: count() })
+          .from(clubMembershipsTable)
+          .where(
+            and(
+              eq(clubMembershipsTable.clubId, id),
+              eq(clubMembershipsTable.status, MembershipStatus.active),
+            ),
+          ),
+        this.db.db
+          .select({ count: count() })
+          .from(sessionsTable)
+          .where(eq(sessionsTable.clubId, id)),
+        // A mentor assigned to several topics is still one mentor.
+        this.db.db
+          .select({
+            count: sql<number>`cast(count(distinct ${topicMentorsTable.userId}) as int)`,
+          })
+          .from(topicMentorsTable)
+          .innerJoin(topicsTable, eq(topicMentorsTable.topicId, topicsTable.id))
+          .where(
+            and(eq(topicsTable.clubId, id), eq(topicsTable.archived, false)),
+          ),
+      ]);
     if (!row) return null;
-    return { ...row, topicCount: topicRow.count, memberCount: memberRow.count };
+    return {
+      ...row.club,
+      coordinatorName: row.coordinatorName,
+      topicCount: topicRow.count,
+      memberCount: memberRow.count,
+      sessionCount: sessionRow.count,
+      mentorCount: mentorRow.count,
+    };
   }
 
   async insert(data: {

@@ -16,6 +16,7 @@ const mockRepo = {
   findCoordinatorMatch: jest.fn(),
   findTopicMentor: jest.fn(),
   insertMentor: jest.fn(),
+  insertWithMentor: jest.fn(),
   deleteMentor: jest.fn(),
 };
 
@@ -83,19 +84,31 @@ describe('TopicsService', () => {
   });
 
   describe('create', () => {
-    it('inserts topic with certificationRequired defaulting to false', async () => {
-      mockRepo.findCoordinatorMatch.mockResolvedValue({ id: 'club-1' });
-      mockRepo.insert.mockResolvedValue(topic);
+    it('inserts topic and assigns the mentor atomically', async () => {
+      // Caller is the club coordinator; the mentor is a different, eligible user.
+      mockRepo.findCoordinatorMatch.mockImplementation((_clubId, userId) =>
+        Promise.resolve(
+          userId === coordinator.userId ? { id: 'club-1' } : null,
+        ),
+      );
+      mockRepo.insertWithMentor.mockResolvedValue(topic);
 
       const result = await service.create(
         'club-1',
-        { name: 'React Basics', certificationRequired: false },
+        {
+          name: 'React Basics',
+          certificationRequired: false,
+          mentorId: mentor.userId,
+        },
         coordinator,
       );
 
-      expect(mockRepo.insert).toHaveBeenCalledWith(
+      // Topic + mentor are written together in one transactional call.
+      expect(mockRepo.insertWithMentor).toHaveBeenCalledWith(
         expect.objectContaining({ certificationRequired: false }),
+        mentor.userId,
       );
+      expect(mockRepo.insert).not.toHaveBeenCalled();
       expect(result).toEqual(topic);
     });
 
@@ -105,11 +118,34 @@ describe('TopicsService', () => {
       await expect(
         service.create(
           'club-1',
-          { name: 'React Basics', certificationRequired: false },
+          {
+            name: 'React Basics',
+            certificationRequired: false,
+            mentorId: mentor.userId,
+          },
           outsider,
         ),
       ).rejects.toThrow(ForbiddenException);
       expect(mockRepo.insert).not.toHaveBeenCalled();
+    });
+
+    it('rejects a mentor who is the club coordinator (no orphan topic created)', async () => {
+      // Every lookup matches — caller is authority-authorized, but the chosen
+      // mentor resolves to the club coordinator.
+      mockRepo.findCoordinatorMatch.mockResolvedValue({ id: 'club-1' });
+
+      await expect(
+        service.create(
+          'club-1',
+          {
+            name: 'React Basics',
+            certificationRequired: false,
+            mentorId: coordinator.userId,
+          },
+          authority,
+        ),
+      ).rejects.toThrow(BadRequestException);
+      expect(mockRepo.insertWithMentor).not.toHaveBeenCalled();
     });
   });
 
@@ -269,15 +305,31 @@ describe('TopicsService', () => {
   // regression guard — authority bypasses all role checks
   describe('authority bypass', () => {
     it('authority can create a topic', async () => {
-      mockRepo.insert.mockResolvedValue(topic);
+      // Mentor is eligible (not the coordinator). Authority skips the role
+      // authorization check, but the mentor-eligibility check still runs.
+      mockRepo.findCoordinatorMatch.mockResolvedValue(null);
+      mockRepo.insertWithMentor.mockResolvedValue(topic);
 
       const result = await service.create(
         'club-1',
-        { name: 'React Basics', certificationRequired: false },
+        {
+          name: 'React Basics',
+          certificationRequired: false,
+          mentorId: mentor.userId,
+        },
         authority,
       );
 
-      expect(mockRepo.findCoordinatorMatch).not.toHaveBeenCalled();
+      // Only consulted for the mentor check, never to authorize the authority.
+      expect(mockRepo.findCoordinatorMatch).toHaveBeenCalledTimes(1);
+      expect(mockRepo.findCoordinatorMatch).toHaveBeenCalledWith(
+        'club-1',
+        mentor.userId,
+      );
+      expect(mockRepo.insertWithMentor).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'React Basics' }),
+        mentor.userId,
+      );
       expect(result).toEqual(topic);
     });
 

@@ -1,0 +1,152 @@
+import { ArrowLeft, Lock } from 'lucide-react';
+import { useNavigate } from 'react-router';
+
+import { Button } from '@/components/ui/button';
+import { CreateModuleForm } from '@/features/topics/components/create-module-form';
+import { useTopic, useTopicModules } from '@/features/topics/hooks/use-topics';
+import { useAuthStore } from '@/store/auth.store';
+
+/** Centred rather than full-bleed — a form reads badly at 1800px wide. */
+const containerClass =
+  'mx-auto w-full max-w-[1800px] px-4 pb-28 pt-5 sm:px-6 md:pb-32 md:pt-8 xl:pb-16';
+
+function PageHeader({
+  topicName,
+  position,
+  onBack,
+}: {
+  topicName: string;
+  /** 1-based slot the new module will take in the curriculum. */
+  position: number;
+  onBack: () => void;
+}) {
+  return (
+    <header className="mb-6 md:mb-8">
+      {/* The shell's breadcrumb is desktop-only, so the page carries its own
+          way back — and names the destination while it's at it. */}
+      <button
+        type="button"
+        onClick={onBack}
+        className="-ml-1 inline-flex max-w-full items-center gap-1.5 rounded-md px-1 py-1 text-[13px] font-semibold text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+      >
+        <ArrowLeft className="size-4 shrink-0" strokeWidth={2} />
+        <span className="truncate">{topicName}</span>
+      </button>
+
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
+        <h1 className="font-serif text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+          New module
+        </h1>
+        <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider tabular-nums text-primary">
+          Module {String(position).padStart(2, '0')}
+        </span>
+      </div>
+
+      <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted-foreground">
+        Learners work through modules in order — this one goes last.
+      </p>
+    </header>
+  );
+}
+
+/**
+ * Create-module route. Only the topic's own mentor authors curriculum, so the
+ * page resolves the topic first and sends everyone else back to the topic.
+ * Existing modules give the new one its `order` and the weight already spent.
+ */
+export function CreateModulePage({ topicId }: { topicId: string }) {
+  const navigate = useNavigate();
+  const userId = useAuthStore((s) => s.userId);
+  const { data: topic, isLoading, isError, refetch } = useTopic(topicId);
+  const { data: modules = [], isLoading: modulesLoading } =
+    useTopicModules(topicId);
+
+  const backToTopic = () => navigate(`/topics/${topicId}`);
+  const isMentor = topic?.mentor != null && topic.mentor.id === userId;
+  const allocatedWeight = modules.reduce((sum, m) => sum + m.weight, 0);
+  const isPending = isLoading || modulesLoading;
+
+  if (isError) {
+    return (
+      <main className={containerClass}>
+        <div className="mx-auto max-w-md rounded-xl border bg-card px-5 py-14 text-center">
+          <p className="text-sm font-semibold text-foreground">
+            Couldn’t load this topic
+          </p>
+          <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">
+            The curriculum has to load before a module can be added to it.
+          </p>
+          <div className="mt-5 flex flex-wrap justify-center gap-2">
+            <Button type="button" onClick={() => refetch()}>
+              Try again
+            </Button>
+            <Button type="button" variant="ghost" onClick={backToTopic}>
+              Back to topic
+            </Button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  if (isPending) {
+    // Shaped like the page it becomes, so nothing jumps on arrival.
+    return (
+      <main className={containerClass} aria-busy="true">
+        <div className="mb-6 space-y-3 md:mb-8">
+          <div className="h-4 w-40 animate-pulse rounded bg-muted" />
+          <div className="h-9 w-64 animate-pulse rounded-lg bg-muted" />
+          <div className="h-4 w-80 max-w-full animate-pulse rounded bg-muted" />
+        </div>
+        <div className="grid grid-cols-1 items-start gap-5 sm:gap-6 xl:grid-cols-[minmax(0,1fr)_21rem] xl:gap-8">
+          <div className="space-y-5 sm:space-y-6">
+            <div className="h-80 animate-pulse rounded-xl bg-muted" />
+            <div className="h-64 animate-pulse rounded-xl bg-muted" />
+          </div>
+          <div className="hidden h-40 animate-pulse rounded-xl bg-muted xl:block" />
+        </div>
+      </main>
+    );
+  }
+
+  if (!topic) return null;
+
+  if (!isMentor) {
+    return (
+      <main className={containerClass}>
+        <div className="mx-auto max-w-md rounded-xl border bg-card px-5 py-14 text-center">
+          <span className="mx-auto flex size-11 items-center justify-center rounded-full bg-muted text-muted-foreground">
+            <Lock className="size-5" strokeWidth={1.75} />
+          </span>
+          <p className="mt-4 text-sm font-semibold text-foreground">
+            Only this topic’s mentor can add modules
+          </p>
+          <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">
+            You can still work through everything already published.
+          </p>
+          <Button type="button" className="mt-5" onClick={backToTopic}>
+            Back to {topic.name}
+          </Button>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className={containerClass}>
+      <PageHeader
+        topicName={topic.name}
+        position={modules.length + 1}
+        onBack={backToTopic}
+      />
+
+      <CreateModuleForm
+        topicId={topicId}
+        nextOrder={modules.length}
+        allocatedWeight={allocatedWeight}
+        onDone={backToTopic}
+        onCancel={backToTopic}
+      />
+    </main>
+  );
+}

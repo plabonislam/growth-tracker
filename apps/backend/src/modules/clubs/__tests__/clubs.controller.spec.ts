@@ -76,6 +76,7 @@ describe('ClubsController', () => {
     mockClubsService.create.mockResolvedValue(club);
     const dto = {
       name: 'Frontend Club',
+      description: 'A community club for frontend engineering enthusiasts',
       coordinatorEmail: 'coord@example.com',
     };
 

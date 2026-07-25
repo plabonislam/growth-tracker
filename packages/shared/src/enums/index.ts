@@ -43,6 +43,11 @@ export const certificationStatusSchema = z.enum([
 export type CertificationStatus = z.infer<typeof certificationStatusSchema>;
 export const CertificationStatus = certificationStatusSchema.Values;
 
+/** What a module resource is, which decides its icon and action word. */
+export const resourceKindSchema = z.enum(['video', 'doc']);
+export type ResourceKind = z.infer<typeof resourceKindSchema>;
+export const ResourceKind = resourceKindSchema.Values;
+
 export const sessionTypeSchema = z.enum(['weekly', 'monthly']);
 export type SessionType = z.infer<typeof sessionTypeSchema>;
 export const SessionType = sessionTypeSchema.Values;

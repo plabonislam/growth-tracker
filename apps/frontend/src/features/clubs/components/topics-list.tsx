@@ -23,12 +23,14 @@ export function TopicsList({
     <section>
       <div className="mb-3 flex items-center justify-between gap-2.5 md:mb-3.5">
         <div className="flex min-w-0 items-baseline gap-2.5">
-          <h3 className="font-serif text-[15px] font-bold text-foreground md:text-[17px] lg:text-xl">
+          {/* Typed like `SectionHeading` — the h3 keeps its place in the page's
+              outline, but reads at the same size as "Explore Clubs". */}
+          <h3 className="font-serif text-3xl font-bold tracking-tight text-foreground">
             Explore curriculum
           </h3>
-          <span className="shrink-0 text-[11.5px] text-muted-foreground md:text-[12.5px] lg:text-[13px]">
+          {/* <span className="shrink-0 text-sm text-muted-foreground">
             {topics.length} {topics.length === 1 ? 'topic' : 'topics'}
-          </span>
+          </span> */}
         </div>
 
         {onCreateTopic && (

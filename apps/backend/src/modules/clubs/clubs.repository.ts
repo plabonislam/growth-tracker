@@ -230,7 +230,24 @@ export class ClubsRepository {
     return row;
   }
 
-  async findPendingClubEnrollments(limit: number = 10, offset: number = 0) {
+  /**
+   * Pending applications narrowed to the clubs this reviewer runs. Who joins a
+   * club is the coordinator's call, not a mentor's — a mentor answers for the
+   * topics they teach, which is a separate queue. `null` reviews every club,
+   * which is the authority's view.
+   */
+  private pendingVisibleTo(reviewerId: string | null) {
+    const isPending = eq(clubMembershipsTable.status, 'pending');
+    if (!reviewerId) return isPending;
+
+    return and(isPending, eq(clubsTable.coordinatorId, reviewerId));
+  }
+
+  async findPendingClubEnrollments(
+    limit: number = 10,
+    offset: number = 0,
+    reviewerId: string | null = null,
+  ) {
     const rows = await this.db.db
       .select({
         id: clubMembershipsTable.id,
@@ -245,18 +262,19 @@ export class ClubsRepository {
       .from(clubMembershipsTable)
       .innerJoin(usersTable, eq(clubMembershipsTable.userId, usersTable.id))
       .innerJoin(clubsTable, eq(clubMembershipsTable.clubId, clubsTable.id))
-      .where(eq(clubMembershipsTable.status, 'pending'))
+      .where(this.pendingVisibleTo(reviewerId))
       .orderBy((t) => t.createdAt)
       .limit(limit)
       .offset(offset);
     return rows;
   }
 
-  async countPendingClubEnrollments() {
+  async countPendingClubEnrollments(reviewerId: string | null = null) {
     const [result] = await this.db.db
       .select({ count: count() })
       .from(clubMembershipsTable)
-      .where(eq(clubMembershipsTable.status, 'pending'));
+      .innerJoin(clubsTable, eq(clubMembershipsTable.clubId, clubsTable.id))
+      .where(this.pendingVisibleTo(reviewerId));
     return result?.count ?? 0;
   }
 }

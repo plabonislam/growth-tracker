@@ -24,6 +24,8 @@ const mockRepo = {
   findMembership: jest.fn(),
   createMembership: jest.fn(),
   updateMembership: jest.fn(),
+  findPendingClubEnrollments: jest.fn(),
+  countPendingClubEnrollments: jest.fn(),
 };
 
 const caller = { userId: 'uid-user1', isAuthority: false };
@@ -89,20 +91,47 @@ describe('ClubsService', () => {
   });
 
   describe('findById', () => {
-    it('returns club for valid id', async () => {
+    it('returns the club with the caller’s membership status', async () => {
       mockRepo.findById.mockResolvedValue(club);
+      mockRepo.findMembership.mockResolvedValue(membership);
 
-      const result = await service.findById('club-1');
+      const result = await service.findById('club-1', caller);
 
-      expect(result).toEqual(club);
+      expect(mockRepo.findMembership).toHaveBeenCalledWith(
+        'club-1',
+        'uid-user1',
+      );
+      expect(result).toEqual({ ...club, membershipStatus: 'active' });
+    });
+
+    it('sets membershipStatus to null when the caller has not joined', async () => {
+      mockRepo.findById.mockResolvedValue(club);
+      mockRepo.findMembership.mockResolvedValue(null);
+
+      const result = await service.findById('club-1', outsider);
+
+      expect(result).toEqual({ ...club, membershipStatus: null });
+    });
+
+    it('reports a pending application as pending, not as membership', async () => {
+      mockRepo.findById.mockResolvedValue(club);
+      mockRepo.findMembership.mockResolvedValue({
+        ...membership,
+        status: 'pending',
+      });
+
+      const result = await service.findById('club-1', caller);
+
+      expect(result.membershipStatus).toBe('pending');
     });
 
     it('throws 404 for unknown id', async () => {
       mockRepo.findById.mockResolvedValue(null);
 
-      await expect(service.findById('no-such-id')).rejects.toThrow(
+      await expect(service.findById('no-such-id', caller)).rejects.toThrow(
         NotFoundException,
       );
+      expect(mockRepo.findMembership).not.toHaveBeenCalled();
     });
   });
 
@@ -331,6 +360,40 @@ describe('ClubsService', () => {
         service.submitJoinApplication('club-1', 'uid-user1', application),
       ).rejects.toThrow(ConflictException);
       expect(mockRepo.createMembership).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getPendingClubEnrollments', () => {
+    beforeEach(() => {
+      mockRepo.findPendingClubEnrollments.mockResolvedValue([]);
+      mockRepo.countPendingClubEnrollments.mockResolvedValue(0);
+    });
+
+    it('scopes the queue to the clubs the caller coordinates', async () => {
+      await service.getPendingClubEnrollments(10, 0, coordinator);
+
+      expect(mockRepo.findPendingClubEnrollments).toHaveBeenCalledWith(
+        10,
+        0,
+        'uid-coord',
+      );
+      expect(mockRepo.countPendingClubEnrollments).toHaveBeenCalledWith(
+        'uid-coord',
+      );
+    });
+
+    it('leaves the queue unscoped for an authority', async () => {
+      await service.getPendingClubEnrollments(10, 0, {
+        userId: 'uid-authority',
+        isAuthority: true,
+      });
+
+      expect(mockRepo.findPendingClubEnrollments).toHaveBeenCalledWith(
+        10,
+        0,
+        null,
+      );
+      expect(mockRepo.countPendingClubEnrollments).toHaveBeenCalledWith(null);
     });
   });
 

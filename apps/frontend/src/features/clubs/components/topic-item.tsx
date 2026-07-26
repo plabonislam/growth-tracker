@@ -1,4 +1,5 @@
 import { Layers, Pencil } from 'lucide-react';
+import type { EnrollmentStatus } from 'shared';
 
 import { Card } from '@/components/ui/card';
 import { formatDuration } from '@/lib/format-duration';
@@ -39,6 +40,12 @@ interface TopicItemProps {
   topic: Topic;
   /** True for an authority or the club's coordinator — they administer the topic. */
   canManageTopic?: boolean;
+  /**
+   * True once the caller is an active member of the club this topic belongs to.
+   * Enrolling is a member's action, so a visitor browsing the club sees the
+   * curriculum without a way into it.
+   */
+  isClubMember?: boolean;
   onAction?: (topic: Topic, action: TopicAction) => void;
   /**
    * Opens the edit form. Omitted hides the control — reassigning the mentor is
@@ -57,9 +64,27 @@ const ACTION_META: Record<
   enroll: { label: 'Enroll' },
 };
 
+/**
+ * A request the learner is not acting on: waiting on the mentor, or turned
+ * down. `approved` is absent — that one becomes the "Open" action instead.
+ */
+const REQUEST_STATE_META: Partial<
+  Record<EnrollmentStatus, { label: string; className: string }>
+> = {
+  pending: {
+    label: 'Awaiting review',
+    className: 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
+  },
+  rejected: {
+    label: 'Not approved',
+    className: 'bg-muted text-muted-foreground',
+  },
+};
+
 export function TopicItem({
   topic,
   canManageTopic,
+  isClubMember,
   onAction,
   onEdit,
 }: TopicItemProps) {
@@ -74,14 +99,23 @@ export function TopicItem({
 
   const action: TopicAction = canManage
     ? 'manage-modules'
-    : topic.enrolled
+    : topic.enrollmentStatus === 'approved'
       ? 'open'
       : 'enroll';
   const { label, icon: Icon } = ACTION_META[action];
 
-  // A draft reaches only the people building it. They keep their own actions;
-  // there is nothing for anyone else to enroll in yet.
-  const showAction = !isDraft || canManage;
+  // A request that has been made but not settled is neither an action nor an
+  // absence of one, so it reads as its own state where the button would be.
+  const requestState =
+    !canManage && topic.enrollmentStatus !== null
+      ? REQUEST_STATE_META[topic.enrollmentStatus]
+      : undefined;
+
+  // Two gates, both about who the action belongs to. A draft reaches only the
+  // people building it — there is nothing for anyone else to enroll in yet.
+  // And enrolling is a club member's action: a learner exploring a club they
+  // have not joined reads the curriculum, then joins the club to get into it.
+  const showAction = canManage || (!isDraft && isClubMember === true);
 
   return (
     <Card className="flex flex-col gap-2.5 p-5 transition-shadow hover:shadow-md">
@@ -154,8 +188,15 @@ export function TopicItem({
         </div>
         {/* Management reads as a bordered tool; the learner's action is the
             filled CTA. Both sit at the same height so a row of cards lines up
-            whichever one each is showing. */}
-        {!showAction ? null : Icon ? (
+            whichever one each is showing. A settled-elsewhere request takes the
+            same slot as a quiet label — there is nothing to press. */}
+        {requestState ? (
+          <span
+            className={`shrink-0 rounded-md px-2.5 py-1.5 text-[12.5px] font-semibold ${requestState.className}`}
+          >
+            {requestState.label}
+          </span>
+        ) : !showAction ? null : Icon ? (
           <button
             type="button"
             onClick={() => onAction?.(topic, action)}

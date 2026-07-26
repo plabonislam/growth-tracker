@@ -1,39 +1,39 @@
 import { ArrowLeft } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
+import { toast } from 'sonner';
 
 import { ClubHero } from '@/features/clubs/components/club-hero';
+import { ClubJoinModal } from '@/features/clubs/components/club-join-modal';
+import { ClubMembershipNotice } from '@/features/clubs/components/club-membership-notice';
 import { CreateTopicModal } from '@/features/clubs/components/create-topic-modal';
 import { EditTopicModal } from '@/features/clubs/components/edit-topic-modal';
 import { TopicEnrollModal } from '@/features/clubs/components/topic-enroll-modal';
 import { TopicsList } from '@/features/clubs/components/topics-list';
 import {
-  TOPIC_ENROLLMENT_ACKNOWLEDGEMENT,
-  TOPIC_ENROLLMENT_COMMITMENTS,
+  TOPIC_ENROLLMENT_REVIEW_INTRO,
   TOPIC_ENROLLMENT_REVIEW_NOTE,
+  TOPIC_ENROLLMENT_TERMS,
+  TOPIC_ENROLLMENT_WEEKLY_COMMITMENT,
 } from '@/features/clubs/clubs.constants';
 import type { Topic, TopicAction } from '@/features/clubs/clubs.types';
-import { formatDuration } from '@/lib/format-duration';
 import { useClubDetail, useClubTopics } from '@/features/clubs/hooks/use-clubs';
+import {
+  useEnrollInTopic,
+  useMyTopicEnrollments,
+} from '@/features/enrollments/hooks/use-enrollments';
+import { getApiErrorMessage } from '@/services/http/client';
 import { useAuthStore } from '@/store/auth.store';
 
 /**
- * What the enroll modal says about the topic. The coordinator's own description
- * leads when there is one; the generated line stands in for topics written
- * before descriptions existed.
+ * The line under the enroll dialog's title: what the topic is, then what
+ * happens to the request. The coordinator's own description leads when there is
+ * one — the modules, time, and mentor are left to the summary panel rather than
+ * restated in a sentence.
  */
 function buildTopicAbout(topic: Topic): string {
-  if (topic.description) return topic.description;
-
-  const lead = topic.mentor
-    ? `This topic is led by ${topic.mentor.name}`
-    : 'This topic';
-  const estimate = formatDuration(topic.estTimeMinutes);
-  const span =
-    topic.modules != null
-      ? ` and spans ${topic.modules} modules${estimate ? ` (~${estimate})` : ''}`
-      : '';
-  return `${lead}${span}. Enroll to access its modules, tasks, and the peer-review process.`;
+  const lead = topic.description ?? 'This topic has no description yet.';
+  return `${lead} ${TOPIC_ENROLLMENT_REVIEW_INTRO}`;
 }
 
 export function ClubDetailPage({ clubId }: { clubId: string }) {
@@ -41,24 +41,73 @@ export function ClubDetailPage({ clubId }: { clubId: string }) {
   const isAuthority = useAuthStore((s) => s.isAuthority);
   const userId = useAuthStore((s) => s.userId);
   const { data: club, isLoading, isError } = useClubDetail(clubId);
-  const { data: topics = [], isLoading: topicsLoading } = useClubTopics(clubId);
+  const { data: clubTopics = [], isLoading: topicsLoading } =
+    useClubTopics(clubId);
+  const { data: myEnrollments } = useMyTopicEnrollments();
+  const enrollMutation = useEnrollInTopic();
   const [enrollTopic, setEnrollTopic] = useState<Topic | null>(null);
+  // True once this topic's request has gone, which swaps the dialog for its
+  // confirmation. Cleared with the dialog.
+  const [requestSent, setRequestSent] = useState(false);
   const [creatingTopic, setCreatingTopic] = useState(false);
+  const [joiningClub, setJoiningClub] = useState(false);
   // The topic whose edit form is open; null while none is.
   const [editingTopic, setEditingTopic] = useState<Topic | null>(null);
+
+  // The topics endpoint answers the same for everyone, so where the caller
+  // stands with each one is fetched once and folded in here.
+  const topics = useMemo(() => {
+    if (!myEnrollments?.length) return clubTopics;
+    const statusByTopic = new Map(
+      myEnrollments.map((enrollment) => [
+        enrollment.topicId,
+        enrollment.status,
+      ]),
+    );
+    return clubTopics.map((topic) => ({
+      ...topic,
+      enrollmentStatus: statusByTopic.get(topic.id) ?? null,
+    }));
+  }, [clubTopics, myEnrollments]);
 
   // Authority and the club's own coordinator administer its topics.
   const canManageTopics =
     isAuthority || (club?.coordinatorId ?? null) === userId;
 
+  // The club is open to browse, but its curriculum is only enrollable once an
+  // application has been approved — a pending one has not opened anything yet.
+  const isClubMember = club?.membership === 'active';
+
   const handleTopicAction = (topic: Topic, action: TopicAction) => {
     if (action === 'enroll') {
+      setRequestSent(false);
       setEnrollTopic(topic);
       return;
     }
     // 'manage-modules' and 'open' both resolve to the topic route.
     navigate(`/topics/${topic.id}`);
   };
+
+  const closeEnrollModal = () => {
+    setEnrollTopic(null);
+    setRequestSent(false);
+    enrollMutation.reset();
+  };
+
+  const submitEnrollment = (topicId: string, reason: string) =>
+    enrollMutation.mutate(
+      { topicId, reason },
+      {
+        onSuccess: () => setRequestSent(true),
+        onError: (error) =>
+          toast.error(
+            getApiErrorMessage(
+              error,
+              'Couldn’t send your enrollment request. Please try again.',
+            ),
+          ),
+      },
+    );
 
   return (
     <div className="pb-24">
@@ -105,6 +154,15 @@ export function ClubDetailPage({ clubId }: { clubId: string }) {
               coordinatorName={club.coordinatorName}
             />
 
+            {/* People who administer the club's topics reach them by role, not
+                by membership — the notice is for everyone else. */}
+            {!canManageTopics && (
+              <ClubMembershipNotice
+                membership={club.membership}
+                onJoin={() => setJoiningClub(true)}
+              />
+            )}
+
             {topicsLoading ? (
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {Array.from({ length: 3 }).map((_, i) => (
@@ -119,6 +177,7 @@ export function ClubDetailPage({ clubId }: { clubId: string }) {
                 topics={topics}
                 onTopicAction={handleTopicAction}
                 canManageTopics={canManageTopics}
+                isClubMember={isClubMember}
                 // Editing includes reassigning the mentor, which the API
                 // restricts to coordinator/authority — so a topic's own mentor
                 // gets "Manage modules" without the edit control.
@@ -135,16 +194,31 @@ export function ClubDetailPage({ clubId }: { clubId: string }) {
       {enrollTopic && (
         <TopicEnrollModal
           open
-          onClose={() => setEnrollTopic(null)}
+          onClose={closeEnrollModal}
           topicName={enrollTopic.title}
-          stats={{ modules: enrollTopic.modules }}
+          meta={{
+            modules: enrollTopic.modules,
+            estTimeMinutes: enrollTopic.estTimeMinutes,
+            mentorName: enrollTopic.mentor?.name,
+            weeklyCommitment: TOPIC_ENROLLMENT_WEEKLY_COMMITMENT,
+          }}
           about={buildTopicAbout(enrollTopic)}
-          commitments={TOPIC_ENROLLMENT_COMMITMENTS}
-          finalAcknowledgement={TOPIC_ENROLLMENT_ACKNOWLEDGEMENT}
+          terms={TOPIC_ENROLLMENT_TERMS}
           reviewNote={TOPIC_ENROLLMENT_REVIEW_NOTE}
-          onSubmit={() => setEnrollTopic(null)}
+          onSubmit={(reason) => submitEnrollment(enrollTopic.id, reason)}
+          isSubmitting={enrollMutation.isPending}
+          sent={requestSent}
+          // No way back to a form whose request has gone — the only thing left
+          // to do with this dialog is leave it.
+          onBackToForm={undefined}
         />
       )}
+
+      <ClubJoinModal
+        clubId={clubId}
+        open={joiningClub}
+        onClose={() => setJoiningClub(false)}
+      />
 
       <CreateTopicModal
         clubId={clubId}

@@ -1,4 +1,4 @@
-import type { TopicStatus } from 'shared';
+import type { EnrollmentStatus, TopicStatus } from 'shared';
 
 /** Membership state for the current user relative to a club. */
 export type MembershipStatus =
@@ -62,8 +62,12 @@ export interface Topic {
   estTimeMinutes?: number;
   /** Absent until the list endpoint exposes the assigned mentor. */
   mentor?: Mentor;
-  /** Enrolled topics show "Open"; otherwise "Enroll". */
-  enrolled: boolean;
+  /**
+   * Where the caller stands with this topic — `null` when they have never
+   * applied. Approved topics show "Open", a pending request says so, and
+   * anything else offers "Enroll".
+   */
+  enrollmentStatus: EnrollmentStatus | null;
 }
 
 /**
@@ -87,6 +91,11 @@ export interface ClubDetail {
   coordinatorName: string | null;
   /** Compared against the caller to unlock coordinator-only affordances. */
   coordinatorId: string | null;
+  /**
+   * The caller's own standing in this club — `null` when they have never
+   * applied. Only an `active` member may enroll in the club's topics.
+   */
+  membership: MembershipStatus | null;
   expectationsIntro: string;
   expectations: string[];
   mentorshipFocus: string;

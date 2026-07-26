@@ -1,16 +1,20 @@
 import type {
   CreateModule,
   CreateResource,
+  MentorModuleProgress,
   ModuleResponse,
   ModuleWithResourcesResponse,
+  TopicProgressResponse,
   TopicStatus,
   UpdateModule,
+  UpdateModuleProgress,
 } from 'shared';
 
 import { httpClient } from '@/services/http/client';
 import type {
   CurriculumModule,
   EnrolledTopicDetail,
+  ModuleReviewRequest,
   TopicDetail,
   TopicMentorRef,
 } from '../topics.types';
@@ -93,7 +97,7 @@ const ENROLLED_TOPIC: EnrolledTopicDetail = {
       title: 'SparkSQL & DataFrames API',
       weightPct: 25,
       estTime: '2h 15m',
-      status: 'todo',
+      status: 'to_do',
       resources: [
         {
           id: 'sparksql-intro',
@@ -117,7 +121,7 @@ const ENROLLED_TOPIC: EnrolledTopicDetail = {
       title: 'Structured Streaming & Real-time Ops',
       weightPct: 30,
       estTime: '3h 10m',
-      status: 'todo',
+      status: 'to_do',
       resources: [
         {
           id: 'streaming-basics',
@@ -137,6 +141,31 @@ const ENROLLED_TOPIC: EnrolledTopicDetail = {
     },
   ],
 };
+
+/** Shape returned by `GET /modules/progress/pending`. */
+interface ApiModuleReview {
+  moduleId: string;
+  learnerId: string;
+  learner: { name: string; email: string };
+  moduleTitle: string;
+  topicId: string;
+  topicName: string;
+  weight: number;
+  submittedAt: string | null;
+}
+
+function toModuleReview(api: ApiModuleReview): ModuleReviewRequest {
+  return {
+    moduleId: api.moduleId,
+    learnerId: api.learnerId,
+    learner: api.learner,
+    moduleTitle: api.moduleTitle,
+    topicId: api.topicId,
+    topicName: api.topicName,
+    weight: api.weight,
+    submittedAt: api.submittedAt,
+  };
+}
 
 /** Shape returned by `GET /topics/:id` — see TopicsRepository.findById(). */
 interface ApiTopicDetail {
@@ -177,9 +206,49 @@ function toCurriculumModule(
 }
 
 export const topicsService = {
+  /**
+   * Still fixture-backed, and now only the search index reads it — the enrolled
+   * topic page itself runs on `getTopicModules` + `getTopicProgress`.
+   */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   getEnrolledTopic: (_id: string): Promise<EnrolledTopicDetail> =>
     Promise.resolve(ENROLLED_TOPIC),
+  /** Where the caller stands in a topic — `GET /topics/:id/progress`. */
+  getTopicProgress: (topicId: string): Promise<TopicProgressResponse> =>
+    httpClient
+      .get<TopicProgressResponse>(`/topics/${topicId}/progress`)
+      .then((r) => r.data),
+  /** Moves one of the caller's own modules along. */
+  setModuleProgress: (
+    moduleId: string,
+    status: UpdateModuleProgress['status'],
+  ): Promise<void> =>
+    httpClient
+      .patch(`/modules/${moduleId}/progress`, { status })
+      .then(() => {}),
+  /** The modules waiting on this mentor — `GET /modules/progress/pending`. */
+  getPendingModuleReviews: (
+    limit: number,
+    offset: number,
+  ): Promise<{ requests: ModuleReviewRequest[]; total: number }> =>
+    httpClient
+      .get<{
+        data: ApiModuleReview[];
+        total: number;
+      }>('/modules/progress/pending', { params: { limit, offset } })
+      .then((r) => ({
+        requests: r.data.data.map(toModuleReview),
+        total: r.data.total,
+      })),
+  /** The mentor's answer: approve the work, or send it back to be done again. */
+  decideModuleReview: (
+    moduleId: string,
+    learnerId: string,
+    status: MentorModuleProgress['status'],
+  ): Promise<void> =>
+    httpClient
+      .patch(`/modules/${moduleId}/progress/${learnerId}`, { status })
+      .then(() => {}),
   getTopic: (id: string): Promise<TopicDetail> =>
     httpClient
       .get<ApiTopicDetail>(`/topics/${id}`)

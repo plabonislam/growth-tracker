@@ -37,10 +37,17 @@ export class ClubsService {
     }));
   }
 
-  async findById(id: string) {
+  /**
+   * A club as this caller sees it. The caller's own membership rides along:
+   * the club page shows its curriculum to anyone, but enrolling in a topic is
+   * a member's action, so the page has to know where the caller stands.
+   */
+  async findById(id: string, caller: Caller) {
     const club = await this.repo.findById(id);
     if (!club) throw new NotFoundException('Club not found');
-    return club;
+
+    const membership = await this.repo.findMembership(id, caller.userId);
+    return { ...club, membershipStatus: membership?.status ?? null };
   }
 
   async checkNameAvailable(name: string) {
@@ -170,10 +177,21 @@ export class ClubsService {
     }
   }
 
-  async getPendingClubEnrollments(limit: number = 10, offset: number = 0) {
+  /**
+   * The applications this caller answers for — the clubs they coordinate, plus
+   * every club for an authority. Mentors are deliberately not here: joining a
+   * club is settled by the club's coordinator, and a mentor's queue is the
+   * enrollment requests for their own topics.
+   */
+  async getPendingClubEnrollments(
+    limit: number = 10,
+    offset: number = 0,
+    caller: Caller,
+  ) {
+    const reviewerId = caller.isAuthority ? null : caller.userId;
     const [enrollments, total] = await Promise.all([
-      this.repo.findPendingClubEnrollments(limit, offset),
-      this.repo.countPendingClubEnrollments(),
+      this.repo.findPendingClubEnrollments(limit, offset, reviewerId),
+      this.repo.countPendingClubEnrollments(reviewerId),
     ]);
 
     return {

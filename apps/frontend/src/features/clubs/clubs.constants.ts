@@ -98,17 +98,43 @@ export const NOT_ENROLLED_META = {
   className: 'bg-muted text-muted-foreground',
 };
 
-/** Default commitment checklist shown in the topic enrollment modal. */
-export const TOPIC_ENROLLMENT_COMMITMENTS = [
+/**
+ * Why a club's topics carry no enroll action, keyed by where the caller stands
+ * with the club — `none` for someone who has never applied. `active` has no
+ * entry: nothing is in their way, so there is nothing to explain.
+ */
+export const TOPIC_ACCESS_NOTE: Record<
+  Exclude<MembershipStatus, 'active'> | 'none',
+  string
+> = {
+  none: 'Join this club to enroll in its topics.',
+  pending:
+    'Your application is under review. You can enroll in topics once a coordinator approves it.',
+  on_break:
+    'Your membership is on break. Enrolling in topics resumes when your membership does.',
+  dropped_out:
+    'You have left this club, so its topics are no longer open to enroll in.',
+  rejected:
+    'Your application to this club was not approved, so its topics are not open to enroll in.',
+};
+
+/**
+ * What a learner confirms before an enrollment request can be sent. One flat
+ * list: each line is agreed to the same way, so each reads the same way.
+ */
+export const TOPIC_ENROLLMENT_TERMS = [
   'I acknowledge the time commitment of approximately 5–8 hours per week.',
-  'I agree to adhere to the Peer-Review Code of Conduct.',
   'I confirm that I have access to the necessary cloud environment resources.',
+  'I have read the requirements and am ready to commit to this topic’s learning schedule.',
 ];
 
-/** Emphasized final acknowledgement in the topic enrollment modal. */
-export const TOPIC_ENROLLMENT_ACKNOWLEDGEMENT =
-  'I have read and understand the aforementioned requirements and I am ready to commit to the intensive learning schedule for this topic.';
+/** The weekly load, shown as a topic-summary fact beside modules and time. */
+export const TOPIC_ENROLLMENT_WEEKLY_COMMITMENT = '5–8 hrs / week';
 
-/** Review note shown beneath the enrollment submit button. */
+/** Closes the header, under the topic's own description. */
+export const TOPIC_ENROLLMENT_REVIEW_INTRO =
+  'Your mentor reviews each request before granting access to the topic modules.';
+
+/** The footer strip — how long the wait is, said once at the bottom. */
 export const TOPIC_ENROLLMENT_REVIEW_NOTE =
-  'Requests are typically reviewed within 48 hours. You will receive a notification upon approval.';
+  'Mentor review typically takes 1–2 business days.';

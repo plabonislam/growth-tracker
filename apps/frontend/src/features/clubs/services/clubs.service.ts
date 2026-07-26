@@ -51,6 +51,7 @@ interface ApiClubDetail {
   mentorCount: number;
   coordinatorName: string | null;
   coordinatorId: string | null;
+  membershipStatus: MembershipStatus | null;
 }
 
 /** Compact member count, e.g. 1240 → "1.2k". */
@@ -71,6 +72,7 @@ function toClubDetail(api: ApiClubDetail): ClubDetail {
     mentorsCount: api.mentorCount,
     coordinatorName: api.coordinatorName,
     coordinatorId: api.coordinatorId,
+    membership: api.membershipStatus,
     // Not surfaced on the current detail layout — kept for type completeness.
     expectationsIntro: '',
     expectations: [],
@@ -119,7 +121,9 @@ function toTopic(apiTopic: TopicListItem, index: number): Topic {
     mentor: apiTopic.mentor
       ? { id: apiTopic.mentor.id, name: apiTopic.mentor.name }
       : undefined,
-    enrolled: false,
+    // Filled in by the caller, which holds the enrollments — the topics
+    // endpoint answers the same for everyone.
+    enrollmentStatus: null,
   };
 }
 

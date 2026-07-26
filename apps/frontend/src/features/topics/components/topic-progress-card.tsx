@@ -12,10 +12,14 @@ function DateBox({ label, value }: { label: string; value: string }) {
   );
 }
 
-type TopicProgressCardProps = Pick<
-  EnrolledTopicDetail,
-  'startedOn' | 'estCompletion' | 'progressPct'
-> & {
+type TopicProgressCardProps = Pick<EnrolledTopicDetail, 'progressPct'> & {
+  /**
+   * Dates are optional: progress is derived from the modules themselves, while
+   * when a learner started and when they are due are not recorded anywhere yet.
+   * Omitting both drops the row rather than showing invented dates.
+   */
+  startedOn?: string;
+  estCompletion?: string;
   modulesDone: number;
   modulesTotal: number;
 };
@@ -29,10 +33,14 @@ export function TopicProgressCard({
 }: TopicProgressCardProps) {
   return (
     <Card className="h-full justify-between gap-4 p-4 md:p-5">
-      <div className="grid grid-cols-2 gap-3">
-        <DateBox label="Started" value={startedOn} />
-        <DateBox label="Est. Completion" value={estCompletion} />
-      </div>
+      {(startedOn || estCompletion) && (
+        <div className="grid grid-cols-2 gap-3">
+          {startedOn && <DateBox label="Started" value={startedOn} />}
+          {estCompletion && (
+            <DateBox label="Est. Completion" value={estCompletion} />
+          )}
+        </div>
+      )}
 
       <div className="space-y-3">
         <div className="flex items-center justify-between gap-2">

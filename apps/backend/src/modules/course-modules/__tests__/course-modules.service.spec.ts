@@ -21,6 +21,7 @@ const mockRepo = {
   insertResource: jest.fn(),
   findResourceById: jest.fn(),
   deleteResource: jest.fn(),
+  findTopicStatus: jest.fn(),
 };
 
 const mentor = { userId: 'uid-mentor', isAuthority: false };
@@ -42,6 +43,9 @@ describe('CourseModulesService', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+    // Curriculum is edited while a topic is still a draft; the published case
+    // is opted into by the tests that cover it.
+    mockRepo.findTopicStatus.mockResolvedValue('draft');
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         CourseModulesService,
@@ -170,6 +174,35 @@ describe('CourseModulesService', () => {
       ).rejects.toThrow(BadRequestException);
       expect(mockRepo.updateById).not.toHaveBeenCalled();
     });
+
+    it('refuses a weight change on a published topic', async () => {
+      mockRepo.findById.mockResolvedValue(module1);
+      mockRepo.findTopicMentor.mockResolvedValue({
+        topicId: 'topic-1',
+        userId: mentor.userId,
+      });
+      mockRepo.findTopicStatus.mockResolvedValue('published');
+
+      await expect(
+        service.update('mod-1', { weight: 40 }, mentor),
+      ).rejects.toThrow(/Unpublish this topic/);
+      expect(mockRepo.updateById).not.toHaveBeenCalled();
+    });
+
+    // Rewording a module doesn't disturb what publishing promised.
+    it('allows a non-weight edit on a published topic', async () => {
+      mockRepo.findById.mockResolvedValue(module1);
+      mockRepo.findTopicMentor.mockResolvedValue({
+        topicId: 'topic-1',
+        userId: mentor.userId,
+      });
+      mockRepo.findTopicStatus.mockResolvedValue('published');
+      mockRepo.updateById.mockResolvedValue({ ...module1, title: 'Updated' });
+
+      await service.update('mod-1', { title: 'Updated' }, mentor);
+
+      expect(mockRepo.updateById).toHaveBeenCalled();
+    });
   });
 
   describe('delete', () => {
@@ -186,6 +219,22 @@ describe('CourseModulesService', () => {
       // The topic travels with the id: the repository renumbers the survivors
       // in the same transaction, so no gap is ever readable.
       expect(mockRepo.deleteById).toHaveBeenCalledWith('mod-1', 'topic-1');
+    });
+
+    // A published topic's modules total exactly 100% — removing one would
+    // quietly break that promise, so the mentor unpublishes first.
+    it('refuses to remove a module from a published topic', async () => {
+      mockRepo.findById.mockResolvedValue(module1);
+      mockRepo.findTopicMentor.mockResolvedValue({
+        topicId: 'topic-1',
+        userId: mentor.userId,
+      });
+      mockRepo.findTopicStatus.mockResolvedValue('published');
+
+      await expect(service.delete('mod-1', mentor)).rejects.toThrow(
+        /Unpublish this topic/,
+      );
+      expect(mockRepo.deleteById).not.toHaveBeenCalled();
     });
 
     it('throws 403 when caller is not Mentor/Authority', async () => {

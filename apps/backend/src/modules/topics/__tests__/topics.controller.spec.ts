@@ -42,9 +42,9 @@ describe('TopicsController', () => {
   it('GET /clubs/:clubId/topics delegates to findByClub', async () => {
     mockTopicsService.findByClub.mockResolvedValue([topic]);
 
-    const result = await controller.findByClub('club-1');
+    const result = await controller.findByClub('club-1', caller);
 
-    expect(mockTopicsService.findByClub).toHaveBeenCalledWith('club-1');
+    expect(mockTopicsService.findByClub).toHaveBeenCalledWith('club-1', caller);
     expect(result).toEqual([topic]);
   });
 

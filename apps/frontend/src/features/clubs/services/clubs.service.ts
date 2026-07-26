@@ -108,9 +108,12 @@ function toTopic(apiTopic: TopicListItem, index: number): Topic {
   return {
     id: apiTopic.id,
     title: apiTopic.name,
+    description: apiTopic.description,
+    status: apiTopic.status,
     iconKey: TOPIC_ICON_ROTATION[index % TOPIC_ICON_ROTATION.length]!,
     tone: TONE_ROTATION[index % TONE_ROTATION.length]!,
     modules: apiTopic.moduleCount,
+    estTimeMinutes: apiTopic.estTimeMinutes,
     mentor: apiTopic.mentor
       ? { id: apiTopic.mentor.id, name: apiTopic.mentor.name }
       : undefined,

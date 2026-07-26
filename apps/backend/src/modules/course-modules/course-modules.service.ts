@@ -4,11 +4,12 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import type {
-  CreateModule,
-  CreateResource,
-  ReorderModules,
-  UpdateModule,
+import {
+  TopicStatus,
+  type CreateModule,
+  type CreateResource,
+  type ReorderModules,
+  type UpdateModule,
 } from 'shared';
 import { CourseModulesRepository } from './course-modules.repository';
 
@@ -62,6 +63,7 @@ export class CourseModulesService {
   async delete(id: string, caller: Caller) {
     const mod = await this.findById(id);
     await this.assertMentorOrAuthority(mod.topicId, caller);
+    await this.assertTopicNotPublished(mod.topicId);
     // The topic goes along so the survivors can be renumbered in the same
     // transaction — a hole in the sequence is never visible to a reader.
     await this.repo.deleteById(id, mod.topicId);
@@ -70,7 +72,10 @@ export class CourseModulesService {
   async update(id: string, dto: UpdateModule, caller: Caller) {
     const mod = await this.findById(id);
     await this.assertMentorOrAuthority(mod.topicId, caller);
-    if (dto.weight !== undefined) {
+    // Everything but the weight stays editable on a published topic: rewording
+    // a module doesn't disturb what the published state promises.
+    if (dto.weight !== undefined && dto.weight !== mod.weight) {
+      await this.assertTopicNotPublished(mod.topicId);
       const othersSum = await this.repo.getWeightSumExcluding(mod.topicId, id);
       if (othersSum + dto.weight > 100) {
         throw new BadRequestException(
@@ -79,6 +84,20 @@ export class CourseModulesService {
       }
     }
     return this.repo.updateById(id, dto);
+  }
+
+  /**
+   * A published topic's modules total exactly 100% — that is what publishing
+   * asserts — so any change that would move the total is refused until the
+   * mentor takes the topic back to draft.
+   */
+  private async assertTopicNotPublished(topicId: string) {
+    const status = await this.repo.findTopicStatus(topicId);
+    if (status === TopicStatus.published) {
+      throw new BadRequestException(
+        'Unpublish this topic before changing its module weights',
+      );
+    }
   }
 
   async addResource(moduleId: string, dto: CreateResource, caller: Caller) {

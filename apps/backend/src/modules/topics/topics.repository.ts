@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { and, eq, inArray, sql } from 'drizzle-orm';
-import type { TopicListItem } from 'shared';
+import type { TopicListItem, TopicStatus } from 'shared';
 import { DatabaseService } from '../../core/database/database.service';
 import { clubsTable } from '../../core/database/schema/clubs.schema';
 import { courseModulesTable } from '../../core/database/schema/course-modules.schema';
@@ -27,9 +27,13 @@ export class TopicsRepository {
         name: topicsTable.name,
         description: topicsTable.description,
         certificationRequired: topicsTable.certificationRequired,
+        status: topicsTable.status,
         archived: topicsTable.archived,
         createdAt: topicsTable.createdAt,
         moduleCount: sql<number>`cast(count(distinct ${courseModulesTable.id}) as int)`,
+        // One joined row per module, so a plain sum is right. `sum` skips nulls
+        // and returns null for a topic with no modules — hence the coalesce.
+        estTimeMinutes: sql<number>`cast(coalesce(sum(${courseModulesTable.estTime}), 0) as int)`,
       })
       .from(topicsTable)
       .leftJoin(
@@ -74,10 +78,42 @@ export class TopicsRepository {
     return rows.map((row) => ({
       ...row,
       certificationRequired: row.certificationRequired ?? false,
+      status: row.status as TopicStatus,
       archived: row.archived ?? false,
       createdAt: (row.createdAt ?? new Date()).toISOString(),
       mentor: mentorByTopic.get(row.id) ?? null,
     }));
+  }
+
+  /** Sets a topic's readiness — see `TopicsService.publish`. */
+  async updateStatus(id: string, status: TopicStatus) {
+    const [row] = await this.db.db
+      .update(topicsTable)
+      .set({ status })
+      .where(eq(topicsTable.id, id))
+      .returning();
+    return row;
+  }
+
+  /** The topic's total module weight, which publishing requires to be 100. */
+  async getModuleWeightSum(topicId: string): Promise<number> {
+    const [row] = await this.db.db
+      .select({
+        total: sql<number>`coalesce(sum(${courseModulesTable.weight}), 0)`,
+        count: sql<number>`cast(count(${courseModulesTable.id}) as int)`,
+      })
+      .from(courseModulesTable)
+      .where(eq(courseModulesTable.topicId, topicId));
+    return Number(row?.total ?? 0);
+  }
+
+  /** How many modules a topic has — a topic with none can't be published. */
+  async getModuleCount(topicId: string): Promise<number> {
+    const [row] = await this.db.db
+      .select({ count: sql<number>`cast(count(*) as int)` })
+      .from(courseModulesTable)
+      .where(eq(courseModulesTable.topicId, topicId));
+    return Number(row?.count ?? 0);
   }
 
   async findById(id: string) {

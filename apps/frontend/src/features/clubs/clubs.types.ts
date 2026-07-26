@@ -1,3 +1,5 @@
+import type { TopicStatus } from 'shared';
+
 /** Membership state for the current user relative to a club. */
 export type MembershipStatus =
   | 'active'
@@ -46,11 +48,16 @@ export interface Mentor {
 export interface Topic {
   id: string;
   title: string;
+  /** What the topic covers, as its coordinator wrote it. Null on older topics. */
+  description: string | null;
+  /** Drafts reach only their mentor, the coordinator, and an authority. */
+  status: TopicStatus;
   iconKey: TopicIconKey;
   tone: ClubTone;
-  /** Curriculum stats aren't returned by the topics list endpoint yet. */
+  /** How many modules the curriculum holds. */
   modules?: number;
-  hours?: number;
+  /** Its modules' estimates added up; 0 when none carry one. */
+  estTimeMinutes?: number;
   /** Absent until the list endpoint exposes the assigned mentor. */
   mentor?: Mentor;
   /** Enrolled topics show "Open"; otherwise "Enroll". */

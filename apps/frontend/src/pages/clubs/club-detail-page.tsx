@@ -12,20 +12,25 @@ import {
   TOPIC_ENROLLMENT_REVIEW_NOTE,
 } from '@/features/clubs/clubs.constants';
 import type { Topic, TopicAction } from '@/features/clubs/clubs.types';
+import { formatDuration } from '@/lib/format-duration';
 import { useClubDetail, useClubTopics } from '@/features/clubs/hooks/use-clubs';
 import { useAuthStore } from '@/store/auth.store';
 
 /**
- * Enrollment blurb — degrades gracefully while the topics list endpoint omits
- * mentor and curriculum stats (see `Topic`).
+ * What the enroll modal says about the topic. The coordinator's own description
+ * leads when there is one; the generated line stands in for topics written
+ * before descriptions existed.
  */
 function buildTopicAbout(topic: Topic): string {
+  if (topic.description) return topic.description;
+
   const lead = topic.mentor
     ? `This topic is led by ${topic.mentor.name}`
     : 'This topic';
+  const estimate = formatDuration(topic.estTimeMinutes);
   const span =
     topic.modules != null
-      ? ` and spans ${topic.modules} modules${topic.hours != null ? ` (~${topic.hours} hrs)` : ''}`
+      ? ` and spans ${topic.modules} modules${estimate ? ` (~${estimate})` : ''}`
       : '';
   return `${lead}${span}. Enroll to access its modules, tasks, and the peer-review process.`;
 }

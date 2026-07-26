@@ -43,6 +43,15 @@ export const certificationStatusSchema = z.enum([
 export type CertificationStatus = z.infer<typeof certificationStatusSchema>;
 export const CertificationStatus = certificationStatusSchema.Values;
 
+/**
+ * A topic's readiness. It is authored as a `draft` and stays invisible to
+ * learners until its mentor publishes it, which the curriculum must total 100%
+ * to allow. Separate from `archived`, which retires a topic that was live.
+ */
+export const topicStatusSchema = z.enum(['draft', 'published']);
+export type TopicStatus = z.infer<typeof topicStatusSchema>;
+export const TopicStatus = topicStatusSchema.Values;
+
 /** What a module resource is, which decides its icon and action word. */
 export const resourceKindSchema = z.enum(['video', 'doc']);
 export type ResourceKind = z.infer<typeof resourceKindSchema>;

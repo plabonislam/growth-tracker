@@ -87,6 +87,11 @@ export interface ClubDetail {
   coordinatorName: string | null;
   /** Compared against the caller to unlock coordinator-only affordances. */
   coordinatorId: string | null;
+  /**
+   * The caller's own standing in this club — `null` when they have never
+   * applied. Only an `active` member may enroll in the club's topics.
+   */
+  membership: MembershipStatus | null;
   expectationsIntro: string;
   expectations: string[];
   mentorshipFocus: string;

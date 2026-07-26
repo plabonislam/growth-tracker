@@ -68,11 +68,16 @@ export class ClubsController {
     );
   }
 
-  @RequireRole('authority')
+  // Any authenticated user opens a club page — that is how a learner decides
+  // whether to join. The response carries the caller's membership, so the
+  // caller has to be known.
+  @ApiBearerAuth()
   @Get(':id')
-  @ApiOperation({ summary: 'Get a club by id (public)' })
-  findOne(@Param('id') id: string) {
-    return this.clubsService.findById(id);
+  @ApiOperation({
+    summary: 'Get a club by id, with the caller’s membership status',
+  })
+  findOne(@Param('id') id: string, @CurrentUser() caller: CallerUser) {
+    return this.clubsService.findById(id, caller);
   }
 
   @ApiBearerAuth()

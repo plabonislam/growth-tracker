@@ -39,6 +39,12 @@ interface TopicItemProps {
   topic: Topic;
   /** True for an authority or the club's coordinator — they administer the topic. */
   canManageTopic?: boolean;
+  /**
+   * True once the caller is an active member of the club this topic belongs to.
+   * Enrolling is a member's action, so a visitor browsing the club sees the
+   * curriculum without a way into it.
+   */
+  isClubMember?: boolean;
   onAction?: (topic: Topic, action: TopicAction) => void;
   /**
    * Opens the edit form. Omitted hides the control — reassigning the mentor is
@@ -60,6 +66,7 @@ const ACTION_META: Record<
 export function TopicItem({
   topic,
   canManageTopic,
+  isClubMember,
   onAction,
   onEdit,
 }: TopicItemProps) {
@@ -79,9 +86,11 @@ export function TopicItem({
       : 'enroll';
   const { label, icon: Icon } = ACTION_META[action];
 
-  // A draft reaches only the people building it. They keep their own actions;
-  // there is nothing for anyone else to enroll in yet.
-  const showAction = !isDraft || canManage;
+  // Two gates, both about who the action belongs to. A draft reaches only the
+  // people building it — there is nothing for anyone else to enroll in yet.
+  // And enrolling is a club member's action: a learner exploring a club they
+  // have not joined reads the curriculum, then joins the club to get into it.
+  const showAction = canManage || (!isDraft && isClubMember === true);
 
   return (
     <Card className="flex flex-col gap-2.5 p-5 transition-shadow hover:shadow-md">

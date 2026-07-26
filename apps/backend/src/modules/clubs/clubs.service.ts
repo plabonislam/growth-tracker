@@ -37,10 +37,17 @@ export class ClubsService {
     }));
   }
 
-  async findById(id: string) {
+  /**
+   * A club as this caller sees it. The caller's own membership rides along:
+   * the club page shows its curriculum to anyone, but enrolling in a topic is
+   * a member's action, so the page has to know where the caller stands.
+   */
+  async findById(id: string, caller: Caller) {
     const club = await this.repo.findById(id);
     if (!club) throw new NotFoundException('Club not found');
-    return club;
+
+    const membership = await this.repo.findMembership(id, caller.userId);
+    return { ...club, membershipStatus: membership?.status ?? null };
   }
 
   async checkNameAvailable(name: string) {

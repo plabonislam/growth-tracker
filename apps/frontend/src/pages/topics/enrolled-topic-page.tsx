@@ -1,3 +1,4 @@
+import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router';
 
 import { LearnerTopicView } from '@/features/topics/components/learner-topic-view';
@@ -36,18 +37,35 @@ export function EnrolledTopicPage({ topicId }: { topicId: string }) {
           </div>
         )}
 
-        {topic &&
-          (isMentor ? (
-            <MentorTopicView
-              topic={topic}
-              onCreateModule={() => navigate(`/topics/${topicId}/modules/new`)}
-              onEditModule={(module) =>
-                navigate(`/topics/${topicId}/modules/${module.id}/edit`)
-              }
-            />
-          ) : (
-            <LearnerTopicView topicId={topicId} />
-          ))}
+        {topic && (
+          <>
+            {/* In-content back affordance, as on the club page. It points at
+                the club rather than at history, so a topic opened from a link
+                still leads somewhere rather than out of the app. */}
+            <button
+              type="button"
+              onClick={() => navigate(`/clubs/${topic.clubId}`)}
+              className="mb-4 flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <ArrowLeft className="size-4" />
+              Back to club
+            </button>
+
+            {isMentor ? (
+              <MentorTopicView
+                topic={topic}
+                onCreateModule={() =>
+                  navigate(`/topics/${topicId}/modules/new`)
+                }
+                onEditModule={(module) =>
+                  navigate(`/topics/${topicId}/modules/${module.id}/edit`)
+                }
+              />
+            ) : (
+              <LearnerTopicView topicId={topicId} />
+            )}
+          </>
+        )}
       </main>
     </div>
   );

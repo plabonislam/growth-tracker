@@ -45,9 +45,17 @@ export function useClubJoinInfo(id: string) {
 }
 
 export function useSubmitJoinApplication(clubId: string) {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (payload: JoinClub) =>
       clubsService.submitJoinApplication(clubId, payload),
+    onSuccess: () => {
+      // The application leaves the caller `pending` in this club, which both
+      // the club card's badge and the club page's topic actions read from.
+      queryClient.invalidateQueries({ queryKey: CLUBS_KEYS.detail(clubId) });
+      queryClient.invalidateQueries({ queryKey: CLUBS_KEYS.list() });
+    },
   });
 }
 

@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import { ClubHero } from '@/features/clubs/components/club-hero';
+import { ClubJoinModal } from '@/features/clubs/components/club-join-modal';
+import { ClubMembershipNotice } from '@/features/clubs/components/club-membership-notice';
 import { CreateTopicModal } from '@/features/clubs/components/create-topic-modal';
 import { EditTopicModal } from '@/features/clubs/components/edit-topic-modal';
 import { TopicEnrollModal } from '@/features/clubs/components/topic-enroll-modal';
@@ -44,12 +46,17 @@ export function ClubDetailPage({ clubId }: { clubId: string }) {
   const { data: topics = [], isLoading: topicsLoading } = useClubTopics(clubId);
   const [enrollTopic, setEnrollTopic] = useState<Topic | null>(null);
   const [creatingTopic, setCreatingTopic] = useState(false);
+  const [joiningClub, setJoiningClub] = useState(false);
   // The topic whose edit form is open; null while none is.
   const [editingTopic, setEditingTopic] = useState<Topic | null>(null);
 
   // Authority and the club's own coordinator administer its topics.
   const canManageTopics =
     isAuthority || (club?.coordinatorId ?? null) === userId;
+
+  // The club is open to browse, but its curriculum is only enrollable once an
+  // application has been approved — a pending one has not opened anything yet.
+  const isClubMember = club?.membership === 'active';
 
   const handleTopicAction = (topic: Topic, action: TopicAction) => {
     if (action === 'enroll') {
@@ -105,6 +112,15 @@ export function ClubDetailPage({ clubId }: { clubId: string }) {
               coordinatorName={club.coordinatorName}
             />
 
+            {/* People who administer the club's topics reach them by role, not
+                by membership — the notice is for everyone else. */}
+            {!canManageTopics && (
+              <ClubMembershipNotice
+                membership={club.membership}
+                onJoin={() => setJoiningClub(true)}
+              />
+            )}
+
             {topicsLoading ? (
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {Array.from({ length: 3 }).map((_, i) => (
@@ -119,6 +135,7 @@ export function ClubDetailPage({ clubId }: { clubId: string }) {
                 topics={topics}
                 onTopicAction={handleTopicAction}
                 canManageTopics={canManageTopics}
+                isClubMember={isClubMember}
                 // Editing includes reassigning the mentor, which the API
                 // restricts to coordinator/authority — so a topic's own mentor
                 // gets "Manage modules" without the edit control.
@@ -145,6 +162,12 @@ export function ClubDetailPage({ clubId }: { clubId: string }) {
           onSubmit={() => setEnrollTopic(null)}
         />
       )}
+
+      <ClubJoinModal
+        clubId={clubId}
+        open={joiningClub}
+        onClose={() => setJoiningClub(false)}
+      />
 
       <CreateTopicModal
         clubId={clubId}

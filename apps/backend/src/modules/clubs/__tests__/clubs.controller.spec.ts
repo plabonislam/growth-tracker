@@ -50,13 +50,14 @@ describe('ClubsController', () => {
     expect(result).toEqual([clubWithMembership]);
   });
 
-  it('GET /clubs/:id calls findById with route param', async () => {
-    mockClubsService.findById.mockResolvedValue(club);
+  it('GET /clubs/:id calls findById with route param and caller', async () => {
+    const clubWithMembership = { ...club, membershipStatus: 'active' };
+    mockClubsService.findById.mockResolvedValue(clubWithMembership);
 
-    const result = await controller.findOne('club-1');
+    const result = await controller.findOne('club-1', caller);
 
-    expect(mockClubsService.findById).toHaveBeenCalledWith('club-1');
-    expect(result).toEqual(club);
+    expect(mockClubsService.findById).toHaveBeenCalledWith('club-1', caller);
+    expect(result).toEqual(clubWithMembership);
   });
 
   it('GET /clubs/check-name calls checkNameAvailable with query param', async () => {

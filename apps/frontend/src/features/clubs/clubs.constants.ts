@@ -98,6 +98,26 @@ export const NOT_ENROLLED_META = {
   className: 'bg-muted text-muted-foreground',
 };
 
+/**
+ * Why a club's topics carry no enroll action, keyed by where the caller stands
+ * with the club — `none` for someone who has never applied. `active` has no
+ * entry: nothing is in their way, so there is nothing to explain.
+ */
+export const TOPIC_ACCESS_NOTE: Record<
+  Exclude<MembershipStatus, 'active'> | 'none',
+  string
+> = {
+  none: 'Join this club to enroll in its topics.',
+  pending:
+    'Your application is under review. You can enroll in topics once a coordinator approves it.',
+  on_break:
+    'Your membership is on break. Enrolling in topics resumes when your membership does.',
+  dropped_out:
+    'You have left this club, so its topics are no longer open to enroll in.',
+  rejected:
+    'Your application to this club was not approved, so its topics are not open to enroll in.',
+};
+
 /** Default commitment checklist shown in the topic enrollment modal. */
 export const TOPIC_ENROLLMENT_COMMITMENTS = [
   'I acknowledge the time commitment of approximately 5–8 hours per week.',

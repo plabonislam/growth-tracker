@@ -23,6 +23,9 @@ export const topicsTable = pgTable('topics', {
     .references(() => clubsTable.id)
     .notNull(),
   name: text('name').notNull(),
+  // Nullable for topics written before descriptions existed; the create
+  // contract requires one from every new topic.
+  description: text('description'),
   certificationRequired: boolean('certification_required').default(false),
   archived: boolean('archived').default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),

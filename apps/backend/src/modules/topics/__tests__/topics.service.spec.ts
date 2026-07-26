@@ -97,6 +97,7 @@ describe('TopicsService', () => {
         'club-1',
         {
           name: 'React Basics',
+          description: 'Hooks, state, and the render cycle.',
           certificationRequired: false,
           mentorId: mentor.userId,
         },
@@ -120,6 +121,7 @@ describe('TopicsService', () => {
           'club-1',
           {
             name: 'React Basics',
+            description: 'Hooks, state, and the render cycle.',
             certificationRequired: false,
             mentorId: mentor.userId,
           },
@@ -139,6 +141,7 @@ describe('TopicsService', () => {
           'club-1',
           {
             name: 'React Basics',
+            description: 'Hooks, state, and the render cycle.',
             certificationRequired: false,
             mentorId: coordinator.userId,
           },
@@ -314,6 +317,7 @@ describe('TopicsService', () => {
         'club-1',
         {
           name: 'React Basics',
+          description: 'Hooks, state, and the render cycle.',
           certificationRequired: false,
           mentorId: mentor.userId,
         },

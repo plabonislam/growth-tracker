@@ -280,7 +280,6 @@ describe('ClubsService', () => {
     const application = {
       memberId: 'DSI-1',
       expectation: 'I want to learn frontend engineering.',
-      acceptedRules: true,
     };
 
     it('creates a pending membership and returns it', async () => {

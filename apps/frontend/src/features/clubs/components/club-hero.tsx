@@ -1,3 +1,4 @@
+import { SectionHeading } from '@/components/ui/section-heading';
 import { CLUB_ICONS } from '../clubs.constants';
 import type { ClubDetail, ClubIconKey } from '../clubs.types';
 
@@ -80,16 +81,14 @@ export function ClubHero({
           <div className="flex size-10.5 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground md:size-12 lg:size-13">
             <Icon className="size-5 md:size-6" strokeWidth={1.75} />
           </div>
-          <div className="min-w-0">
-            <h1 className="font-serif text-[19px] font-bold leading-tight tracking-tight text-foreground md:text-[23px] lg:text-[28px]">
-              {name}
-            </h1>
-            {tagline && (
-              <p className="mt-1 max-w-xl text-[12.5px] leading-relaxed text-muted-foreground md:text-[13px] lg:text-sm">
-                {tagline}
-              </p>
-            )}
-          </div>
+          {/* max-w-2xl keeps the tagline to a readable measure — the hero runs
+              to 1800px, and the heading has no width of its own. */}
+          <SectionHeading
+            as="h1"
+            title={name}
+            subtitle={tagline}
+            className="min-w-0 max-w-2xl"
+          />
         </div>
 
         {coordinatorName && <CoordinatorChip name={coordinatorName} />}

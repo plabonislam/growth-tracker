@@ -52,15 +52,19 @@ export class CourseModulesService {
         'One or more module IDs do not belong to this topic',
       );
     }
+    // 0-based, matching what `create` writes — the client renders position as
+    // `order + 1`, so numbering from 1 here would shift every module by one.
     for (let i = 0; i < dto.moduleIds.length; i++) {
-      await this.repo.updateOrder(dto.moduleIds[i], i + 1);
+      await this.repo.updateOrder(dto.moduleIds[i], i);
     }
   }
 
   async delete(id: string, caller: Caller) {
     const mod = await this.findById(id);
     await this.assertMentorOrAuthority(mod.topicId, caller);
-    await this.repo.deleteById(id);
+    // The topic goes along so the survivors can be renumbered in the same
+    // transaction — a hole in the sequence is never visible to a reader.
+    await this.repo.deleteById(id, mod.topicId);
   }
 
   async update(id: string, dto: UpdateModule, caller: Caller) {

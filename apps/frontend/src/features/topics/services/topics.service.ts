@@ -3,6 +3,7 @@ import type {
   CreateResource,
   ModuleResponse,
   ModuleWithResourcesResponse,
+  UpdateModule,
 } from 'shared';
 
 import { httpClient } from '@/services/http/client';
@@ -189,9 +190,28 @@ export const topicsService = {
     httpClient
       .post<ModuleResponse>(`/topics/${topicId}/modules`, payload)
       .then((r) => toCurriculumModule(r.data)),
+  updateModule: (
+    topicId: string,
+    moduleId: string,
+    payload: UpdateModule,
+  ): Promise<CurriculumModule> =>
+    httpClient
+      .patch<ModuleResponse>(`/topics/${topicId}/modules/${moduleId}`, payload)
+      .then((r) => toCurriculumModule(r.data)),
   addModuleResource: (
     moduleId: string,
     payload: CreateResource,
   ): Promise<void> =>
     httpClient.post(`/modules/${moduleId}/resources`, payload).then(() => {}),
+  deleteModule: (moduleId: string): Promise<void> =>
+    httpClient.delete(`/modules/${moduleId}`).then(() => {}),
+  /** Rewrites every module's position from the order of the ids given. */
+  reorderModules: (topicId: string, moduleIds: string[]): Promise<void> =>
+    httpClient
+      .patch(`/topics/${topicId}/modules/reorder`, { moduleIds })
+      .then(() => {}),
+  deleteModuleResource: (moduleId: string, resourceId: string): Promise<void> =>
+    httpClient
+      .delete(`/modules/${moduleId}/resources/${resourceId}`)
+      .then(() => {}),
 };

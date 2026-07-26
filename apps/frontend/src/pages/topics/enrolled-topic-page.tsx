@@ -41,6 +41,9 @@ export function EnrolledTopicPage({ topicId }: { topicId: string }) {
             <MentorTopicView
               topic={topic}
               onCreateModule={() => navigate(`/topics/${topicId}/modules/new`)}
+              onEditModule={(module) =>
+                navigate(`/topics/${topicId}/modules/${module.id}/edit`)
+              }
             />
           ) : (
             <LearnerTopicView topicId={topicId} />

@@ -2,7 +2,7 @@ import { ArrowLeft, Lock } from 'lucide-react';
 import { useNavigate } from 'react-router';
 
 import { Button } from '@/components/ui/button';
-import { CreateModuleForm } from '@/features/topics/components/create-module-form';
+import { ModuleForm } from '@/features/topics/components/module-form';
 import { useTopic, useTopicModules } from '@/features/topics/hooks/use-topics';
 import { useAuthStore } from '@/store/auth.store';
 
@@ -13,11 +13,13 @@ const containerClass =
 function PageHeader({
   topicName,
   position,
+  isEditing,
   onBack,
 }: {
   topicName: string;
-  /** 1-based slot the new module will take in the curriculum. */
+  /** 1-based slot this module holds in the curriculum. */
   position: number;
+  isEditing: boolean;
   onBack: () => void;
 }) {
   return (
@@ -35,7 +37,7 @@ function PageHeader({
 
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
         <h1 className="font-serif text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-          New module
+          {isEditing ? 'Edit module' : 'New module'}
         </h1>
         <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider tabular-nums text-primary">
           Module {String(position).padStart(2, '0')}
@@ -43,18 +45,28 @@ function PageHeader({
       </div>
 
       <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted-foreground">
-        Learners work through modules in order — this one goes last.
+        {isEditing
+          ? 'Changes reach learners as soon as you save.'
+          : 'Learners work through modules in order — this one goes last.'}
       </p>
     </header>
   );
 }
 
 /**
- * Create-module route. Only the topic's own mentor authors curriculum, so the
- * page resolves the topic first and sends everyone else back to the topic.
- * Existing modules give the new one its `order` and the weight already spent.
+ * Authoring route for a module — the same page whether one is being created or
+ * edited, so a mentor returns to the form they filled in, with their answers in
+ * it. Only the topic's own mentor authors curriculum, so the page resolves the
+ * topic first and sends everyone else back to the topic.
  */
-export function CreateModulePage({ topicId }: { topicId: string }) {
+export function ModuleFormPage({
+  topicId,
+  moduleId,
+}: {
+  topicId: string;
+  /** Present on the edit route; absent authors a new module. */
+  moduleId?: string;
+}) {
   const navigate = useNavigate();
   const userId = useAuthStore((s) => s.userId);
   const { data: topic, isLoading, isError, refetch } = useTopic(topicId);
@@ -63,7 +75,19 @@ export function CreateModulePage({ topicId }: { topicId: string }) {
 
   const backToTopic = () => navigate(`/topics/${topicId}`);
   const isMentor = topic?.mentor != null && topic.mentor.id === userId;
-  const allocatedWeight = modules.reduce((sum, m) => sum + m.weight, 0);
+  const editing = moduleId
+    ? modules.find((module) => module.id === moduleId)
+    : undefined;
+  // One past the highest position in use, rather than the module count: a gap
+  // left by a delete would make the count collide with an existing module.
+  const nextOrder = modules.reduce(
+    (next, module) => Math.max(next, module.order + 1),
+    0,
+  );
+  const totalWeight = modules.reduce((sum, m) => sum + m.weight, 0);
+  // What the *other* modules hold: editing measures its weight against the
+  // topic minus its own share, so re-saving an unchanged module always fits.
+  const allocatedWeight = totalWeight - (editing?.weight ?? 0);
   const isPending = isLoading || modulesLoading;
 
   if (isError) {
@@ -119,10 +143,29 @@ export function CreateModulePage({ topicId }: { topicId: string }) {
             <Lock className="size-5" strokeWidth={1.75} />
           </span>
           <p className="mt-4 text-sm font-semibold text-foreground">
-            Only this topic’s mentor can add modules
+            Only this topic’s mentor can edit modules
           </p>
           <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">
             You can still work through everything already published.
+          </p>
+          <Button type="button" className="mt-5" onClick={backToTopic}>
+            Back to {topic.name}
+          </Button>
+        </div>
+      </main>
+    );
+  }
+
+  // An id that matches nothing — a deleted module, or a hand-typed URL.
+  if (moduleId && !editing) {
+    return (
+      <main className={containerClass}>
+        <div className="mx-auto max-w-md rounded-xl border bg-card px-5 py-14 text-center">
+          <p className="text-sm font-semibold text-foreground">
+            That module is no longer here
+          </p>
+          <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">
+            It may have been removed since this page was opened.
           </p>
           <Button type="button" className="mt-5" onClick={backToTopic}>
             Back to {topic.name}
@@ -136,14 +179,21 @@ export function CreateModulePage({ topicId }: { topicId: string }) {
     <main className={containerClass}>
       <PageHeader
         topicName={topic.name}
-        position={modules.length + 1}
+        // Editing shows the slot the module already holds; creating shows the
+        // one it is about to take.
+        position={editing ? editing.order + 1 : modules.length + 1}
+        isEditing={editing != null}
         onBack={backToTopic}
       />
 
-      <CreateModuleForm
+      <ModuleForm
+        // Remounts when the mentor switches modules, so the fields reload from
+        // the module rather than keeping the previous one's answers.
+        key={editing?.id ?? 'new'}
         topicId={topicId}
-        nextOrder={modules.length}
+        nextOrder={nextOrder}
         allocatedWeight={allocatedWeight}
+        module={editing}
         onDone={backToTopic}
         onCancel={backToTopic}
       />

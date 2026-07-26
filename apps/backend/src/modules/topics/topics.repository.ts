@@ -25,6 +25,7 @@ export class TopicsRepository {
         id: topicsTable.id,
         clubId: topicsTable.clubId,
         name: topicsTable.name,
+        description: topicsTable.description,
         certificationRequired: topicsTable.certificationRequired,
         archived: topicsTable.archived,
         createdAt: topicsTable.createdAt,
@@ -104,6 +105,7 @@ export class TopicsRepository {
   async insert(data: {
     clubId: string;
     name: string;
+    description?: string | null;
     certificationRequired: boolean;
   }) {
     const [row] = await this.db.db.insert(topicsTable).values(data).returning();
@@ -116,7 +118,12 @@ export class TopicsRepository {
    * mentor-less topic behind.
    */
   async insertWithMentor(
-    data: { clubId: string; name: string; certificationRequired: boolean },
+    data: {
+      clubId: string;
+      name: string;
+      description?: string | null;
+      certificationRequired: boolean;
+    },
     mentorId: string,
   ) {
     return this.db.db.transaction(async (tx) => {

@@ -7,17 +7,11 @@ import { ClubJoinForm } from './club-join-form';
 
 type ClubJoinModalProps = {
   clubId: string;
-  rules?: string[];
   open: boolean;
   onClose: () => void;
 };
 
-export function ClubJoinModal({
-  clubId,
-  rules,
-  open,
-  onClose,
-}: ClubJoinModalProps) {
+export function ClubJoinModal({ clubId, open, onClose }: ClubJoinModalProps) {
   useEffect(() => {
     if (!open) return;
 
@@ -62,7 +56,7 @@ export function ClubJoinModal({
         </button>
 
         <div className="overflow-y-auto">
-          <ClubJoinForm clubId={clubId} rules={rules} />
+          <ClubJoinForm clubId={clubId} />
         </div>
       </div>
     </div>,

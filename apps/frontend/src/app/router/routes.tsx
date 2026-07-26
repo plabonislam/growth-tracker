@@ -7,6 +7,7 @@ import { ProtectedRoute } from './protected-route';
 import {
   ClubDetailRoute,
   CreateModuleRoute,
+  EditModuleRoute,
   DashboardRoute,
   EnrolledTopicRoute,
   ExploreRoute,
@@ -30,6 +31,10 @@ export const routes: RouteObject[] = [
       {
         path: '/topics/:topicId/modules/new',
         element: <CreateModuleRoute />,
+      },
+      {
+        path: '/topics/:topicId/modules/:moduleId/edit',
+        element: <EditModuleRoute />,
       },
       { path: '/clubs/:clubId', element: <ClubDetailRoute /> },
     ],

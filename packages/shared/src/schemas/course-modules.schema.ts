@@ -127,10 +127,11 @@ export const CreateResourceSchema = z.object({
 });
 
 /**
- * What a mentor fills in when authoring a module. `order` is derived from the
- * topic's existing modules rather than typed, and resources are attached in a
- * second call once the module has an id. A module carries at least one
- * resource — there is nothing to work through otherwise.
+ * What a mentor fills in when authoring a module, and what they see again when
+ * editing one. `order` is derived from the topic's existing modules rather than
+ * typed, and resources are attached in a second call once the module has an id.
+ * A module carries at least one resource — there is nothing to work through
+ * otherwise.
  */
 export const CreateModuleWithResourcesSchema = CreateModuleSchema.omit({
   order: true,
@@ -152,6 +153,9 @@ export const CreateModuleWithResourcesSchema = CreateModuleSchema.omit({
  * allocated. The create endpoint rejects a topic whose module weights would
  * pass 100; refining here puts that failure on the `weight` field at author
  * time instead of leaving it to a round-trip 400.
+ *
+ * Editing passes the same budget with the edited module's own weight left out,
+ * so re-saving it unchanged is never rejected for weight it already holds.
  */
 export const buildCreateModuleWithResourcesSchema = (allocatedWeight: number) =>
   CreateModuleWithResourcesSchema.superRefine((values, ctx) => {

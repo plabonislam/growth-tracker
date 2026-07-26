@@ -33,8 +33,9 @@ import { formatDuration } from '@/lib/format-duration';
 import { fieldLabelClass } from '@/lib/form-styles';
 import { cn } from '@/lib/utils';
 import { getApiErrorMessage } from '@/services/http/client';
-import { useCreateModule } from '../hooks/use-topics';
+import { useCreateModule, useUpdateModule } from '../hooks/use-topics';
 import { RESOURCE_KIND_META, RESOURCE_KINDS } from '../topics.constants';
+import type { CurriculumModule } from '../topics.types';
 
 /** Matches `CreateModuleWithResourcesSchema`'s `resources` cap. */
 const MAX_RESOURCES = 10;
@@ -58,12 +59,18 @@ const numberInputClass =
 const selectTriggerClass =
   'w-full rounded-lg border bg-background px-4 text-base data-[size=default]:h-11 md:text-sm focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30';
 
-type CreateModuleFormProps = {
+type ModuleFormProps = {
   topicId: string;
-  /** Position for the new module — the count of modules already on the topic. */
+  /** Position for a new module — the count of modules already on the topic. */
   nextOrder: number;
-  /** Weight already allocated across the topic, 0–100. */
+  /**
+   * Weight held by every *other* module on the topic, 0–100. When editing, the
+   * edited module's own share is left out, so re-saving it unchanged never
+   * reads as overspending.
+   */
   allocatedWeight: number;
+  /** The module being edited. Absent authors a new one. */
+  module?: CurriculumModule;
   onDone: () => void;
   onCancel: () => void;
 };
@@ -104,14 +111,25 @@ function SectionCard({
   );
 }
 
-export function CreateModuleForm({
+/**
+ * Authors a module, and edits one. Both run through the same form so a mentor
+ * revisits exactly the page they filled in, with their answers already in it.
+ */
+export function ModuleForm({
   topicId,
   nextOrder,
   allocatedWeight,
+  module,
   onDone,
   onCancel,
-}: CreateModuleFormProps) {
-  const mutation = useCreateModule(topicId);
+}: ModuleFormProps) {
+  const isEditing = module != null;
+
+  // Both are declared unconditionally — hooks cannot be called by branch — and
+  // the mode decides which one submit runs.
+  const createMutation = useCreateModule(topicId);
+  const updateMutation = useUpdateModule(topicId);
+  const mutation = isEditing ? updateMutation : createMutation;
 
   const remainingBefore = Math.max(0, 100 - allocatedWeight);
 
@@ -122,15 +140,28 @@ export function CreateModuleForm({
 
   const form = useForm<CreateModuleWithResources>({
     resolver: zodResolver(schema),
-    defaultValues: {
-      title: '',
-      body: '',
-      weight: undefined,
-      estTime: undefined,
-      // One row up front: it is required, so an empty state would only be a
-      // dead end the mentor has to click out of.
-      resources: [{ ...EMPTY_RESOURCE }],
-    },
+    defaultValues: module
+      ? {
+          title: module.title,
+          body: module.body ?? '',
+          weight: module.weight,
+          // Blank rather than 0 when the mentor never set one.
+          estTime: module.estTime ?? undefined,
+          resources: module.resources.map((resource) => ({
+            title: resource.title,
+            url: resource.url,
+            kind: resource.kind,
+          })),
+        }
+      : {
+          title: '',
+          body: '',
+          weight: undefined,
+          estTime: undefined,
+          // One row up front: it is required, so an empty state would only be a
+          // dead end the mentor has to click out of.
+          resources: [{ ...EMPTY_RESOURCE }],
+        },
   });
 
   const resources = useFieldArray({ control: form.control, name: 'resources' });
@@ -179,43 +210,72 @@ export function CreateModuleForm({
   const handleCancel = () => {
     if (
       form.formState.isDirty &&
-      !window.confirm('Discard this module? Your changes won’t be saved.')
+      !window.confirm(
+        isEditing
+          ? 'Discard your changes? They won’t be saved.'
+          : 'Discard this module? Your changes won’t be saved.',
+      )
     ) {
       return;
     }
     onCancel();
   };
 
+  /** Shared by both modes — only the verb in the copy differs. */
+  const handleSaved = ({
+    module: saved,
+    failedResources,
+  }: {
+    module: CurriculumModule;
+    failedResources: number;
+  }) => {
+    toast.success(
+      `Module “${saved.title}” ${isEditing ? 'updated' : 'created'}`,
+    );
+    if (failedResources > 0) {
+      toast.warning(
+        `${failedResources} resource${failedResources === 1 ? 's' : ''} couldn’t be saved. Check the module’s resources.`,
+      );
+    }
+    onDone();
+  };
+
+  const handleFailed = (error: unknown) =>
+    toast.error(
+      getApiErrorMessage(
+        error,
+        isEditing
+          ? 'Couldn’t save the module. Please try again.'
+          : 'Couldn’t create the module. Please try again.',
+      ),
+    );
+
   // The schema trims every text field and `zodResolver` hands `handleSubmit` the
   // parsed values, so these arrive ready to send.
   const onSubmit = ({
     resources: rows,
-    ...module
-  }: CreateModuleWithResources) =>
-    mutation.mutate(
-      {
-        module: { ...module, order: nextOrder },
-        resources: rows,
-      },
-      {
-        onSuccess: ({ module: created, failedResources }) => {
-          toast.success(`Module “${created.title}” created`);
-          if (failedResources > 0) {
-            toast.warning(
-              `${failedResources} resource${failedResources === 1 ? '' : 's'} couldn’t be attached. Add them again from the module.`,
-            );
-          }
-          onDone();
+    ...fields
+  }: CreateModuleWithResources) => {
+    if (module) {
+      // `order` is left out: editing never moves a module, and position is
+      // rearranged through the reorder endpoint instead.
+      updateMutation.mutate(
+        {
+          moduleId: module.id,
+          module: fields,
+          resources: rows,
+          originalResources: module.resources,
         },
-        onError: (error) =>
-          toast.error(
-            getApiErrorMessage(
-              error,
-              'Couldn’t create the module. Please try again.',
-            ),
-          ),
-      },
+        { onSuccess: handleSaved, onError: handleFailed },
+      );
+      return;
+    }
+
+    createMutation.mutate(
+      { module: { ...fields, order: nextOrder }, resources: rows },
+      { onSuccess: handleSaved, onError: handleFailed },
     );
+  };
 
   return (
     <SectionCard>
@@ -336,12 +396,17 @@ export function CreateModuleForm({
                           </span>
                         </div>
 
+                        {/* `remainingBefore` excludes this module when editing,
+                            so the arithmetic reads the same either way: what is
+                            left over once this module takes its share. */}
                         <FormDescription>
                           {remainingBefore === 0
-                            ? 'The topic is already at 100%.'
+                            ? isEditing
+                              ? 'The topic’s other modules already use all 100%.'
+                              : 'The topic is already at 100%.'
                             : pendingWeight > 0
                               ? `${Math.max(0, remainingBefore - pendingWeight)}% of the topic left after this module.`
-                              : `Share of the topic’s progress. ${remainingBefore}% unallocated.`}
+                              : `Share of the topic’s progress. ${remainingBefore}% available to this module.`}
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -547,7 +612,13 @@ export function CreateModuleForm({
                 disabled={mutation.isPending}
                 className="w-50"
               >
-                {mutation.isPending ? 'Creating…' : 'Create module'}
+                {isEditing
+                  ? mutation.isPending
+                    ? 'Saving…'
+                    : 'Save changes'
+                  : mutation.isPending
+                    ? 'Creating…'
+                    : 'Create module'}
               </Button>
               <Button
                 type="button"

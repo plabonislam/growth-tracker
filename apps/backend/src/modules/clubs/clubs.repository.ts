@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { and, count, eq, sql } from 'drizzle-orm';
+import { and, count, eq, ne, sql } from 'drizzle-orm';
 import { MembershipStatus } from 'shared';
 
 import { DatabaseService } from '../../core/database/database.service';
@@ -193,6 +193,29 @@ export class ClubsRepository {
       })
       .from(clubMembershipsTable)
       .where(eq(clubMembershipsTable.userId, userId));
+  }
+
+  /**
+   * An active membership the user holds in some *other* club. A learner belongs
+   * to one club at a time, so this is what stands between them and a second —
+   * the club's name comes back with it, since any refusal has to name it.
+   */
+  async findActiveMembershipElsewhere(clubId: string, userId: string) {
+    const [row] = await this.db.db
+      .select({
+        clubId: clubMembershipsTable.clubId,
+        clubName: clubsTable.name,
+      })
+      .from(clubMembershipsTable)
+      .innerJoin(clubsTable, eq(clubMembershipsTable.clubId, clubsTable.id))
+      .where(
+        and(
+          eq(clubMembershipsTable.userId, userId),
+          eq(clubMembershipsTable.status, MembershipStatus.active),
+          ne(clubMembershipsTable.clubId, clubId),
+        ),
+      );
+    return row ?? null;
   }
 
   async createMembership(

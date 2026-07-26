@@ -3,6 +3,7 @@ import { CoreModule } from './core/core.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ClubsModule } from './modules/clubs/clubs.module';
 import { CourseModulesModule } from './modules/course-modules/course-modules.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { EnrollmentsModule } from './modules/enrollments/enrollments.module';
 import { ProgressModule } from './modules/progress/progress.module';
 import { TopicsModule } from './modules/topics/topics.module';
@@ -18,6 +19,7 @@ import { UserModule } from './modules/user/user.module';
     CourseModulesModule,
     EnrollmentsModule,
     ProgressModule,
+    DashboardModule,
   ],
 })
 export class AppModule {}

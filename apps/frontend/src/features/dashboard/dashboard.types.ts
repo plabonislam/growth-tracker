@@ -14,13 +14,13 @@ export interface AgendaItem {
 
 /** The club the learner is currently working through. */
 export interface JourneySummary {
+  /** Links the card and its empty state back to the club page. */
+  id: string;
   clubName: string;
   /** What the club covers, clamped to two lines on the card. */
   description: string;
   /** Display date, e.g. "12 Jan 2026". */
   memberSince: string;
-  /** Standing in the cohort — shown by the page title, not on the card. */
-  cohortBadge: string;
   progressPct: number;
   /** Names rendered as stacked initials avatars. */
   memberNames: string[];
@@ -73,10 +73,11 @@ export interface LearningPath {
 export interface LearnerDashboard {
   /** The line under the greeting — what to pick up today. */
   nudge: string;
-  journey: JourneySummary;
+  /** Null until the learner's application to a club has been approved. */
+  club: JourneySummary | null;
   stats: LearnerStats;
-  activeTopic: ActiveTopic;
-  learningPath: LearningPath;
+  /** Null until a mentor approves them into a topic. */
+  activeTopic: ActiveTopic | null;
   deadlines: AgendaItem[];
   events: AgendaItem[];
 }

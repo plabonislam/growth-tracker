@@ -1,97 +1,137 @@
-import type { LearnerDashboard } from '../dashboard.types';
+import type { LearnerDashboardResponse } from 'shared';
+
+import { httpClient } from '@/services/http/client';
+import type { AgendaItem, LearnerDashboard } from '../dashboard.types';
 
 /**
- * Learner dashboard service.
+ * Learner dashboard service — `GET /dashboard/me`.
  *
- * Would normally be `httpClient.get('/dashboard/me')` (see docs/frontend.md —
- * Service Pattern); until that endpoint exists we resolve a local fixture so
- * the TanStack Query wiring is real and swappable.
+ * The API answers in figures and dates; the wording around them is built here,
+ * where the page's language lives. Two things the design asks for have nothing
+ * behind them and are therefore absent rather than invented: a cohort ranking,
+ * and deadlines (no task carries a due date).
  */
 
-const DASHBOARD: LearnerDashboard = {
-  nudge: 'Pick up module 4 — one quiz is due today.',
-  journey: {
-    clubName: 'Artificial Intelligence Specialization',
-    description:
-      'A mentor-led track through machine learning foundations, neural networks and applied AI systems.',
-    memberSince: '12 Jan 2026',
-    cohortBadge: 'Top 5% of cohort',
-    progressPct: 68,
-    memberNames: ['Priya Nair', 'Tom Reed', 'Lena Wu'],
-    extraMembers: 14,
-    membersNote: '1,240 active learners in this specialization',
-  },
-  // `clubProgress` mirrors `journey.progressPct`; `learningTime` has nothing
-  // behind it anywhere yet — no session or study time is recorded.
-  stats: {
-    completedTopics: { value: 12, note: 'Across 3 clubs' },
-    earnedCertificates: { value: 3, note: 'Latest: Deep Learning I' },
-    clubProgress: { value: 68, unit: '%', note: 'AI Specialization' },
-    learningTime: { value: 46, unit: 'h', note: 'Logged this quarter' },
-  },
-  activeTopic: {
-    id: 'advanced-neural-networks',
-    title: 'Advanced Neural Networks',
-    description:
-      'Explore backpropagation, optimization algorithms, and architectural trade-offs in multi-layered perceptrons.',
-    startedOn: '02 Jun 2026',
-    moduleLabel: 'Module 4 of 8',
-    progressPct: 42,
-  },
-  learningPath: {
-    subtitle: 'Next topics on your specialization roadmap',
-    steps: [
-      {
-        id: 'advanced-neural-networks',
-        order: 1,
-        title: 'Advanced Neural Networks',
-        meta: 'Module 4 of 8 · 42% complete',
-        status: 'active',
+/** ISO → "12 Jan 2026". */
+function formatDay(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '—';
+  return date.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+/** A session's date → "Wednesday, 12 Aug" — near enough to read at a glance. */
+function formatSessionDay(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '—';
+  return date.toLocaleDateString('en-GB', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'short',
+  });
+}
+
+/** Minutes → whole hours; the metric has no room for a second unit. */
+function toHours(minutes: number): number {
+  return Math.round(minutes / 60);
+}
+
+/** The one thing worth doing next, from what the learner actually has. */
+function buildNudge(api: LearnerDashboardResponse): string {
+  if (!api.club) return 'Join a club to start learning.';
+  if (!api.activeTopic) {
+    return `Pick a topic in ${api.club.name} to get started.`;
+  }
+  const { moduleIndex, moduleCount, title } = api.activeTopic;
+  return moduleCount === 0
+    ? `${title} is still being written — check back soon.`
+    : `Pick up module ${moduleIndex} of ${title}.`;
+}
+
+function toEvents(api: LearnerDashboardResponse): AgendaItem[] {
+  return api.events.map((event, index) => ({
+    id: event.id,
+    title: event.title,
+    when: `${formatSessionDay(event.date)} · ${event.type} session`,
+    // No icon or tone is recorded for a session; alternate so a short list
+    // still reads as a list rather than a block of one colour.
+    iconKey: index % 2 === 0 ? 'workshop' : 'podcast',
+    tone: index % 2 === 0 ? 'info' : 'amber',
+  }));
+}
+
+function toDashboard(api: LearnerDashboardResponse): LearnerDashboard {
+  const { stats } = api;
+
+  return {
+    nudge: buildNudge(api),
+    club: api.club && {
+      id: api.club.id,
+      clubName: api.club.name,
+      description: api.club.description ?? '',
+      memberSince: formatDay(api.club.memberSince),
+      progressPct: api.club.progressPct,
+      memberNames: api.club.memberNames,
+      // The stack shows the sample; the count covers everyone it left out.
+      extraMembers: Math.max(
+        0,
+        api.club.memberCount - api.club.memberNames.length,
+      ),
+      membersNote: `${api.club.memberCount} active ${
+        api.club.memberCount === 1 ? 'learner' : 'learners'
+      } in this club`,
+    },
+    activeTopic: api.activeTopic && {
+      id: api.activeTopic.id,
+      title: api.activeTopic.title,
+      description: api.activeTopic.description ?? '',
+      startedOn: formatDay(api.activeTopic.startedAt),
+      moduleLabel:
+        api.activeTopic.moduleCount === 0
+          ? 'No modules yet'
+          : `Module ${api.activeTopic.moduleIndex} of ${api.activeTopic.moduleCount}`,
+      progressPct: api.activeTopic.progressPct,
+    },
+    stats: {
+      completedTopics: {
+        value: stats.completedTopics,
+        note:
+          stats.completedTopicClubs === 0
+            ? 'None finished yet'
+            : `Across ${stats.completedTopicClubs} ${
+                stats.completedTopicClubs === 1 ? 'club' : 'clubs'
+              }`,
       },
-      {
-        id: 'nlp',
-        order: 2,
-        title: 'Natural language processing',
-        meta: 'Unlocks after Module 6 · 6 tasks · Est. 3 weeks',
-        status: 'upcoming',
+      earnedCertificates: {
+        value: stats.earnedCertificates,
+        note: stats.latestCertificateTopic
+          ? `Latest: ${stats.latestCertificateTopic}`
+          : 'None earned yet',
       },
-    ],
-  },
-  deadlines: [
-    {
-      id: 'final-quiz',
-      title: 'Final Module Quiz',
-      when: 'Today, 11:59 PM',
-      iconKey: 'quiz',
-      tone: 'error',
+      clubProgress: {
+        value: api.club?.progressPct ?? 0,
+        unit: '%',
+        note: api.club ? api.club.name : 'No club joined',
+      },
+      learningTime: {
+        value: toHours(stats.learningMinutes),
+        unit: 'h',
+        // Named for what it is: the estimates on finished modules, not a clock.
+        note: 'Estimated across completed modules',
+      },
     },
-    {
-      id: 'project-docs',
-      title: 'Project Documentation',
-      when: 'Tomorrow, 09:00 AM',
-      iconKey: 'doc',
-      tone: 'neutral',
-    },
-  ],
-  events: [
-    {
-      id: 'ai-ethics',
-      title: 'AI Ethics Workshop',
-      when: 'Wednesday, 4:00 PM',
-      iconKey: 'workshop',
-      tone: 'info',
-    },
-    {
-      id: 'career-qa',
-      title: 'Career Path Q&A',
-      when: 'Friday, 1:00 PM',
-      iconKey: 'podcast',
-      tone: 'amber',
-    },
-  ],
-};
+    // Nothing records a due date, so this list stays empty until tasks carry one.
+    deadlines: [],
+    events: toEvents(api),
+  };
+}
 
 export const dashboardService = {
   getLearnerDashboard: (): Promise<LearnerDashboard> =>
-    Promise.resolve(DASHBOARD),
+    httpClient
+      .get<LearnerDashboardResponse>('/dashboard/me')
+      .then((r) => toDashboard(r.data)),
 };

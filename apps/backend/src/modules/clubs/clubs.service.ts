@@ -6,11 +6,12 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
-import type {
-  CreateClub,
-  JoinClub,
-  UpdateClub,
-  UpdateMembershipStatus,
+import {
+  MembershipStatus,
+  type CreateClub,
+  type JoinClub,
+  type UpdateClub,
+  type UpdateMembershipStatus,
 } from 'shared';
 import { ClubsRepository } from './clubs.repository';
 
@@ -122,6 +123,20 @@ export class ClubsService {
         );
       }
 
+      // A learner belongs to one club at a time. Caught here so the answer
+      // comes back now rather than after a coordinator has read the
+      // application — the approval path refuses it too, which is what actually
+      // holds the rule.
+      const elsewhere = await this.repo.findActiveMembershipElsewhere(
+        clubId,
+        userId,
+      );
+      if (elsewhere) {
+        throw new BadRequestException(
+          `You are already an active member of ${elsewhere.clubName}. Leave that club before joining another.`,
+        );
+      }
+
       const membership = await this.repo.createMembership(clubId, userId, {
         expectation: dto.expectation,
       });
@@ -154,6 +169,21 @@ export class ClubsService {
 
       const membership = await this.repo.findMembership(clubId, userId);
       if (!membership) throw new NotFoundException('Membership not found');
+
+      // Where the one-club rule is actually kept: a membership only becomes
+      // active here, so two pending applications can't both be approved into
+      // two active memberships.
+      if (dto.status === MembershipStatus.active) {
+        const elsewhere = await this.repo.findActiveMembershipElsewhere(
+          clubId,
+          userId,
+        );
+        if (elsewhere) {
+          throw new ConflictException(
+            `This learner is already an active member of ${elsewhere.clubName}`,
+          );
+        }
+      }
 
       const updated = await this.repo.updateMembership(clubId, userId, {
         status: dto.status,

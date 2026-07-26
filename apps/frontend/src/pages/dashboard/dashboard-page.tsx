@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 
 import { ActiveTopicCard } from '@/features/dashboard/components/active-topic-card';
 import { AgendaCard } from '@/features/dashboard/components/agenda-card';
+import { EmptyCard } from '@/features/dashboard/components/empty-card';
 import { JourneyCard } from '@/features/dashboard/components/journey-card';
 import { MetricTile } from '@/features/dashboard/components/metric-tile';
 import { METRIC_TONE } from '@/features/dashboard/dashboard.constants';
@@ -53,22 +54,17 @@ export function DashboardPage() {
 
         {data && (
           <>
-            {/* Greeting carries the one thing to do next; the cohort standing
-                sits opposite it rather than inside the club card. */}
-            <div className="flex flex-wrap items-end justify-between gap-3">
-              <div className="min-w-0 flex-1 basis-60">
-                <h1 className="text-[21px] font-bold leading-tight tracking-tight text-foreground md:text-2xl lg:text-3xl">
-                  Welcome back
-                  {firstName(user?.name) ? `, ${firstName(user?.name)}` : ''}
-                </h1>
-                <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted-foreground md:text-sm">
-                  {data.nudge}
-                </p>
-              </div>
-              <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-amber-200 bg-amber-100 px-3 py-2 text-[11px] font-semibold text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-400">
-                <Trophy className="size-3.5" strokeWidth={1.9} />
-                {data.journey.cohortBadge}
-              </span>
+            {/* The greeting carries the one thing to do next. The spec's
+                cohort-standing pill sat here; nothing ranks a learner against
+                their cohort, so there is nothing true to put in it. */}
+            <div className="min-w-0">
+              <h1 className="text-[21px] font-bold leading-tight tracking-tight text-foreground md:text-2xl lg:text-3xl">
+                Welcome back
+                {firstName(user?.name) ? `, ${firstName(user?.name)}` : ''}
+              </h1>
+              <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted-foreground md:text-sm">
+                {data.nudge}
+              </p>
             </div>
 
             {/* Four across once there is room; two up until then. */}
@@ -99,13 +95,42 @@ export function DashboardPage() {
               />
             </div>
 
-            {/* The club and the topic inside it, side by side once both fit. */}
+            {/* The club and the topic inside it, side by side once both fit.
+                Either can be missing — a learner joins a club before a topic,
+                and is approved into each — so each has its own way in. */}
             <div className="grid grid-cols-1 items-stretch gap-4 xl:grid-cols-2">
-              <JourneyCard journey={data.journey} />
-              <ActiveTopicCard
-                topic={data.activeTopic}
-                onContinue={() => navigate(`/topics/${data.activeTopic.id}`)}
-              />
+              {data.club ? (
+                <JourneyCard journey={data.club} />
+              ) : (
+                <EmptyCard
+                  title="No club yet"
+                  body="Join a club to get a curriculum, a mentor, and the people learning alongside you."
+                  actionLabel="Explore clubs"
+                  onAction={() => navigate('/explore')}
+                />
+              )}
+
+              {data.activeTopic ? (
+                <ActiveTopicCard
+                  topic={data.activeTopic}
+                  onContinue={() => navigate(`/topics/${data.activeTopic!.id}`)}
+                />
+              ) : (
+                <EmptyCard
+                  title="No topic yet"
+                  body={
+                    data.club
+                      ? `Enroll in a topic in ${data.club.clubName} to start working through its modules.`
+                      : 'Once you are in a club, enroll in one of its topics to start learning.'
+                  }
+                  actionLabel={
+                    data.club ? 'Browse its topics' : 'Explore clubs'
+                  }
+                  onAction={() =>
+                    navigate(data.club ? `/clubs/${data.club.id}` : '/explore')
+                  }
+                />
+              )}
             </div>
 
             <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">

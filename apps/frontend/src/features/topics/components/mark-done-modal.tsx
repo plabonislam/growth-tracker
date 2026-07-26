@@ -9,9 +9,16 @@ type MarkDoneModalProps = {
   open: boolean;
   onClose: () => void;
   onSubmit: () => void;
+  /** Holds the dialog open while the request is in flight. */
+  isSubmitting?: boolean;
 };
 
-export function MarkDoneModal({ open, onClose, onSubmit }: MarkDoneModalProps) {
+export function MarkDoneModal({
+  open,
+  onClose,
+  onSubmit,
+  isSubmitting = false,
+}: MarkDoneModalProps) {
   const [confirmed, setConfirmed] = useState(false);
 
   // Reset the confirmation whenever the modal is (re)opened.
@@ -79,10 +86,19 @@ export function MarkDoneModal({ open, onClose, onSubmit }: MarkDoneModalProps) {
         </div>
 
         <div className="flex flex-col gap-3 bg-muted/30 p-4 sm:flex-row-reverse">
-          <Button className="flex-1" disabled={!confirmed} onClick={onSubmit}>
-            Submit Request
+          <Button
+            className="flex-1"
+            disabled={!confirmed || isSubmitting}
+            onClick={onSubmit}
+          >
+            {isSubmitting ? 'Sending…' : 'Submit Request'}
           </Button>
-          <Button variant="outline" className="flex-1" onClick={onClose}>
+          <Button
+            variant="outline"
+            className="flex-1"
+            disabled={isSubmitting}
+            onClick={onClose}
+          >
             Cancel
           </Button>
         </div>

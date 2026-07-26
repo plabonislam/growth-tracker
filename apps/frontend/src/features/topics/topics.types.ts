@@ -1,4 +1,4 @@
-import type { ResourceKind, TopicStatus } from 'shared';
+import type { ModuleProgressStatus, ResourceKind, TopicStatus } from 'shared';
 
 /** Resource kind, resolved to an icon + action label in `topics.constants.ts`. */
 export type { ResourceKind, TopicStatus };
@@ -46,8 +46,11 @@ export interface CurriculumModule {
   resources: CurriculumResource[];
 }
 
-/** Completion state of a module inside an enrolled topic. */
-export type ModuleStatus = 'completed' | 'in_progress' | 'todo';
+/**
+ * Completion state of a module inside an enrolled topic — the API's own enum,
+ * so a card renders exactly what `GET /topics/:id/progress` returned.
+ */
+export type ModuleStatus = ModuleProgressStatus;
 
 export interface ModuleResource {
   id: string;
@@ -80,6 +83,20 @@ export interface TopicMentor {
   rating: number;
   /** Typical reply delay, e.g. "~2h". */
   avgResponseTime: string;
+}
+
+/** A module a learner has submitted, as it appears in the mentor's queue. */
+export interface ModuleReviewRequest {
+  moduleId: string;
+  learnerId: string;
+  learner: { name: string; email: string };
+  moduleTitle: string;
+  topicId: string;
+  topicName: string;
+  /** The module's share of the topic, which is what approving awards. */
+  weight: number;
+  /** When it was sent for review; null on rows written before it was tracked. */
+  submittedAt: string | null;
 }
 
 export interface EnrolledTopicDetail {

@@ -55,6 +55,11 @@ export const topicEnrollmentsTable = pgTable(
       .references(() => usersTable.id)
       .notNull(),
     status: enrollmentStatusEnum('status').notNull(),
+    /**
+     * Why the learner wants the topic, as they wrote it on the request — the
+     * mentor reviews on this. Nullable for rows written before it was asked for.
+     */
+    reason: text('reason'),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
   },
   (t) => [unique().on(t.topicId, t.userId)],

@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { enrollmentStatusSchema } from '../enums';
+
 export const ApproveEnrollmentSchema = z.object({
   action: z.enum(['approve', 'reject']),
 });
@@ -8,14 +10,13 @@ export const ApproveEnrollmentSchema = z.object({
  * The reason's bounds, published so the form's hint can read them instead of
  * restating the numbers and drifting from them.
  */
-export const TOPIC_ENROLLMENT_REASON_LENGTH = { min: 40, max: 1000 } as const;
+export const TOPIC_ENROLLMENT_REASON_LENGTH = { min: 20, max: 500 } as const;
 
 /**
  * What to write, rather than how long to make it — a character count is no help
  * to someone who has not worked out what to say yet.
  */
-const REASON_MESSAGE =
-  'Tell your mentor what you want to build with this topic';
+const REASON_MESSAGE = 'Tell your mentor what you want to join with this topic';
 
 /**
  * Payload a learner submits to request enrollment in a topic. The learner's
@@ -49,8 +50,20 @@ export const TopicEnrollmentResponseSchema = z.object({
   id: z.string().uuid(),
   topicId: z.string().uuid(),
   userId: z.string().uuid(),
-  status: z.string(),
+  status: enrollmentStatusSchema,
+  /** Null on rows written before a reason was asked for. */
+  reason: z.string().nullable(),
   createdAt: z.string(),
+});
+
+/**
+ * Where the caller stands with one topic. Returned as a set from
+ * `GET /topics/enrollments/mine`, which is how a topic list knows whether to
+ * offer enrolling, say a request is pending, or open the curriculum.
+ */
+export const MyTopicEnrollmentSchema = z.object({
+  topicId: z.string().uuid(),
+  status: enrollmentStatusSchema,
 });
 
 export type ApproveEnrollment = z.infer<typeof ApproveEnrollmentSchema>;
@@ -61,3 +74,4 @@ export type ClubEnrollmentResponse = z.infer<
 export type TopicEnrollmentResponse = z.infer<
   typeof TopicEnrollmentResponseSchema
 >;
+export type MyTopicEnrollment = z.infer<typeof MyTopicEnrollmentSchema>;

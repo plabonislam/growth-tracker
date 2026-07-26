@@ -124,7 +124,6 @@ export const TOPIC_ACCESS_NOTE: Record<
  */
 export const TOPIC_ENROLLMENT_TERMS = [
   'I acknowledge the time commitment of approximately 5–8 hours per week.',
-  'I agree to adhere to the Peer-Review Code of Conduct.',
   'I confirm that I have access to the necessary cloud environment resources.',
   'I have read the requirements and am ready to commit to this topic’s learning schedule.',
 ];

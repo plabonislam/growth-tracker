@@ -121,7 +121,9 @@ function toTopic(apiTopic: TopicListItem, index: number): Topic {
     mentor: apiTopic.mentor
       ? { id: apiTopic.mentor.id, name: apiTopic.mentor.name }
       : undefined,
-    enrolled: false,
+    // Filled in by the caller, which holds the enrollments — the topics
+    // endpoint answers the same for everyone.
+    enrollmentStatus: null,
   };
 }
 

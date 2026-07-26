@@ -3,6 +3,7 @@ import { CoreModule } from './core/core.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ClubsModule } from './modules/clubs/clubs.module';
 import { CourseModulesModule } from './modules/course-modules/course-modules.module';
+import { EnrollmentsModule } from './modules/enrollments/enrollments.module';
 import { TopicsModule } from './modules/topics/topics.module';
 import { UserModule } from './modules/user/user.module';
 
@@ -14,6 +15,7 @@ import { UserModule } from './modules/user/user.module';
     ClubsModule,
     TopicsModule,
     CourseModulesModule,
+    EnrollmentsModule,
   ],
 })
 export class AppModule {}

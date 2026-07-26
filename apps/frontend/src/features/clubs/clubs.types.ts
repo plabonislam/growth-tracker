@@ -1,4 +1,4 @@
-import type { TopicStatus } from 'shared';
+import type { EnrollmentStatus, TopicStatus } from 'shared';
 
 /** Membership state for the current user relative to a club. */
 export type MembershipStatus =
@@ -62,8 +62,12 @@ export interface Topic {
   estTimeMinutes?: number;
   /** Absent until the list endpoint exposes the assigned mentor. */
   mentor?: Mentor;
-  /** Enrolled topics show "Open"; otherwise "Enroll". */
-  enrolled: boolean;
+  /**
+   * Where the caller stands with this topic — `null` when they have never
+   * applied. Approved topics show "Open", a pending request says so, and
+   * anything else offers "Enroll".
+   */
+  enrollmentStatus: EnrollmentStatus | null;
 }
 
 /**

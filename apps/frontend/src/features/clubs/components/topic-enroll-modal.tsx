@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { TOPIC_ENROLLMENT_REASON_LENGTH } from 'shared';
+import { EnrollTopicSchema, TOPIC_ENROLLMENT_REASON_LENGTH } from 'shared';
 
 import { formatDuration } from '@/lib/format-duration';
 import { cn } from '@/lib/utils';
@@ -47,6 +47,23 @@ interface SummaryFact {
   icon: typeof Clock;
   label: string;
   value: string;
+}
+
+/**
+ * A field's error, under the field it belongs to. `role="alert"` so it is read
+ * out when it appears — the learner may have pressed send with focus elsewhere.
+ */
+function FieldError({ id, children }: { id: string; children: string }) {
+  return (
+    <p
+      id={id}
+      role="alert"
+      className="mt-1.5 flex items-start gap-1.5 text-[12px] font-medium leading-[1.45] text-destructive"
+    >
+      <AlertCircle className="mt-px size-3.5 shrink-0" strokeWidth={2} />
+      {children}
+    </p>
+  );
 }
 
 /** Icon tile over a labelled value — the topic summary's repeating unit. */
@@ -89,18 +106,23 @@ export function TopicEnrollModal({
   onBackToForm,
 }: TopicEnrollModalProps) {
   const titleId = useId();
+  const reasonErrorId = useId();
+  const termsErrorId = useId();
   const panelRef = useRef<HTMLDivElement>(null);
 
   const [checked, setChecked] = useState<boolean[]>(() =>
     terms.map(() => false),
   );
   const [reason, setReason] = useState('');
+  // Whether sending has been tried, which is what turns the errors on.
+  const [attempted, setAttempted] = useState(false);
 
   // Reset the form whenever the modal is (re)opened for a topic.
   useEffect(() => {
     if (!open) return;
     setChecked(terms.map(() => false));
     setReason('');
+    setAttempted(false);
   }, [open, terms]);
 
   // Move focus into the dialog, so Escape and Tab act on it rather than on the
@@ -146,13 +168,20 @@ export function TopicEnrollModal({
   const reasonTooLong = reasonLength > TOPIC_ENROLLMENT_REASON_LENGTH.max;
   const ready = unconfirmed === 0 && reasonShortBy === 0 && !reasonTooLong;
 
-  // One sentence for whichever step is still open, in the order the form is
-  // filled in — the checklist sits below the reason, so it answers last.
-  const blockNote = reasonTooLong
-    ? `Trim your reason to ${TOPIC_ENROLLMENT_REASON_LENGTH.max} characters or fewer.`
-    : reasonShortBy > 0
-      ? `Add ${reasonShortBy} more character${reasonShortBy === 1 ? '' : 's'} to your reason.`
-      : `Confirm ${unconfirmed} more line${unconfirmed === 1 ? '' : 's'} to send this request.`;
+  // The reason is judged by the same schema the API will judge it by, so the
+  // wording a learner reads here is the wording the server would have sent.
+  const reasonIssue = EnrollTopicSchema.shape.reason.safeParse(reason);
+  // Held back until the request is first attempted, so the dialog doesn't open
+  // by pointing out that an untouched form is incomplete. After that they run
+  // live, clearing as each field is put right.
+  const reasonError =
+    attempted && !reasonIssue.success
+      ? reasonIssue.error.issues[0]?.message
+      : null;
+  const termsError =
+    attempted && unconfirmed > 0
+      ? `Confirm ${unconfirmed} more term${unconfirmed === 1 ? '' : 's'} to send this request.`
+      : null;
 
   const estimate = formatDuration(meta?.estTimeMinutes);
   const facts: SummaryFact[] = [];
@@ -224,13 +253,15 @@ export function TopicEnrollModal({
           {/* Topic summary — the facts the decision rests on, kept out of the
               form so the form is only what the learner has to fill in. */}
           {facts.length > 0 && (
-            <aside className="border-b bg-muted/40 p-4 sm:px-[22px] sm:py-[18px] min-[1060px]:border-b-0 min-[1060px]:border-r min-[1060px]:px-6 min-[1060px]:py-[22px]">
+            <aside className="border-b bg-muted/40 p-4 sm:max-[1059px]:px-[22px] sm:max-[1059px]:py-[18px] min-[1060px]:border-b-0 min-[1060px]:border-r min-[1060px]:px-6 min-[1060px]:py-[22px]">
               <div className="text-[10.5px] font-semibold uppercase leading-none tracking-[0.12em] text-muted-foreground">
                 Topic summary
               </div>
-              {/* One column when there is room to read down it, two across the
-                  tablet range where the panel is full-width and short. */}
-              <div className="mt-3 grid gap-[11px] sm:grid-cols-2 min-[1060px]:grid-cols-1">
+              {/* One column to read down, except across the tablet range, where
+                  the panel is full-width and short and two fit side by side.
+                  The range is closed at both ends so it can't leak into the
+                  wide layout, where the column is only 318px. */}
+              <div className="mt-3 grid gap-[11px] sm:max-[1059px]:grid-cols-2">
                 {facts.map((fact) => (
                   <SummaryItem key={fact.label} {...fact} />
                 ))}
@@ -239,11 +270,13 @@ export function TopicEnrollModal({
           )}
 
           <form
+            noValidate
             onSubmit={(event) => {
               event.preventDefault();
+              setAttempted(true);
               if (ready) onSubmit(reason.trim());
             }}
-            className="flex flex-col gap-4 p-4 sm:px-[22px] sm:py-[18px] min-[1060px]:px-6 min-[1060px]:py-[22px]"
+            className="flex flex-col gap-4 p-4 sm:max-[1059px]:px-[22px] sm:max-[1059px]:py-[18px] min-[1060px]:px-6 min-[1060px]:py-[22px]"
           >
             <label className="block">
               <span className="flex items-baseline justify-between gap-3">
@@ -271,9 +304,19 @@ export function TopicEnrollModal({
                 rows={3}
                 value={reason}
                 onChange={(event) => setReason(event.target.value)}
+                aria-invalid={reasonError ? true : undefined}
+                aria-describedby={reasonError ? reasonErrorId : undefined}
                 placeholder={`Briefly describe what you want to build with ${topicName} and how this topic fits your track…`}
-                className="mt-2 min-h-[82px] w-full resize-y rounded-[9px] border bg-muted/40 px-3.5 py-3 text-[13.5px] leading-relaxed text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary/40 focus:bg-background focus:ring-[3px] focus:ring-primary/12"
+                className={cn(
+                  'mt-2 min-h-[82px] w-full resize-y rounded-[9px] border bg-muted/40 px-3.5 py-3 text-[13.5px] leading-relaxed text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:bg-background focus:ring-[3px]',
+                  reasonError
+                    ? 'border-destructive focus:border-destructive focus:ring-destructive/15'
+                    : 'focus:border-primary/40 focus:ring-primary/12',
+                )}
               />
+              {reasonError && (
+                <FieldError id={reasonErrorId}>{reasonError}</FieldError>
+              )}
             </label>
 
             <div>
@@ -296,7 +339,13 @@ export function TopicEnrollModal({
               {/* A confirmed line tints, so the panel fills in as it is worked
                   down. The box is drawn rather than a checkbox control, to keep
                   the tick inside the row's own tinting. */}
-              <ul className="mt-2 overflow-hidden rounded-[11px] border">
+              <ul
+                aria-describedby={termsError ? termsErrorId : undefined}
+                className={cn(
+                  'mt-2 overflow-hidden rounded-[11px] border',
+                  termsError && 'border-destructive',
+                )}
+              >
                 {terms.map((term, index) => {
                   const isChecked = checked[index] ?? false;
                   return (
@@ -340,22 +389,17 @@ export function TopicEnrollModal({
                   );
                 })}
               </ul>
+              {termsError && (
+                <FieldError id={termsErrorId}>{termsError}</FieldError>
+              )}
             </div>
 
-            {/* What is left, or that nothing is — the send button never has to
-                be guessed at. */}
-            {ready ? (
+            {/* Said once everything is in order, where the blocking errors were
+                — the learner sees the same spot answer either way. */}
+            {ready && (
               <span className="-mt-1 flex items-start gap-2 text-[12px] font-semibold leading-[1.45] text-emerald-700 dark:text-emerald-400">
                 <Check className="mt-px size-3.5 shrink-0" strokeWidth={2.2} />
                 All set — your mentor will be notified.
-              </span>
-            ) : (
-              <span className="-mt-1 flex items-start gap-2 text-[12px] font-semibold leading-[1.45] text-amber-700 dark:text-amber-400">
-                <AlertCircle
-                  className="mt-px size-3.5 shrink-0"
-                  strokeWidth={2}
-                />
-                {blockNote}
               </span>
             )}
 
@@ -370,15 +414,18 @@ export function TopicEnrollModal({
               >
                 Cancel
               </button>
+              {/* Reads as closed until the form is in order, but stays a real
+                  button: pressing it is how a learner asks what is missing, and
+                  a disabled one — in markup or to a screen reader — would
+                  answer nothing. */}
               <button
                 type="submit"
-                disabled={!ready || isSubmitting}
-                title={ready ? undefined : blockNote}
+                disabled={isSubmitting}
                 className={cn(
                   'inline-flex flex-[2_1_220px] items-center justify-center gap-2 rounded-[10px] border px-[18px] py-3.5 text-[13px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                   ready && !isSubmitting
                     ? 'border-primary bg-primary text-primary-foreground shadow-sm hover:bg-primary/90'
-                    : 'cursor-not-allowed border-muted bg-muted text-muted-foreground',
+                    : 'border-muted bg-muted text-muted-foreground',
                 )}
               >
                 {isSubmitting ? 'Sending…' : 'Send enrollment request'}

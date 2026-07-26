@@ -21,6 +21,8 @@ export const ENROLLMENTS_KEYS = {
     [...ENROLLMENTS_KEYS.lists(), { type, page, pageSize }] as const,
   count: (type: EnrollmentType) =>
     [...ENROLLMENTS_KEYS.lists(), 'count', type] as const,
+  /** The caller's own topic enrollments — not part of the review queue. */
+  mine: () => [...ENROLLMENTS_KEYS.all, 'mine'] as const,
 };
 
 export function usePendingEnrollments(
@@ -67,6 +69,35 @@ export function useUpdateEnrollment() {
   return useMutation({
     mutationFn: enrollmentsService.updateEnrollment,
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ENROLLMENTS_KEYS.lists() });
+      // A decision changes where the learner stands, which topic cards read.
+      queryClient.invalidateQueries({ queryKey: ENROLLMENTS_KEYS.mine() });
+    },
+  });
+}
+
+/**
+ * The caller's own topic enrollments, keyed by topic. Fetched once and read by
+ * every topic card, which is what decides between enrolling, waiting, and
+ * opening the curriculum.
+ */
+export function useMyTopicEnrollments() {
+  return useQuery({
+    queryKey: ENROLLMENTS_KEYS.mine(),
+    queryFn: enrollmentsService.getMyTopicEnrollments,
+  });
+}
+
+/** Sends the learner's enrollment request for one topic. */
+export function useEnrollInTopic() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ topicId, reason }: { topicId: string; reason: string }) =>
+      enrollmentsService.enrollInTopic(topicId, reason),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ENROLLMENTS_KEYS.mine() });
+      // The request joins the review queue an authority is looking at.
       queryClient.invalidateQueries({ queryKey: ENROLLMENTS_KEYS.lists() });
     },
   });

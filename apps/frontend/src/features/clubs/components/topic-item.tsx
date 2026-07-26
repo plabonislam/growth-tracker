@@ -1,4 +1,5 @@
 import { Layers, Pencil } from 'lucide-react';
+import type { EnrollmentStatus } from 'shared';
 
 import { Card } from '@/components/ui/card';
 import { formatDuration } from '@/lib/format-duration';
@@ -63,6 +64,23 @@ const ACTION_META: Record<
   enroll: { label: 'Enroll' },
 };
 
+/**
+ * A request the learner is not acting on: waiting on the mentor, or turned
+ * down. `approved` is absent — that one becomes the "Open" action instead.
+ */
+const REQUEST_STATE_META: Partial<
+  Record<EnrollmentStatus, { label: string; className: string }>
+> = {
+  pending: {
+    label: 'Awaiting review',
+    className: 'bg-amber-500/10 text-amber-700 dark:text-amber-400',
+  },
+  rejected: {
+    label: 'Not approved',
+    className: 'bg-muted text-muted-foreground',
+  },
+};
+
 export function TopicItem({
   topic,
   canManageTopic,
@@ -81,10 +99,17 @@ export function TopicItem({
 
   const action: TopicAction = canManage
     ? 'manage-modules'
-    : topic.enrolled
+    : topic.enrollmentStatus === 'approved'
       ? 'open'
       : 'enroll';
   const { label, icon: Icon } = ACTION_META[action];
+
+  // A request that has been made but not settled is neither an action nor an
+  // absence of one, so it reads as its own state where the button would be.
+  const requestState =
+    !canManage && topic.enrollmentStatus !== null
+      ? REQUEST_STATE_META[topic.enrollmentStatus]
+      : undefined;
 
   // Two gates, both about who the action belongs to. A draft reaches only the
   // people building it — there is nothing for anyone else to enroll in yet.
@@ -163,8 +188,15 @@ export function TopicItem({
         </div>
         {/* Management reads as a bordered tool; the learner's action is the
             filled CTA. Both sit at the same height so a row of cards lines up
-            whichever one each is showing. */}
-        {!showAction ? null : Icon ? (
+            whichever one each is showing. A settled-elsewhere request takes the
+            same slot as a quiet label — there is nothing to press. */}
+        {requestState ? (
+          <span
+            className={`shrink-0 rounded-md px-2.5 py-1.5 text-[12.5px] font-semibold ${requestState.className}`}
+          >
+            {requestState.label}
+          </span>
+        ) : !showAction ? null : Icon ? (
           <button
             type="button"
             onClick={() => onAction?.(topic, action)}

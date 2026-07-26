@@ -1,4 +1,8 @@
-import { EnrollmentStatus, MembershipStatus } from 'shared';
+import {
+  MembershipStatus,
+  type MyTopicEnrollment,
+  type TopicEnrollmentResponse,
+} from 'shared';
 
 import { httpClient } from '@/services/http/client';
 import type { EnrollmentRequest } from '../enrollments.types';
@@ -44,23 +48,15 @@ const RESOURCE_PATH: Record<EnrollmentType, string> = {
 };
 
 /**
- * "Approve" means different things per resource: a club *membership* becomes
- * `active` (there is no `approved` member state), while a topic *enrollment*
- * becomes `approved`. Sending `approved` to the club endpoint fails its Zod
- * schema with a 400.
+ * A decision reads differently per resource. A club *membership* is moved to a
+ * state — `active`, since there is no `approved` member — through the members
+ * endpoint, while a topic *enrollment* is decided by an action the enrollments
+ * endpoint applies itself. The two contracts don't overlap, so each is built
+ * where it is sent.
  */
-const API_STATUS: Record<
-  EnrollmentType,
-  Record<'approved' | 'rejected', string>
-> = {
-  club: {
-    approved: MembershipStatus.active,
-    rejected: MembershipStatus.rejected,
-  },
-  topic: {
-    approved: EnrollmentStatus.approved,
-    rejected: EnrollmentStatus.rejected,
-  },
+const CLUB_MEMBER_STATUS: Record<'approved' | 'rejected', string> = {
+  approved: MembershipStatus.active,
+  rejected: MembershipStatus.rejected,
 };
 
 const TONE_ROTATION = ['teal', 'violet', 'amber', 'rose', 'indigo'] as const;
@@ -122,8 +118,27 @@ export const enrollmentsService = {
     status,
     droppedReason,
   }: UpdateEnrollmentParams) =>
-    httpClient.patch(`/${RESOURCE_PATH[type]}/${targetId}/members/${userId}`, {
-      status: API_STATUS[type][status],
-      droppedReason,
-    }),
+    type === 'topic'
+      ? httpClient.patch(`/topics/${targetId}/enrollments/${userId}`, {
+          action: status === 'approved' ? 'approve' : 'reject',
+        })
+      : httpClient.patch(`/clubs/${targetId}/members/${userId}`, {
+          status: CLUB_MEMBER_STATUS[status],
+          droppedReason,
+        }),
+
+  /** Sends a learner's request to join a topic — `POST /topics/:id/enroll`. */
+  enrollInTopic: (
+    topicId: string,
+    reason: string,
+  ): Promise<TopicEnrollmentResponse> =>
+    httpClient
+      .post<TopicEnrollmentResponse>(`/topics/${topicId}/enroll`, { reason })
+      .then((r) => r.data),
+
+  /** Where the caller stands with every topic they have applied to. */
+  getMyTopicEnrollments: (): Promise<MyTopicEnrollment[]> =>
+    httpClient
+      .get<MyTopicEnrollment[]>('/topics/enrollments/mine')
+      .then((r) => r.data),
 };

@@ -1,6 +1,7 @@
 import { ArrowLeft } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
+import { toast } from 'sonner';
 
 import { ClubHero } from '@/features/clubs/components/club-hero';
 import { ClubJoinModal } from '@/features/clubs/components/club-join-modal';
@@ -17,6 +18,11 @@ import {
 } from '@/features/clubs/clubs.constants';
 import type { Topic, TopicAction } from '@/features/clubs/clubs.types';
 import { useClubDetail, useClubTopics } from '@/features/clubs/hooks/use-clubs';
+import {
+  useEnrollInTopic,
+  useMyTopicEnrollments,
+} from '@/features/enrollments/hooks/use-enrollments';
+import { getApiErrorMessage } from '@/services/http/client';
 import { useAuthStore } from '@/store/auth.store';
 
 /**
@@ -35,12 +41,34 @@ export function ClubDetailPage({ clubId }: { clubId: string }) {
   const isAuthority = useAuthStore((s) => s.isAuthority);
   const userId = useAuthStore((s) => s.userId);
   const { data: club, isLoading, isError } = useClubDetail(clubId);
-  const { data: topics = [], isLoading: topicsLoading } = useClubTopics(clubId);
+  const { data: clubTopics = [], isLoading: topicsLoading } =
+    useClubTopics(clubId);
+  const { data: myEnrollments } = useMyTopicEnrollments();
+  const enrollMutation = useEnrollInTopic();
   const [enrollTopic, setEnrollTopic] = useState<Topic | null>(null);
+  // True once this topic's request has gone, which swaps the dialog for its
+  // confirmation. Cleared with the dialog.
+  const [requestSent, setRequestSent] = useState(false);
   const [creatingTopic, setCreatingTopic] = useState(false);
   const [joiningClub, setJoiningClub] = useState(false);
   // The topic whose edit form is open; null while none is.
   const [editingTopic, setEditingTopic] = useState<Topic | null>(null);
+
+  // The topics endpoint answers the same for everyone, so where the caller
+  // stands with each one is fetched once and folded in here.
+  const topics = useMemo(() => {
+    if (!myEnrollments?.length) return clubTopics;
+    const statusByTopic = new Map(
+      myEnrollments.map((enrollment) => [
+        enrollment.topicId,
+        enrollment.status,
+      ]),
+    );
+    return clubTopics.map((topic) => ({
+      ...topic,
+      enrollmentStatus: statusByTopic.get(topic.id) ?? null,
+    }));
+  }, [clubTopics, myEnrollments]);
 
   // Authority and the club's own coordinator administer its topics.
   const canManageTopics =
@@ -52,12 +80,34 @@ export function ClubDetailPage({ clubId }: { clubId: string }) {
 
   const handleTopicAction = (topic: Topic, action: TopicAction) => {
     if (action === 'enroll') {
+      setRequestSent(false);
       setEnrollTopic(topic);
       return;
     }
     // 'manage-modules' and 'open' both resolve to the topic route.
     navigate(`/topics/${topic.id}`);
   };
+
+  const closeEnrollModal = () => {
+    setEnrollTopic(null);
+    setRequestSent(false);
+    enrollMutation.reset();
+  };
+
+  const submitEnrollment = (topicId: string, reason: string) =>
+    enrollMutation.mutate(
+      { topicId, reason },
+      {
+        onSuccess: () => setRequestSent(true),
+        onError: (error) =>
+          toast.error(
+            getApiErrorMessage(
+              error,
+              'Couldn’t send your enrollment request. Please try again.',
+            ),
+          ),
+      },
+    );
 
   return (
     <div className="pb-24">
@@ -144,7 +194,7 @@ export function ClubDetailPage({ clubId }: { clubId: string }) {
       {enrollTopic && (
         <TopicEnrollModal
           open
-          onClose={() => setEnrollTopic(null)}
+          onClose={closeEnrollModal}
           topicName={enrollTopic.title}
           meta={{
             modules: enrollTopic.modules,
@@ -155,10 +205,12 @@ export function ClubDetailPage({ clubId }: { clubId: string }) {
           about={buildTopicAbout(enrollTopic)}
           terms={TOPIC_ENROLLMENT_TERMS}
           reviewNote={TOPIC_ENROLLMENT_REVIEW_NOTE}
-          // TODO: POST the reason once the topic-enrollment endpoint exists —
-          // until then the request has nowhere to go, so the dialog closes
-          // rather than claiming it was sent.
-          onSubmit={() => setEnrollTopic(null)}
+          onSubmit={(reason) => submitEnrollment(enrollTopic.id, reason)}
+          isSubmitting={enrollMutation.isPending}
+          sent={requestSent}
+          // No way back to a form whose request has gone — the only thing left
+          // to do with this dialog is leave it.
+          onBackToForm={undefined}
         />
       )}
 

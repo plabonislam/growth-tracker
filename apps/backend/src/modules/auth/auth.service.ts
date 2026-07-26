@@ -6,6 +6,8 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { eq } from 'drizzle-orm';
 import { DatabaseService } from '../../core/database/database.service';
+import { clubsTable } from '../../core/database/schema/clubs.schema';
+import { topicMentorsTable } from '../../core/database/schema/topics.schema';
 import { usersTable } from '../../core/database/schema/users.schema';
 
 interface GoogleProfile {
@@ -87,17 +89,40 @@ export class AuthService {
     // `id` is intentionally omitted — the client already has it from the JWT
     // `sub` claim (see frontend auth.store). This endpoint supplies only the
     // profile fields the token doesn't carry.
-    const [user] = await this.db.db
-      .select({
-        name: usersTable.name,
-        email: usersTable.email,
-        avatarUrl: usersTable.avatarUrl,
-        isAuthority: usersTable.isAuthority,
-      })
-      .from(usersTable)
-      .where(eq(usersTable.id, userId));
+    const [[user], [coordinated], [mentored]] = await Promise.all([
+      this.db.db
+        .select({
+          name: usersTable.name,
+          email: usersTable.email,
+          avatarUrl: usersTable.avatarUrl,
+          isAuthority: usersTable.isAuthority,
+        })
+        .from(usersTable)
+        .where(eq(usersTable.id, userId)),
+      // Held in join tables rather than on the user row, so a role is a
+      // question about what they run, not a column anyone can read off a token.
+      this.db.db
+        .select({ id: clubsTable.id })
+        .from(clubsTable)
+        .where(eq(clubsTable.coordinatorId, userId))
+        .limit(1),
+      this.db.db
+        .select({ topicId: topicMentorsTable.topicId })
+        .from(topicMentorsTable)
+        .where(eq(topicMentorsTable.userId, userId))
+        .limit(1),
+    ]);
 
     if (!user) throw new NotFoundException('User not found');
-    return user;
+
+    return {
+      ...user,
+      /** What the caller runs, which decides the reviewing screens they get. */
+      roles: {
+        isAuthority: user.isAuthority ?? false,
+        isCoordinator: coordinated != null,
+        isMentor: mentored != null,
+      },
+    };
   }
 }

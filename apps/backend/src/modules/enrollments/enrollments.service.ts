@@ -116,7 +116,7 @@ export class EnrollmentsService {
     );
 
     try {
-      await this.assertTopicMentorOrAuthority(topicId, caller);
+      await this.assertMayDecide(topicId, caller);
 
       const status =
         dto.action === 'approve'
@@ -155,10 +155,21 @@ export class EnrollmentsService {
     }
   }
 
-  async getPendingTopicEnrollments(limit: number = 10, offset: number = 0) {
+  /**
+   * The review queue as this caller is responsible for it: a mentor sees their
+   * own topics, a coordinator every topic in their club, and an authority all
+   * of them. Anyone else reviews nothing, and gets an empty queue rather than a
+   * closed door — there is nothing of theirs being withheld.
+   */
+  async getPendingTopicEnrollments(
+    limit: number = 10,
+    offset: number = 0,
+    caller: Caller,
+  ) {
+    const reviewerId = caller.isAuthority ? null : caller.userId;
     const [enrollments, total] = await Promise.all([
-      this.repo.findPendingEnrollments(limit, offset),
-      this.repo.countPendingEnrollments(),
+      this.repo.findPendingEnrollments(limit, offset, reviewerId),
+      this.repo.countPendingEnrollments(reviewerId),
     ]);
 
     return {
@@ -180,16 +191,26 @@ export class EnrollmentsService {
   }
 
   /**
-   * Deciding is the mentor's call — they author the curriculum and take the
-   * learner on. An authority stands in when there is no one else to ask.
+   * Deciding is the mentor's call first — they author the curriculum and take
+   * the learner on — and the coordinator's, who answers for the club the topic
+   * sits in and already decides its memberships. An authority stands in for
+   * either.
    */
-  private async assertTopicMentorOrAuthority(topicId: string, caller: Caller) {
+  private async assertMayDecide(topicId: string, caller: Caller) {
     if (caller.isAuthority) return;
-    const match = await this.repo.findTopicMentor(topicId, caller.userId);
-    if (!match) {
-      throw new ForbiddenException(
-        'Only this topic’s mentor can decide its enrollment requests',
-      );
+
+    if (await this.repo.findTopicMentor(topicId, caller.userId)) return;
+
+    const topic = await this.repo.findTopicById(topicId);
+    if (
+      topic &&
+      (await this.repo.findClubCoordinatorMatch(topic.clubId, caller.userId))
+    ) {
+      return;
     }
+
+    throw new ForbiddenException(
+      'Only this topic’s mentor or its club coordinator can decide enrollment requests',
+    );
   }
 }

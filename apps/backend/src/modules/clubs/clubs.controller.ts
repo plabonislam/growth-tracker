@@ -53,18 +53,20 @@ export class ClubsController {
   }
 
   @ApiBearerAuth()
-  @RequireRole('authority')
   @Get('enrollments/pending')
   @ApiOperation({
-    summary: 'Get pending club enrollment requests (Authority only)',
+    summary:
+      'Pending club applications this caller reviews (Coordinator / Mentor / Authority)',
   })
   getPendingEnrollments(
+    @CurrentUser() caller: CallerUser,
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
   ) {
     return this.clubsService.getPendingClubEnrollments(
       limit ? parseInt(limit) : 10,
       offset ? parseInt(offset) : 0,
+      caller,
     );
   }
 

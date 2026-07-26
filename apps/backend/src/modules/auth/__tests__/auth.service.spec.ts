@@ -135,24 +135,58 @@ describe('AuthService', () => {
   });
 
   describe('getMe', () => {
-    it('returns user profile for valid userId', async () => {
-      const selectChain = {
+    /**
+     * `getMe` runs three selects at once: the profile, then one row each to
+     * ask whether this user coordinates a club or mentors a topic. They are
+     * answered in call order.
+     */
+    const givenSelects = (
+      profileRows: unknown[],
+      coordinatorRows: unknown[],
+      mentorRows: unknown[],
+    ) => {
+      // The profile query ends at `where`; each role probe adds `limit`.
+      const probe = (rows: unknown[]) => ({
         from: jest.fn().mockReturnThis(),
-        where: jest.fn().mockResolvedValue([mockUser]),
-      };
-      mockDb.select.mockReturnValue(selectChain);
+        where: jest.fn().mockReturnValue({
+          limit: jest.fn().mockResolvedValue(rows),
+        }),
+      });
+
+      mockDb.select
+        .mockReturnValueOnce({
+          from: jest.fn().mockReturnThis(),
+          where: jest.fn().mockResolvedValue(profileRows),
+        })
+        .mockReturnValueOnce(probe(coordinatorRows))
+        .mockReturnValueOnce(probe(mentorRows));
+    };
+
+    it('returns the profile with no roles for a plain learner', async () => {
+      givenSelects([mockUser], [], []);
 
       const result = await service.getMe('uuid-1');
 
-      expect(result).toEqual(mockUser);
+      expect(result).toEqual({
+        ...mockUser,
+        roles: { isAuthority: false, isCoordinator: false, isMentor: false },
+      });
+    });
+
+    it('reports coordinating and mentoring from the join tables', async () => {
+      givenSelects([mockUser], [{ id: 'club-1' }], [{ topicId: 'topic-1' }]);
+
+      const result = await service.getMe('uuid-1');
+
+      expect(result.roles).toEqual({
+        isAuthority: false,
+        isCoordinator: true,
+        isMentor: true,
+      });
     });
 
     it('throws NotFoundException when user not found', async () => {
-      const selectChain = {
-        from: jest.fn().mockReturnThis(),
-        where: jest.fn().mockResolvedValue([]),
-      };
-      mockDb.select.mockReturnValue(selectChain);
+      givenSelects([], [], []);
 
       await expect(service.getMe('nonexistent-id')).rejects.toThrow(
         NotFoundException,

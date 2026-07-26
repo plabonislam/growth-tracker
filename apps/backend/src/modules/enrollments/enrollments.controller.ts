@@ -4,7 +4,6 @@ import type { ApproveEnrollment, EnrollTopic } from 'shared';
 import { ApproveEnrollmentSchema, EnrollTopicSchema } from 'shared';
 
 import { CurrentUser } from '../../core/decorators/current-user.decorator';
-import { RequireRole } from '../../core/decorators/require-role.decorator';
 import { ZodBody } from '../../core/decorators/zod-body.decorator';
 import { EnrollmentsService } from './enrollments.service';
 
@@ -22,15 +21,20 @@ export class EnrollmentsController {
   // Declared before `topics/:topicId/...` routes so "enrollments" is never read
   // as a topic id.
   @ApiBearerAuth()
-  @RequireRole('authority')
   @Get('topics/enrollments/pending')
   @ApiOperation({
-    summary: 'Get pending topic enrollment requests (Authority only)',
+    summary:
+      'Pending topic enrollment requests this caller reviews (Mentor / Coordinator / Authority)',
   })
-  getPending(@Query('limit') limit?: string, @Query('offset') offset?: string) {
+  getPending(
+    @CurrentUser() caller: CallerUser,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+  ) {
     return this.enrollmentsService.getPendingTopicEnrollments(
       limit ? parseInt(limit) : 10,
       offset ? parseInt(offset) : 0,
+      caller,
     );
   }
 

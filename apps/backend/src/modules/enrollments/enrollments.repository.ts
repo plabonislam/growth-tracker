@@ -1,9 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { and, count, eq, ne } from 'drizzle-orm';
+import { and, count, eq, inArray, ne, or } from 'drizzle-orm';
 import { EnrollmentStatus } from 'shared';
 
 import { DatabaseService } from '../../core/database/database.service';
-import { clubMembershipsTable } from '../../core/database/schema/clubs.schema';
+import {
+  clubMembershipsTable,
+  clubsTable,
+} from '../../core/database/schema/clubs.schema';
 import {
   topicEnrollmentsTable,
   topicMentorsTable,
@@ -134,34 +137,85 @@ export class EnrollmentsRepository {
     return row ?? null;
   }
 
-  /** Every learner still waiting on a decision, oldest request first. */
-  findPendingEnrollments(limit: number, offset: number) {
-    return this.db.db
-      .select({
-        id: topicEnrollmentsTable.id,
-        userId: topicEnrollmentsTable.userId,
-        topicId: topicEnrollmentsTable.topicId,
-        userName: usersTable.name,
-        userEmail: usersTable.email,
-        topicName: topicsTable.name,
-        status: topicEnrollmentsTable.status,
-        reason: topicEnrollmentsTable.reason,
-        createdAt: topicEnrollmentsTable.createdAt,
-      })
-      .from(topicEnrollmentsTable)
-      .innerJoin(usersTable, eq(topicEnrollmentsTable.userId, usersTable.id))
-      .innerJoin(topicsTable, eq(topicEnrollmentsTable.topicId, topicsTable.id))
-      .where(eq(topicEnrollmentsTable.status, EnrollmentStatus.pending))
-      .orderBy(topicEnrollmentsTable.createdAt)
-      .limit(limit)
-      .offset(offset);
+  /** The club a topic belongs to, when this user is the one coordinating it. */
+  async findClubCoordinatorMatch(clubId: string, userId: string) {
+    const [row] = await this.db.db
+      .select()
+      .from(clubsTable)
+      .where(
+        and(eq(clubsTable.id, clubId), eq(clubsTable.coordinatorId, userId)),
+      );
+    return row ?? null;
   }
 
-  async countPendingEnrollments() {
+  /**
+   * Pending requests, narrowed to what this reviewer is responsible for: the
+   * topics they mentor, plus every topic in a club they coordinate. `null`
+   * reviews everything, which is the authority's view.
+   */
+  private pendingVisibleTo(reviewerId: string | null) {
+    const isPending = eq(
+      topicEnrollmentsTable.status,
+      EnrollmentStatus.pending,
+    );
+    if (!reviewerId) return isPending;
+
+    const mentoredTopics = this.db.db
+      .select({ topicId: topicMentorsTable.topicId })
+      .from(topicMentorsTable)
+      .where(eq(topicMentorsTable.userId, reviewerId));
+
+    return and(
+      isPending,
+      or(
+        eq(clubsTable.coordinatorId, reviewerId),
+        inArray(topicEnrollmentsTable.topicId, mentoredTopics),
+      ),
+    );
+  }
+
+  /** Every learner still waiting on this reviewer, oldest request first. */
+  findPendingEnrollments(
+    limit: number,
+    offset: number,
+    reviewerId: string | null,
+  ) {
+    return (
+      this.db.db
+        .select({
+          id: topicEnrollmentsTable.id,
+          userId: topicEnrollmentsTable.userId,
+          topicId: topicEnrollmentsTable.topicId,
+          userName: usersTable.name,
+          userEmail: usersTable.email,
+          topicName: topicsTable.name,
+          status: topicEnrollmentsTable.status,
+          reason: topicEnrollmentsTable.reason,
+          createdAt: topicEnrollmentsTable.createdAt,
+        })
+        .from(topicEnrollmentsTable)
+        .innerJoin(usersTable, eq(topicEnrollmentsTable.userId, usersTable.id))
+        .innerJoin(
+          topicsTable,
+          eq(topicEnrollmentsTable.topicId, topicsTable.id),
+        )
+        // Joined for the coordinator half of the scope, so it is part of the
+        // query whether or not the reviewer is one.
+        .innerJoin(clubsTable, eq(topicsTable.clubId, clubsTable.id))
+        .where(this.pendingVisibleTo(reviewerId))
+        .orderBy(topicEnrollmentsTable.createdAt)
+        .limit(limit)
+        .offset(offset)
+    );
+  }
+
+  async countPendingEnrollments(reviewerId: string | null) {
     const [row] = await this.db.db
       .select({ count: count() })
       .from(topicEnrollmentsTable)
-      .where(eq(topicEnrollmentsTable.status, EnrollmentStatus.pending));
+      .innerJoin(topicsTable, eq(topicEnrollmentsTable.topicId, topicsTable.id))
+      .innerJoin(clubsTable, eq(topicsTable.clubId, clubsTable.id))
+      .where(this.pendingVisibleTo(reviewerId));
     return row?.count ?? 0;
   }
 }

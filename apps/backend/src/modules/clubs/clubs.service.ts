@@ -177,10 +177,21 @@ export class ClubsService {
     }
   }
 
-  async getPendingClubEnrollments(limit: number = 10, offset: number = 0) {
+  /**
+   * The applications this caller answers for — the clubs they coordinate, plus
+   * every club for an authority. Mentors are deliberately not here: joining a
+   * club is settled by the club's coordinator, and a mentor's queue is the
+   * enrollment requests for their own topics.
+   */
+  async getPendingClubEnrollments(
+    limit: number = 10,
+    offset: number = 0,
+    caller: Caller,
+  ) {
+    const reviewerId = caller.isAuthority ? null : caller.userId;
     const [enrollments, total] = await Promise.all([
-      this.repo.findPendingClubEnrollments(limit, offset),
-      this.repo.countPendingClubEnrollments(),
+      this.repo.findPendingClubEnrollments(limit, offset, reviewerId),
+      this.repo.countPendingClubEnrollments(reviewerId),
     ]);
 
     return {

@@ -17,12 +17,14 @@ const mockRepo = {
   insertEnrollment: jest.fn(),
   decidePendingEnrollment: jest.fn(),
   findTopicMentor: jest.fn(),
+  findClubCoordinatorMatch: jest.fn(),
   findPendingEnrollments: jest.fn(),
   countPendingEnrollments: jest.fn(),
 };
 
 const learner = { userId: 'uid-learner', isAuthority: false };
 const mentor = { userId: 'uid-mentor', isAuthority: false };
+const coordinator = { userId: 'uid-coord', isAuthority: false };
 const outsider = { userId: 'uid-outsider', isAuthority: false };
 const authority = { userId: 'uid-authority', isAuthority: true };
 
@@ -230,8 +232,33 @@ describe('EnrollmentsService', () => {
       expect(mockRepo.decidePendingEnrollment).toHaveBeenCalled();
     });
 
-    it('throws 403 when the caller mentors neither this topic nor anything', async () => {
+    it('lets the club’s coordinator decide a topic they do not mentor', async () => {
       mockRepo.findTopicMentor.mockResolvedValue(null);
+      mockRepo.findTopicById.mockResolvedValue(topic);
+      mockRepo.findClubCoordinatorMatch.mockResolvedValue({ id: 'club-1' });
+      mockRepo.decidePendingEnrollment.mockResolvedValue({
+        ...enrollment,
+        status: 'approved',
+      });
+
+      const result = await service.decideTopicEnrollment(
+        'topic-1',
+        'uid-learner',
+        { action: 'approve' },
+        coordinator,
+      );
+
+      expect(mockRepo.findClubCoordinatorMatch).toHaveBeenCalledWith(
+        'club-1',
+        'uid-coord',
+      );
+      expect(result.status).toBe('approved');
+    });
+
+    it('throws 403 when the caller neither mentors the topic nor runs its club', async () => {
+      mockRepo.findTopicMentor.mockResolvedValue(null);
+      mockRepo.findTopicById.mockResolvedValue(topic);
+      mockRepo.findClubCoordinatorMatch.mockResolvedValue(null);
 
       await expect(
         service.decideTopicEnrollment(
@@ -310,9 +337,8 @@ describe('EnrollmentsService', () => {
       ]);
       mockRepo.countPendingEnrollments.mockResolvedValue(1);
 
-      const result = await service.getPendingTopicEnrollments(10, 0);
+      const result = await service.getPendingTopicEnrollments(10, 0, mentor);
 
-      expect(mockRepo.findPendingEnrollments).toHaveBeenCalledWith(10, 0);
       expect(result.total).toBe(1);
       expect(result.data[0]).toEqual({
         id: 'enr-1',
@@ -324,6 +350,32 @@ describe('EnrollmentsService', () => {
         status: 'pending',
         createdAt: enrollment.createdAt,
       });
+    });
+
+    it('scopes the queue to a mentor or coordinator by their own id', async () => {
+      mockRepo.findPendingEnrollments.mockResolvedValue([]);
+      mockRepo.countPendingEnrollments.mockResolvedValue(0);
+
+      await service.getPendingTopicEnrollments(10, 0, mentor);
+
+      expect(mockRepo.findPendingEnrollments).toHaveBeenCalledWith(
+        10,
+        0,
+        'uid-mentor',
+      );
+      expect(mockRepo.countPendingEnrollments).toHaveBeenCalledWith(
+        'uid-mentor',
+      );
+    });
+
+    it('leaves the queue unscoped for an authority', async () => {
+      mockRepo.findPendingEnrollments.mockResolvedValue([]);
+      mockRepo.countPendingEnrollments.mockResolvedValue(0);
+
+      await service.getPendingTopicEnrollments(10, 0, authority);
+
+      expect(mockRepo.findPendingEnrollments).toHaveBeenCalledWith(10, 0, null);
+      expect(mockRepo.countPendingEnrollments).toHaveBeenCalledWith(null);
     });
   });
 });

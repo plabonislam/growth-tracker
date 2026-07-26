@@ -24,6 +24,8 @@ const mockRepo = {
   findMembership: jest.fn(),
   createMembership: jest.fn(),
   updateMembership: jest.fn(),
+  findPendingClubEnrollments: jest.fn(),
+  countPendingClubEnrollments: jest.fn(),
 };
 
 const caller = { userId: 'uid-user1', isAuthority: false };
@@ -358,6 +360,40 @@ describe('ClubsService', () => {
         service.submitJoinApplication('club-1', 'uid-user1', application),
       ).rejects.toThrow(ConflictException);
       expect(mockRepo.createMembership).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getPendingClubEnrollments', () => {
+    beforeEach(() => {
+      mockRepo.findPendingClubEnrollments.mockResolvedValue([]);
+      mockRepo.countPendingClubEnrollments.mockResolvedValue(0);
+    });
+
+    it('scopes the queue to the clubs the caller coordinates', async () => {
+      await service.getPendingClubEnrollments(10, 0, coordinator);
+
+      expect(mockRepo.findPendingClubEnrollments).toHaveBeenCalledWith(
+        10,
+        0,
+        'uid-coord',
+      );
+      expect(mockRepo.countPendingClubEnrollments).toHaveBeenCalledWith(
+        'uid-coord',
+      );
+    });
+
+    it('leaves the queue unscoped for an authority', async () => {
+      await service.getPendingClubEnrollments(10, 0, {
+        userId: 'uid-authority',
+        isAuthority: true,
+      });
+
+      expect(mockRepo.findPendingClubEnrollments).toHaveBeenCalledWith(
+        10,
+        0,
+        null,
+      );
+      expect(mockRepo.countPendingClubEnrollments).toHaveBeenCalledWith(null);
     });
   });
 

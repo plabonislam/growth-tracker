@@ -79,15 +79,19 @@ describe('EnrollmentsController', () => {
     expect(result).toEqual(decided);
   });
 
-  it('GET /topics/enrollments/pending parses paging off the query string', async () => {
+  it('GET /topics/enrollments/pending parses paging and passes the reviewer', async () => {
     mockService.getPendingTopicEnrollments.mockResolvedValue({
       data: [],
       total: 0,
     });
 
-    await controller.getPending('25', '50');
+    await controller.getPending(caller, '25', '50');
 
-    expect(mockService.getPendingTopicEnrollments).toHaveBeenCalledWith(25, 50);
+    expect(mockService.getPendingTopicEnrollments).toHaveBeenCalledWith(
+      25,
+      50,
+      caller,
+    );
   });
 
   it('GET /topics/enrollments/pending falls back to the first page', async () => {
@@ -96,8 +100,12 @@ describe('EnrollmentsController', () => {
       total: 0,
     });
 
-    await controller.getPending();
+    await controller.getPending(caller);
 
-    expect(mockService.getPendingTopicEnrollments).toHaveBeenCalledWith(10, 0);
+    expect(mockService.getPendingTopicEnrollments).toHaveBeenCalledWith(
+      10,
+      0,
+      caller,
+    );
   });
 });

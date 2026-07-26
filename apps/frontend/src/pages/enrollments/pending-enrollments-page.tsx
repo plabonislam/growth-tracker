@@ -8,7 +8,9 @@ export function PendingEnrollmentsPage() {
         <SectionHeading
           as="h1"
           title="Pending enrollments"
-          subtitle="Review and manage student applications for clubs and specific curriculum topics."
+          // Which queues these are depends on the role reading the page, so the
+          // line says what they have in common rather than naming both.
+          subtitle="Review the applications waiting on your decision."
           className="py-6 md:py-8 lg:py-10"
         />
 

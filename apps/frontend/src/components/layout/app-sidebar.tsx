@@ -11,6 +11,7 @@ import {
 import { useNavigate } from 'react-router';
 
 import { BrandLogo } from '@/components/layout/brand-logo';
+import { useCurrentUser } from '@/features/auth/hooks/use-current-user';
 import { usePendingEnrollmentsCount } from '@/features/enrollments/hooks/use-enrollments';
 
 import { cn } from '@/lib/utils';
@@ -24,8 +25,8 @@ interface SidebarItem {
   comingSoon?: boolean;
   /** Numeric badge shown at the end of the row (e.g. pending request count). */
   count?: number;
-  /** Only rendered for Authority/Coordinator users. */
-  authorityOnly?: boolean;
+  /** Only rendered for someone who reviews enrollment requests. */
+  reviewersOnly?: boolean;
 }
 
 interface SidebarSection {
@@ -34,7 +35,8 @@ interface SidebarSection {
 }
 
 function buildSections(
-  isAuthority: boolean,
+  /** True for an authority, a club coordinator, or a topic mentor. */
+  isReviewer: boolean,
   pendingCount: number,
 ): SidebarSection[] {
   const sections: SidebarSection[] = [
@@ -48,7 +50,7 @@ function buildSections(
           icon: CircleCheckBig,
           path: '/pending-enrollments',
           count: pendingCount > 0 ? pendingCount : undefined,
-          authorityOnly: true,
+          reviewersOnly: true,
         },
       ],
     },
@@ -65,7 +67,7 @@ function buildSections(
   return sections
     .map((section) => ({
       ...section,
-      items: section.items.filter((item) => !item.authorityOnly || isAuthority),
+      items: section.items.filter((item) => !item.reviewersOnly || isReviewer),
     }))
     .filter((section) => section.items.length > 0);
 }
@@ -150,11 +152,18 @@ export function SidebarContent({
   onNavigate?: () => void;
 }) {
   const navigate = useNavigate();
+  // The token carries only `isAuthority`; coordinating and mentoring are
+  // relationships the profile has to answer for.
   const isAuthority = useAuthStore((s) => s.isAuthority);
+  const { data: user } = useCurrentUser();
+  const isReviewer =
+    isAuthority ||
+    user?.roles?.isCoordinator === true ||
+    user?.roles?.isMentor === true;
   const { total: pendingCount } = usePendingEnrollmentsCount({
-    enabled: isAuthority,
+    enabled: isReviewer,
   });
-  const sections = buildSections(isAuthority, pendingCount);
+  const sections = buildSections(isReviewer, pendingCount);
   return (
     <>
       {/* Brand lockup — mark + wordmark, free-floating (no border row) */}

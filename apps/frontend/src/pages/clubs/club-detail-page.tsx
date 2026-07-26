@@ -10,32 +10,24 @@ import { EditTopicModal } from '@/features/clubs/components/edit-topic-modal';
 import { TopicEnrollModal } from '@/features/clubs/components/topic-enroll-modal';
 import { TopicsList } from '@/features/clubs/components/topics-list';
 import {
-  TOPIC_ENROLLMENT_ACKNOWLEDGEMENT,
-  TOPIC_ENROLLMENT_COMMITMENTS,
+  TOPIC_ENROLLMENT_REVIEW_INTRO,
   TOPIC_ENROLLMENT_REVIEW_NOTE,
+  TOPIC_ENROLLMENT_TERMS,
+  TOPIC_ENROLLMENT_WEEKLY_COMMITMENT,
 } from '@/features/clubs/clubs.constants';
 import type { Topic, TopicAction } from '@/features/clubs/clubs.types';
-import { formatDuration } from '@/lib/format-duration';
 import { useClubDetail, useClubTopics } from '@/features/clubs/hooks/use-clubs';
 import { useAuthStore } from '@/store/auth.store';
 
 /**
- * What the enroll modal says about the topic. The coordinator's own description
- * leads when there is one; the generated line stands in for topics written
- * before descriptions existed.
+ * The line under the enroll dialog's title: what the topic is, then what
+ * happens to the request. The coordinator's own description leads when there is
+ * one — the modules, time, and mentor are left to the summary panel rather than
+ * restated in a sentence.
  */
 function buildTopicAbout(topic: Topic): string {
-  if (topic.description) return topic.description;
-
-  const lead = topic.mentor
-    ? `This topic is led by ${topic.mentor.name}`
-    : 'This topic';
-  const estimate = formatDuration(topic.estTimeMinutes);
-  const span =
-    topic.modules != null
-      ? ` and spans ${topic.modules} modules${estimate ? ` (~${estimate})` : ''}`
-      : '';
-  return `${lead}${span}. Enroll to access its modules, tasks, and the peer-review process.`;
+  const lead = topic.description ?? 'This topic has no description yet.';
+  return `${lead} ${TOPIC_ENROLLMENT_REVIEW_INTRO}`;
 }
 
 export function ClubDetailPage({ clubId }: { clubId: string }) {
@@ -154,11 +146,18 @@ export function ClubDetailPage({ clubId }: { clubId: string }) {
           open
           onClose={() => setEnrollTopic(null)}
           topicName={enrollTopic.title}
-          stats={{ modules: enrollTopic.modules }}
+          meta={{
+            modules: enrollTopic.modules,
+            estTimeMinutes: enrollTopic.estTimeMinutes,
+            mentorName: enrollTopic.mentor?.name,
+            weeklyCommitment: TOPIC_ENROLLMENT_WEEKLY_COMMITMENT,
+          }}
           about={buildTopicAbout(enrollTopic)}
-          commitments={TOPIC_ENROLLMENT_COMMITMENTS}
-          finalAcknowledgement={TOPIC_ENROLLMENT_ACKNOWLEDGEMENT}
+          terms={TOPIC_ENROLLMENT_TERMS}
           reviewNote={TOPIC_ENROLLMENT_REVIEW_NOTE}
+          // TODO: POST the reason once the topic-enrollment endpoint exists —
+          // until then the request has nowhere to go, so the dialog closes
+          // rather than claiming it was sent.
           onSubmit={() => setEnrollTopic(null)}
         />
       )}

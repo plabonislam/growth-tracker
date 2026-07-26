@@ -12,11 +12,14 @@ export interface AgendaItem {
   tone: AgendaTone;
 }
 
-/** "Your Active Journey" summary card. */
+/** The club the learner is currently working through. */
 export interface JourneySummary {
   clubName: string;
+  /** What the club covers, clamped to two lines on the card. */
+  description: string;
   /** Display date, e.g. "12 Jan 2026". */
   memberSince: string;
+  /** Standing in the cohort — shown by the page title, not on the card. */
   cohortBadge: string;
   progressPct: number;
   /** Names rendered as stacked initials avatars. */
@@ -25,9 +28,20 @@ export interface JourneySummary {
   membersNote: string;
 }
 
+/** One figure on the dashboard's top row, with the line that qualifies it. */
+export interface LearnerMetric {
+  value: number;
+  /** Suffix set beside the figure, e.g. "%" or "h". Omitted for a plain count. */
+  unit?: string;
+  /** What the figure is drawn from, e.g. "Across 3 clubs". */
+  note: string;
+}
+
 export interface LearnerStats {
-  completedTopics: number;
-  earnedCertificates: number;
+  completedTopics: LearnerMetric;
+  earnedCertificates: LearnerMetric;
+  clubProgress: LearnerMetric;
+  learningTime: LearnerMetric;
 }
 
 export interface ActiveTopic {
@@ -57,6 +71,8 @@ export interface LearningPath {
 }
 
 export interface LearnerDashboard {
+  /** The line under the greeting — what to pick up today. */
+  nudge: string;
   journey: JourneySummary;
   stats: LearnerStats;
   activeTopic: ActiveTopic;

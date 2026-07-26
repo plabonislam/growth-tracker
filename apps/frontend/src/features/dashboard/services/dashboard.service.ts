@@ -9,18 +9,25 @@ import type { LearnerDashboard } from '../dashboard.types';
  */
 
 const DASHBOARD: LearnerDashboard = {
+  nudge: 'Pick up module 4 — one quiz is due today.',
   journey: {
     clubName: 'Artificial Intelligence Specialization',
+    description:
+      'A mentor-led track through machine learning foundations, neural networks and applied AI systems.',
     memberSince: '12 Jan 2026',
-    cohortBadge: 'Top 5% of Cohort',
+    cohortBadge: 'Top 5% of cohort',
     progressPct: 68,
     memberNames: ['Priya Nair', 'Tom Reed', 'Lena Wu'],
     extraMembers: 14,
-    membersNote: 'Join 1,240+ active learners in this specialization',
+    membersNote: '1,240 active learners in this specialization',
   },
+  // `clubProgress` mirrors `journey.progressPct`; `learningTime` has nothing
+  // behind it anywhere yet — no session or study time is recorded.
   stats: {
-    completedTopics: 12,
-    earnedCertificates: 3,
+    completedTopics: { value: 12, note: 'Across 3 clubs' },
+    earnedCertificates: { value: 3, note: 'Latest: Deep Learning I' },
+    clubProgress: { value: 68, unit: '%', note: 'AI Specialization' },
+    learningTime: { value: 46, unit: 'h', note: 'Logged this quarter' },
   },
   activeTopic: {
     id: 'advanced-neural-networks',

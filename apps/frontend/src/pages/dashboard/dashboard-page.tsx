@@ -1,82 +1,134 @@
+import { BarChart3, Check, Clock, Trophy } from 'lucide-react';
 import { useNavigate } from 'react-router';
 
 import { ActiveTopicCard } from '@/features/dashboard/components/active-topic-card';
 import { AgendaCard } from '@/features/dashboard/components/agenda-card';
 import { JourneyCard } from '@/features/dashboard/components/journey-card';
-import { LearningPathCard } from '@/features/dashboard/components/learning-path-card';
 import { MetricTile } from '@/features/dashboard/components/metric-tile';
+import { METRIC_TONE } from '@/features/dashboard/dashboard.constants';
 import { useLearnerDashboard } from '@/features/dashboard/hooks/use-dashboard';
-import { SectionHeading } from '@/components/ui/section-heading';
+import { useCurrentUser } from '@/features/auth/hooks/use-current-user';
+
+/** "Md. Shahnur Islam Plabon" → "Md." — the greeting wants a name, not a record. */
+function firstName(name: string | undefined) {
+  return name?.trim().split(/\s+/)[0];
+}
 
 export function DashboardPage() {
   const navigate = useNavigate();
   const { data, isLoading, isError } = useLearnerDashboard();
+  const { data: user } = useCurrentUser();
 
   return (
     <div className="pb-16">
-      <main className="mx-auto max-w-[1800px] space-y-8 px-4 py-8 md:px-6">
+      <main className="mx-auto max-w-[1560px] space-y-4 px-4 py-6 md:space-y-5 md:px-6 md:py-8 lg:space-y-6">
         {isError && (
           <p className="py-12 text-center text-sm text-destructive">
             Couldn’t load your dashboard. Please try again.
           </p>
         )}
 
+        {/* Mirrors the loaded shape: title, metric strip, pair, two lists. */}
         {isLoading && (
-          <div className="space-y-8">
-            <div className="h-64 animate-pulse rounded-xl bg-muted" />
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-              <div className="h-48 animate-pulse rounded-xl bg-muted" />
-              <div className="h-72 animate-pulse rounded-xl bg-muted" />
+          <div className="space-y-4 md:space-y-5 lg:space-y-6">
+            <div className="h-12 w-72 animate-pulse rounded-xl bg-muted" />
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-28 animate-pulse rounded-xl bg-muted"
+                />
+              ))}
             </div>
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              <div className="h-40 animate-pulse rounded-xl bg-muted" />
-              <div className="h-40 animate-pulse rounded-xl bg-muted" />
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+              <div className="h-64 animate-pulse rounded-xl bg-muted" />
+              <div className="h-64 animate-pulse rounded-xl bg-muted" />
+            </div>
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <div className="h-44 animate-pulse rounded-xl bg-muted" />
+              <div className="h-44 animate-pulse rounded-xl bg-muted" />
             </div>
           </div>
         )}
 
         {data && (
           <>
-            {/* Journey + metrics — metrics move beside the journey card on xl */}
-            <section>
-              <SectionHeading title="Your Active Journey" className="mb-4" />
-              <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-                <div className="xl:col-span-2">
-                  <JourneyCard journey={data.journey} />
-                </div>
-                <div className="grid grid-cols-2 gap-4 xl:grid-cols-1">
-                  <MetricTile
-                    value={data.stats.completedTopics}
-                    label="Completed Topics"
-                  />
-                  <MetricTile
-                    value={data.stats.earnedCertificates}
-                    label="Earned Certificates"
-                    accent="text-amber-600"
-                  />
-                </div>
+            {/* Greeting carries the one thing to do next; the cohort standing
+                sits opposite it rather than inside the club card. */}
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div className="min-w-0 flex-1 basis-60">
+                <h1 className="text-[21px] font-bold leading-tight tracking-tight text-foreground md:text-2xl lg:text-3xl">
+                  Welcome back
+                  {firstName(user?.name) ? `, ${firstName(user?.name)}` : ''}
+                </h1>
+                <p className="mt-1.5 text-[12.5px] leading-relaxed text-muted-foreground md:text-sm">
+                  {data.nudge}
+                </p>
               </div>
-            </section>
+              <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-amber-200 bg-amber-100 px-3 py-2 text-[11px] font-semibold text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-400">
+                <Trophy className="size-3.5" strokeWidth={1.9} />
+                {data.journey.cohortBadge}
+              </span>
+            </div>
 
-            {/* Active topic pairs with the learning path from lg (1024px) up;
-                grid rows stretch both cards to the same height */}
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+            {/* Four across once there is room; two up until then. */}
+            <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
+              <MetricTile
+                label="Completed topics"
+                metric={data.stats.completedTopics}
+                icon={Check}
+                tone={METRIC_TONE.blue}
+              />
+              <MetricTile
+                label="Certificates earned"
+                metric={data.stats.earnedCertificates}
+                icon={Trophy}
+                tone={METRIC_TONE.orange}
+              />
+              <MetricTile
+                label="Club progress"
+                metric={data.stats.clubProgress}
+                icon={BarChart3}
+                tone={METRIC_TONE.emerald}
+              />
+              <MetricTile
+                label="Learning time"
+                metric={data.stats.learningTime}
+                icon={Clock}
+                tone={METRIC_TONE.violet}
+              />
+            </div>
+
+            {/* The club and the topic inside it, side by side once both fit. */}
+            <div className="grid grid-cols-1 items-stretch gap-4 xl:grid-cols-2">
+              <JourneyCard journey={data.journey} />
               <ActiveTopicCard
                 topic={data.activeTopic}
                 onContinue={() => navigate(`/topics/${data.activeTopic.id}`)}
               />
-              <LearningPathCard path={data.learningPath} />
             </div>
 
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-              <section>
-                <SectionHeading title="Upcoming Deadlines" className="mb-4" />
-                <AgendaCard items={data.deadlines} />
-              </section>
-              <section>
-                <SectionHeading title="Community Events" className="mb-4" />
-                <AgendaCard items={data.events} />
-              </section>
+            <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
+              <AgendaCard
+                title="Upcoming deadlines"
+                items={data.deadlines}
+                emptyLabel="Nothing due right now."
+                action={
+                  // Counted off the rows themselves, so the pill can't claim a
+                  // deadline the list isn't showing.
+                  data.deadlines.some((item) => item.tone === 'error') && (
+                    <span className="rounded-full bg-destructive/10 px-2.5 py-1.5 text-[10.5px] font-semibold leading-none text-destructive">
+                      {data.deadlines.filter((i) => i.tone === 'error').length}{' '}
+                      due today
+                    </span>
+                  )
+                }
+              />
+              <AgendaCard
+                title="Community events"
+                items={data.events}
+                emptyLabel="No events scheduled."
+              />
             </div>
           </>
         )}

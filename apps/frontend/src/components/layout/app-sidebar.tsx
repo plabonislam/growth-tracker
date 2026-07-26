@@ -1,11 +1,7 @@
 import {
-  Award,
-  CalendarDays,
   CircleCheckBig,
-  ClipboardList,
   Compass,
   LayoutDashboard,
-  Library,
   type LucideIcon,
 } from 'lucide-react';
 import { useNavigate } from 'react-router';
@@ -21,9 +17,7 @@ import { useAuthStore } from '@/store/auth.store';
 interface SidebarItem {
   label: string;
   icon: LucideIcon;
-  path?: string;
-  /** Feature not built yet — rendered muted with a "Soon" badge. */
-  comingSoon?: boolean;
+  path: string;
   /** Numeric badge shown at the end of the row (e.g. pending request count). */
   count?: number;
   /** Only rendered for someone who reviews enrollment requests. */
@@ -40,12 +34,13 @@ function buildSections(
   isReviewer: boolean,
   pendingCount: number,
 ): SidebarSection[] {
+  // Only routes that exist. Tasks, sessions and certifications were listed
+  // here as "Soon" placeholders — nothing to navigate to, so nothing to show.
   const sections: SidebarSection[] = [
     {
       items: [
         { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard' },
         { label: 'Explore Clubs', icon: Compass, path: '/explore' },
-        { label: 'My Topics', icon: Library, comingSoon: true },
         {
           label: 'Pending requests',
           icon: CircleCheckBig,
@@ -53,14 +48,6 @@ function buildSections(
           count: pendingCount > 0 ? pendingCount : undefined,
           reviewersOnly: true,
         },
-      ],
-    },
-    {
-      title: 'Learning',
-      items: [
-        { label: 'My Tasks', icon: ClipboardList, comingSoon: true },
-        { label: 'Sessions', icon: CalendarDays, comingSoon: true },
-        { label: 'Certifications', icon: Award, comingSoon: true },
       ],
     },
   ];
@@ -83,28 +70,12 @@ function SidebarLink({
   onNavigate?: () => void;
 }) {
   const navigate = useNavigate();
-  const { label, icon: Icon, path, comingSoon, count } = item;
-
-  if (comingSoon) {
-    return (
-      <span
-        aria-disabled
-        className="flex cursor-default items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground/50"
-      >
-        <Icon className="size-[18px]" strokeWidth={1.75} />
-        <span className="flex-1 text-left">{label}</span>
-        <span className="rounded-full border border-border/60 px-1.5 py-px text-[9px] font-semibold uppercase tracking-wider text-muted-foreground/60">
-          Soon
-        </span>
-      </span>
-    );
-  }
+  const { label, icon: Icon, path, count } = item;
 
   return (
     <button
       type="button"
       onClick={() => {
-        if (!path) return;
         navigate(path);
         onNavigate?.();
       }}

@@ -37,9 +37,14 @@ function metaLabel(topic: Topic): string {
 
 interface TopicItemProps {
   topic: Topic;
-  /** True for an authority or the club's coordinator — they edit the topic itself. */
-  canEditTopic?: boolean;
+  /** True for an authority or the club's coordinator — they administer the topic. */
+  canManageTopic?: boolean;
   onAction?: (topic: Topic, action: TopicAction) => void;
+  /**
+   * Opens the edit form. Omitted hides the control — reassigning the mentor is
+   * coordinator/authority only, so the topic's own mentor doesn't get it.
+   */
+  onEdit?: (topic: Topic) => void;
 }
 
 /** Label + icon per action; learner actions are icon-less by design. */
@@ -47,35 +52,40 @@ const ACTION_META: Record<
   TopicAction,
   { label: string; icon?: typeof Layers }
 > = {
-  edit: { label: 'Edit topic', icon: Pencil },
   'manage-modules': { label: 'Manage modules', icon: Layers },
   open: { label: 'Open' },
   enroll: { label: 'Enroll' },
 };
 
-export function TopicItem({ topic, canEditTopic, onAction }: TopicItemProps) {
+export function TopicItem({
+  topic,
+  canManageTopic,
+  onAction,
+  onEdit,
+}: TopicItemProps) {
   const userId = useAuthStore((s) => s.userId);
   // The topic's own mentor manages it; everyone else is there to learn.
   const isMentor = topic.mentor != null && topic.mentor.id === userId;
+  // Authority, coordinator, and mentor all land on the same curriculum screen —
+  // the topic is administered through its modules, not edited as a record here.
+  const canManage = canManageTopic || isMentor;
 
   const isDraft = topic.status === 'draft';
 
-  const action: TopicAction = canEditTopic
-    ? 'edit'
-    : isMentor
-      ? 'manage-modules'
-      : topic.enrolled
-        ? 'open'
-        : 'enroll';
+  const action: TopicAction = canManage
+    ? 'manage-modules'
+    : topic.enrolled
+      ? 'open'
+      : 'enroll';
   const { label, icon: Icon } = ACTION_META[action];
 
   // A draft reaches only the people building it. They keep their own actions;
   // there is nothing for anyone else to enroll in yet.
-  const showAction = !isDraft || canEditTopic || isMentor;
+  const showAction = !isDraft || canManage;
 
   return (
     <Card className="flex flex-col gap-2.5 p-5 transition-shadow hover:shadow-md">
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex items-center gap-2">
         <span className="text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground">
           {metaLabel(topic)}
         </span>
@@ -83,6 +93,21 @@ export function TopicItem({ topic, canEditTopic, onAction }: TopicItemProps) {
           <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-600">
             Draft
           </span>
+        )}
+        {/* Acting on the topic record sits up here, the way a module card's
+            edit/delete do; the footer keeps the one action that navigates.
+            Shown for drafts too, where editing matters most. */}
+        {onEdit && (
+          <button
+            type="button"
+            onClick={() => onEdit(topic)}
+            aria-label={`Edit ${topic.title}`}
+            title="Edit topic"
+            // -my-1 keeps the button from growing this row past its text height.
+            className="-my-1 ml-auto inline-flex size-7 shrink-0 items-center justify-center rounded-md border border-input bg-background text-muted-foreground shadow-xs transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          >
+            <Pencil className="size-3.5" strokeWidth={2.25} />
+          </button>
         )}
       </div>
       <div>
@@ -127,7 +152,9 @@ export function TopicItem({ topic, canEditTopic, onAction }: TopicItemProps) {
             </div>
           )}
         </div>
-        {/* Management reads as a bordered tool; enrolling stays the primary-tinted CTA */}
+        {/* Management reads as a bordered tool; the learner's action is the
+            filled CTA. Both sit at the same height so a row of cards lines up
+            whichever one each is showing. */}
         {!showAction ? null : Icon ? (
           <button
             type="button"
@@ -141,7 +168,7 @@ export function TopicItem({ topic, canEditTopic, onAction }: TopicItemProps) {
           <button
             type="button"
             onClick={() => onAction?.(topic, action)}
-            className="shrink-0 text-sm font-semibold text-primary transition-colors hover:text-primary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            className="inline-flex shrink-0 items-center rounded-md bg-primary px-3 py-1.5 text-[13px] font-semibold text-primary-foreground shadow-xs transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           >
             {label}
           </button>

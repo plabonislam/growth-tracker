@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router';
 
 import { ClubHero } from '@/features/clubs/components/club-hero';
 import { CreateTopicModal } from '@/features/clubs/components/create-topic-modal';
+import { EditTopicModal } from '@/features/clubs/components/edit-topic-modal';
 import { TopicEnrollModal } from '@/features/clubs/components/topic-enroll-modal';
 import { TopicsList } from '@/features/clubs/components/topics-list';
 import {
@@ -43,16 +44,19 @@ export function ClubDetailPage({ clubId }: { clubId: string }) {
   const { data: topics = [], isLoading: topicsLoading } = useClubTopics(clubId);
   const [enrollTopic, setEnrollTopic] = useState<Topic | null>(null);
   const [creatingTopic, setCreatingTopic] = useState(false);
+  // The topic whose edit form is open; null while none is.
+  const [editingTopic, setEditingTopic] = useState<Topic | null>(null);
 
   // Authority and the club's own coordinator administer its topics.
-  const canEditTopics = isAuthority || (club?.coordinatorId ?? null) === userId;
+  const canManageTopics =
+    isAuthority || (club?.coordinatorId ?? null) === userId;
 
   const handleTopicAction = (topic: Topic, action: TopicAction) => {
     if (action === 'enroll') {
       setEnrollTopic(topic);
       return;
     }
-    // 'edit', 'manage-modules' and 'open' all resolve to the topic route.
+    // 'manage-modules' and 'open' both resolve to the topic route.
     navigate(`/topics/${topic.id}`);
   };
 
@@ -114,7 +118,11 @@ export function ClubDetailPage({ clubId }: { clubId: string }) {
               <TopicsList
                 topics={topics}
                 onTopicAction={handleTopicAction}
-                canEditTopics={canEditTopics}
+                canManageTopics={canManageTopics}
+                // Editing includes reassigning the mentor, which the API
+                // restricts to coordinator/authority — so a topic's own mentor
+                // gets "Manage modules" without the edit control.
+                onEditTopic={canManageTopics ? setEditingTopic : undefined}
                 onCreateTopic={
                   isAuthority ? () => setCreatingTopic(true) : undefined
                 }
@@ -143,6 +151,17 @@ export function ClubDetailPage({ clubId }: { clubId: string }) {
         open={creatingTopic}
         onClose={() => setCreatingTopic(false)}
       />
+
+      {/* Keyed so switching topics remounts the form rather than reseeding a
+          half-edited one. */}
+      {editingTopic && (
+        <EditTopicModal
+          key={editingTopic.id}
+          clubId={clubId}
+          topic={editingTopic}
+          onClose={() => setEditingTopic(null)}
+        />
+      )}
     </div>
   );
 }

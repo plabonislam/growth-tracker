@@ -5,6 +5,7 @@ import type {
   JoinClub,
   TopicListItem,
   TopicResponse,
+  UpdateTopic,
 } from 'shared';
 
 import { httpClient } from '@/services/http/client';
@@ -110,6 +111,7 @@ function toTopic(apiTopic: TopicListItem, index: number): Topic {
     title: apiTopic.name,
     description: apiTopic.description,
     status: apiTopic.status,
+    certificationRequired: apiTopic.certificationRequired,
     iconKey: TOPIC_ICON_ROTATION[index % TOPIC_ICON_ROTATION.length]!,
     tone: TONE_ROTATION[index % TONE_ROTATION.length]!,
     modules: apiTopic.moduleCount,
@@ -189,6 +191,19 @@ export const clubsService = {
     httpClient
       .post<TopicResponse>(`/clubs/${clubId}/topics`, payload)
       .then((r) => r.data),
+  updateTopic: (
+    topicId: string,
+    payload: UpdateTopic,
+  ): Promise<TopicResponse> =>
+    httpClient
+      .patch<TopicResponse>(`/topics/${topicId}`, payload)
+      .then((r) => r.data),
+  // The mentor lives in a join table, not on the topic row, so reassigning is
+  // a remove-then-add rather than part of the PATCH body.
+  assignTopicMentor: (topicId: string, userId: string): Promise<void> =>
+    httpClient.post(`/topics/${topicId}/mentors`, { userId }).then(() => {}),
+  removeTopicMentor: (topicId: string, userId: string): Promise<void> =>
+    httpClient.delete(`/topics/${topicId}/mentors/${userId}`).then(() => {}),
   checkClubNameAvailable: (name: string): Promise<boolean> =>
     httpClient
       .get<{ available: boolean }>('/clubs/check-name', { params: { name } })

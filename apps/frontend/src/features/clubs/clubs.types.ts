@@ -52,6 +52,8 @@ export interface Topic {
   description: string | null;
   /** Drafts reach only their mentor, the coordinator, and an authority. */
   status: TopicStatus;
+  /** Whether members must certify to complete it — prefills the edit form. */
+  certificationRequired: boolean;
   iconKey: TopicIconKey;
   tone: ClubTone;
   /** How many modules the curriculum holds. */
@@ -65,11 +67,11 @@ export interface Topic {
 }
 
 /**
- * What the topic card's action does, decided by the caller's role:
- * authority/coordinator edit the topic, its mentor manages modules,
- * everyone else enrolls or opens.
+ * What the topic card's action does, decided by the caller's role: everyone
+ * who administers the topic — authority, the club's coordinator, and its own
+ * mentor — manages its modules; everyone else enrolls or opens.
  */
-export type TopicAction = 'edit' | 'manage-modules' | 'open' | 'enroll';
+export type TopicAction = 'manage-modules' | 'open' | 'enroll';
 
 export interface ClubDetail {
   id: string;

@@ -21,4 +21,8 @@ export interface EnrollmentRequest {
   status: EnrollmentRequestStatus;
 }
 
-export type PendingEnrollmentsTab = 'club' | 'topic';
+/**
+ * The queues on the pending-requests page. `club` and `topic` are enrollment
+ * applications; `module` is submitted work waiting on its mentor.
+ */
+export type PendingEnrollmentsTab = 'club' | 'topic' | 'module';

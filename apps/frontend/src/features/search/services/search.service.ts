@@ -31,8 +31,12 @@ async function buildIndex(): Promise<SearchResult[]> {
     kind: 'topic',
     title: topic.title,
     subtitle: `${clubDetail.name} · ${topic.modules} modules`,
-    // Enrolled topics open directly; others land on the club page to enroll.
-    path: topic.enrolled ? `/topics/${topic.id}` : `/clubs/${clubDetail.id}`,
+    // An approved enrollment opens the topic directly; anything else lands on
+    // the club page, where the way in is.
+    path:
+      topic.enrollmentStatus === 'approved'
+        ? `/topics/${topic.id}`
+        : `/clubs/${clubDetail.id}`,
   }));
 
   const moduleResults: SearchResult[] = enrolledTopic.modules.map((module) => ({

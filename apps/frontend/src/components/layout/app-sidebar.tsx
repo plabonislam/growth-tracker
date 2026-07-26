@@ -13,6 +13,7 @@ import { useNavigate } from 'react-router';
 import { BrandLogo } from '@/components/layout/brand-logo';
 import { useCurrentUser } from '@/features/auth/hooks/use-current-user';
 import { usePendingEnrollmentsCount } from '@/features/enrollments/hooks/use-enrollments';
+import { usePendingModuleReviews } from '@/features/topics/hooks/use-topics';
 
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/store/auth.store';
@@ -160,10 +161,18 @@ export function SidebarContent({
     isAuthority ||
     user?.roles?.isCoordinator === true ||
     user?.roles?.isMentor === true;
-  const { total: pendingCount } = usePendingEnrollmentsCount({
+  const { total: pendingEnrollments } = usePendingEnrollmentsCount({
     enabled: isReviewer,
   });
-  const sections = buildSections(isReviewer, pendingCount);
+  // One row is enough to learn the total; the badge counts every queue the
+  // page holds, so submitted modules are part of it.
+  const { data: reviews } = usePendingModuleReviews(0, 1, {
+    enabled: isReviewer,
+  });
+  const sections = buildSections(
+    isReviewer,
+    pendingEnrollments + (reviews?.total ?? 0),
+  );
   return (
     <>
       {/* Brand lockup — mark + wordmark, free-floating (no border row) */}

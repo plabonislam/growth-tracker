@@ -1,27 +1,35 @@
 import { useState } from 'react';
 
 import { useCurrentUser } from '@/features/auth/hooks/use-current-user';
+import { ModuleReviewsTable } from '@/features/topics/components/module-reviews-table';
 import { cn } from '@/lib/utils';
 import type { PendingEnrollmentsTab } from '../enrollments.types';
 import { EnrollmentsTable } from './enrollments-table';
 
+/** Who each queue belongs to — an authority reviews all of them. */
+type TabAudience = 'coordinator' | 'mentor';
+
 const TABS: {
   key: PendingEnrollmentsTab;
   label: string;
-  targetColumnLabel: string;
-  /** True when only the club's coordinator (or an authority) reviews these. */
-  coordinatorsOnly?: boolean;
+  targetColumnLabel?: string;
+  audience?: TabAudience;
 }[] = [
   {
     key: 'club',
     label: 'Club enrollments',
     targetColumnLabel: 'Club name',
-    coordinatorsOnly: true,
+    audience: 'coordinator',
   },
   {
     key: 'topic',
     label: 'Topic enrollments',
     targetColumnLabel: 'Target topic',
+  },
+  {
+    key: 'module',
+    label: 'Module reviews',
+    audience: 'mentor',
   },
 ];
 
@@ -29,17 +37,19 @@ export function PendingEnrollmentsTabs() {
   const { data: user } = useCurrentUser();
   const roles = user?.roles;
 
-  // Who joins a club is the coordinator's call; a mentor reviews only the
-  // requests for their own topics, so the club queue isn't theirs to see.
-  const tabs = TABS.filter(
-    (tab) =>
-      !tab.coordinatorsOnly || roles?.isCoordinator || roles?.isAuthority,
-  );
+  // Who joins a club is the coordinator's call; whether work is done is the
+  // mentor's. Each sees their own queue, and an authority sees every one.
+  const tabs = TABS.filter((tab) => {
+    if (!tab.audience || roles?.isAuthority) return true;
+    return tab.audience === 'coordinator'
+      ? roles?.isCoordinator
+      : roles?.isMentor;
+  });
 
   const [requestedTab, setRequestedTab] =
     useState<PendingEnrollmentsTab | null>(null);
-  // Falls back to the first tab this caller has, which is the topic queue for a
-  // mentor — the roles arrive a render after the tabs are first drawn.
+  // Falls back to the first tab this caller has — the roles arrive a render
+  // after the tabs are first drawn.
   const active =
     tabs.find((tab) => tab.key === requestedTab) ?? tabs[0] ?? null;
 
@@ -47,9 +57,9 @@ export function PendingEnrollmentsTabs() {
 
   return (
     <div className="flex flex-col gap-5">
-      {/* One queue is not a choice — the strip appears only when both do. */}
+      {/* One queue is not a choice — the strip appears only when several do. */}
       {tabs.length > 1 && (
-        <div className="flex gap-6 border-b">
+        <div className="flex flex-wrap gap-6 border-b">
           {tabs.map((tab) => (
             <button
               key={tab.key}
@@ -71,11 +81,15 @@ export function PendingEnrollmentsTabs() {
         </div>
       )}
 
-      <EnrollmentsTable
-        key={active.key}
-        type={active.key}
-        targetColumnLabel={active.targetColumnLabel}
-      />
+      {active.key === 'module' ? (
+        <ModuleReviewsTable />
+      ) : (
+        <EnrollmentsTable
+          key={active.key}
+          type={active.key}
+          targetColumnLabel={active.targetColumnLabel ?? ''}
+        />
+      )}
     </div>
   );
 }

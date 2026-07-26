@@ -5,7 +5,10 @@ import {
   courseModulesTable,
   moduleResourcesTable,
 } from '../../core/database/schema/course-modules.schema';
-import { topicMentorsTable } from '../../core/database/schema/topics.schema';
+import {
+  topicMentorsTable,
+  topicsTable,
+} from '../../core/database/schema/topics.schema';
 
 @Injectable()
 export class CourseModulesRepository {
@@ -111,6 +114,15 @@ export class CourseModulesRepository {
           AND m.${sql.identifier('order')} IS DISTINCT FROM ranked.new_order
       `);
     });
+  }
+
+  /** A topic's readiness — module weights are frozen once it is published. */
+  async findTopicStatus(topicId: string): Promise<string | null> {
+    const [row] = await this.db.db
+      .select({ status: topicsTable.status })
+      .from(topicsTable)
+      .where(eq(topicsTable.id, topicId));
+    return row?.status ?? null;
   }
 
   async getWeightSum(topicId: string): Promise<number> {

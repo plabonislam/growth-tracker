@@ -9,7 +9,9 @@ interface TopicsListProps {
   topics: Topic[];
   onTopicAction?: (topic: Topic, action: TopicAction) => void;
   /** True for an authority or the club's coordinator — see `TopicItem`. */
-  canEditTopics?: boolean;
+  canManageTopics?: boolean;
+  /** When provided, renders an edit control on every card — see `TopicItem`. */
+  onEditTopic?: (topic: Topic) => void;
   /** When provided, renders a "Create topic" action in the section header. */
   onCreateTopic?: () => void;
 }
@@ -17,7 +19,8 @@ interface TopicsListProps {
 export function TopicsList({
   topics,
   onTopicAction,
-  canEditTopics,
+  canManageTopics,
+  onEditTopic,
   onCreateTopic,
 }: TopicsListProps) {
   return (
@@ -59,8 +62,9 @@ export function TopicsList({
             <TopicItem
               key={topic.id}
               topic={topic}
-              canEditTopic={canEditTopics}
+              canManageTopic={canManageTopics}
               onAction={onTopicAction}
+              onEdit={onEditTopic}
             />
           ))}
         </div>

@@ -1,6 +1,11 @@
 import { z } from 'zod';
 
+import { topicStatusSchema } from '../enums';
+
 const MAX_TOPIC_NAME_LENGTH = 100;
+
+/** A topic's curriculum must add up to exactly this before it can be published. */
+export const REQUIRED_TOPIC_WEIGHT = 100;
 
 /**
  * The description's bounds, published so the form's counter can read them
@@ -76,6 +81,8 @@ export const TopicResponseSchema = z.object({
   /** Null for topics created before descriptions existed. */
   description: z.string().nullable(),
   certificationRequired: z.boolean(),
+  /** `draft` until its mentor publishes it — see `topicStatusSchema`. */
+  status: topicStatusSchema,
   archived: z.boolean(),
   createdAt: z.string(),
 });
@@ -87,9 +94,14 @@ export const TopicMentorSchema = z.object({
   avatarUrl: z.string().nullable(),
 });
 
-/** A topic enriched for list rendering — includes mentor and module count. */
+/**
+ * A topic enriched for list rendering — mentor, module count, and the time its
+ * curriculum adds up to. `estTimeMinutes` is the sum of its modules' estimates,
+ * so a topic with none, or with none estimated, reads 0.
+ */
 export const TopicListItemSchema = TopicResponseSchema.extend({
   moduleCount: z.number().int().nonnegative(),
+  estTimeMinutes: z.number().int().nonnegative(),
   mentor: TopicMentorSchema.nullable(),
 });
 

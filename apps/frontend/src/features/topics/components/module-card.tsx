@@ -72,6 +72,10 @@ function ResourceRow({ resource }: { resource: ModuleCardResource }) {
   );
 }
 
+/** Chip geometry shared by the weight and duration pills in the card header. */
+const CHIP =
+  'text-[9.5px] font-semibold uppercase tracking-[0.05em] text-foreground/75';
+
 /**
  * Generic over the module so `onMarkDone` hands the caller back its own type
  * rather than the card's narrowed view of it.
@@ -79,6 +83,7 @@ function ResourceRow({ resource }: { resource: ModuleCardResource }) {
 export function ModuleCard<T extends ModuleCardModule>({
   module,
   emptyResourcesLabel,
+  weightBar = false,
   onMarkDone,
   onEdit,
   onDelete,
@@ -86,6 +91,11 @@ export function ModuleCard<T extends ModuleCardModule>({
   module: T;
   /** Shown in place of the resource list when there are none. */
   emptyResourcesLabel?: string;
+  /**
+   * Renders the module's share of the topic budget as a bar under the title.
+   * Mentor-only: to a learner a filled bar reads as progress, which it isn't.
+   */
+  weightBar?: boolean;
   onMarkDone?: (module: T) => void;
   /** Omitted for anyone but the topic's mentor — hides the edit control. */
   onEdit?: (module: T) => void;
@@ -95,77 +105,100 @@ export function ModuleCard<T extends ModuleCardModule>({
   const meta = module.status ? MODULE_STATUS_META[module.status] : null;
 
   return (
-    <Card className="h-full w-full max-w-[800px] gap-4 rounded-lg p-6 transition-shadow hover:shadow-md">
-      <div className="flex flex-wrap items-center gap-3">
-        <span className="text-[11px] font-bold uppercase text-muted-foreground">
-          Module {String(module.order).padStart(2, '0')}
-        </span>
-        {meta && (
-          <span
-            className={cn(
-              'rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase',
-              meta.chip,
-            )}
-          >
-            {meta.label}
+    <Card className="h-full w-full max-w-[800px] gap-0 rounded-[14px] p-[18px] shadow-sm transition-[box-shadow,border-color] duration-150 hover:border-input hover:shadow-[0_8px_24px_rgba(15,23,42,0.08)]">
+      <div className="flex flex-wrap items-center justify-between gap-2.5">
+        <div className="flex min-w-0 items-center gap-[7px]">
+          <span className="text-[10px] font-semibold uppercase tracking-[0.11em] text-muted-foreground">
+            Module {String(module.order).padStart(2, '0')}
           </span>
-        )}
-        <span className="rounded-full bg-muted px-2.5 py-0.5 text-[10px] font-bold uppercase text-muted-foreground">
-          Weight: {module.weightPct}%
-        </span>
+          {meta && (
+            <span
+              className={cn(
+                'rounded-md px-[7px] py-[5px] text-[9.5px] font-semibold uppercase tracking-[0.05em]',
+                meta.chip,
+              )}
+            >
+              {meta.label}
+            </span>
+          )}
+          <span className={cn(CHIP, 'rounded-md bg-muted px-[7px] py-[5px]')}>
+            Weight: {module.weightPct}%
+          </span>
+        </div>
         {(module.estTime || onEdit || onDelete) && (
-          <div className="ml-auto flex items-center gap-1.5">
+          <div className="flex items-center gap-[5px]">
             {module.estTime && (
-              <span className="flex items-center gap-1 rounded-full bg-muted px-2.5 py-0.5 text-[10px] font-bold uppercase text-muted-foreground">
-                <Clock className="size-3" />
+              <span
+                className={cn(
+                  CHIP,
+                  'inline-flex items-center gap-[5px] rounded-full bg-muted px-2 py-1.5',
+                )}
+              >
+                <Clock className="size-[11px]" strokeWidth={2} />
                 {module.estTime}
               </span>
             )}
             {onEdit && (
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 size="icon"
                 aria-label={`Edit ${module.title}`}
                 title="Edit module"
-                className="size-7 text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                className="size-8 rounded-[9px] text-muted-foreground duration-150 hover:border-primary/40 hover:bg-primary/10 hover:text-primary"
                 onClick={() => onEdit(module)}
               >
-                <Pencil className="size-3.5" />
+                <Pencil className="size-3.5" strokeWidth={2} />
               </Button>
             )}
             {onDelete && (
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 size="icon"
                 aria-label={`Delete ${module.title}`}
                 title="Delete module"
-                className="size-7 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                className="size-8 rounded-[9px] text-muted-foreground/70 duration-150 hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive"
                 onClick={() => onDelete(module)}
               >
-                <Trash2 className="size-3.5" />
+                <Trash2 className="size-3.5" strokeWidth={2} />
               </Button>
             )}
           </div>
         )}
       </div>
-      <div>
-        <h4 className="font-serif text-xl font-semibold leading-tight">
+
+      <div className="mt-[13px]">
+        <h4 className="font-serif text-[17px] font-bold leading-[1.2] text-foreground">
           {module.title}
         </h4>
 
         {module.description && (
-          <p className="line-clamp-2 text-[13px] leading-relaxed text-muted-foreground">
+          <p className="mt-[5px] line-clamp-2 text-[12.5px] leading-[1.45] text-muted-foreground">
             {module.description}
           </p>
         )}
       </div>
 
-      <div className="flex-1 space-y-4 pt-1">
+      {weightBar && (
+        <div
+          className="mt-3 h-1 overflow-hidden rounded-full bg-muted"
+          role="presentation"
+        >
+          <div
+            className="h-full rounded-full bg-primary/40"
+            // Clamped so a malformed weight can't overflow the track.
+            style={{
+              width: `${Math.min(100, Math.max(0, module.weightPct))}%`,
+            }}
+          />
+        </div>
+      )}
+
+      <div className="mt-3.5 flex-1 space-y-3">
         {module.resources.length === 0
           ? emptyResourcesLabel && (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-[12.5px] text-muted-foreground">
                 {emptyResourcesLabel}
               </p>
             )
@@ -177,7 +210,7 @@ export function ModuleCard<T extends ModuleCardModule>({
       {module.status === 'in_progress' && (
         <Button
           variant="outline"
-          className="mt-2 w-fit self-end border-primary/40 px-6 text-primary hover:bg-primary/10 hover:text-primary"
+          className="mt-4 w-fit self-end border-primary/40 px-6 text-primary hover:bg-primary/10 hover:text-primary"
           onClick={() => onMarkDone?.(module)}
         >
           Mark as Done

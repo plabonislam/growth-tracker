@@ -76,6 +76,54 @@ export function useCreateTopic(clubId: string) {
   });
 }
 
+/** What an edit submits: the whole form, plus who the mentor was before it. */
+export interface UpdateTopicVars {
+  topicId: string;
+  values: CreateTopic;
+  /** The mentor the topic already had, so an unchanged pick skips the swap. */
+  previousMentorId?: string;
+}
+
+/**
+ * Saves a topic edit. The form is the create form, but the API splits it: the
+ * text fields go through `PATCH /topics/:id` while the mentor lives in a join
+ * table reached by its own endpoints. Reassigning is therefore remove-then-add
+ * and is not atomic with the patch — a failure partway leaves the fields saved
+ * and the mentor unchanged, which the caller surfaces as a failed save.
+ */
+export function useUpdateTopic(clubId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      topicId,
+      values,
+      previousMentorId,
+    }: UpdateTopicVars) => {
+      const topic = await clubsService.updateTopic(topicId, {
+        name: values.name,
+        description: values.description,
+        certificationRequired: values.certificationRequired,
+      });
+
+      if (values.mentorId !== previousMentorId) {
+        // Ordered remove-then-add: the join table would otherwise hold both,
+        // and the list would render whichever row came back first.
+        if (previousMentorId) {
+          await clubsService.removeTopicMentor(topicId, previousMentorId);
+        }
+        await clubsService.assignTopicMentor(topicId, values.mentorId);
+      }
+
+      return topic;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: CLUBS_KEYS.topics(clubId) });
+      queryClient.invalidateQueries({ queryKey: CLUBS_KEYS.detail(clubId) });
+    },
+  });
+}
+
 /** On-blur uniqueness check for the club name field. */
 export function useCheckClubName() {
   return useMutation({

@@ -1,7 +1,7 @@
-import type { ResourceKind } from 'shared';
+import type { ResourceKind, TopicStatus } from 'shared';
 
 /** Resource kind, resolved to an icon + action label in `topics.constants.ts`. */
-export type { ResourceKind };
+export type { ResourceKind, TopicStatus };
 
 /** A topic's assigned mentor, as returned by `GET /topics/:id`. */
 export interface TopicMentorRef {
@@ -16,6 +16,8 @@ export interface TopicDetail {
   clubId: string;
   name: string;
   certificationRequired: boolean;
+  /** `draft` until its mentor publishes it; learners only see published ones. */
+  status: TopicStatus;
   mentor: TopicMentorRef | null;
 }
 

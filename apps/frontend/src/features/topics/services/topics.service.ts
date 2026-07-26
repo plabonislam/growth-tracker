@@ -3,6 +3,7 @@ import type {
   CreateResource,
   ModuleResponse,
   ModuleWithResourcesResponse,
+  TopicStatus,
   UpdateModule,
 } from 'shared';
 
@@ -143,6 +144,7 @@ interface ApiTopicDetail {
   clubId: string;
   name: string;
   certificationRequired: boolean | null;
+  status: TopicStatus | null;
   mentor: TopicMentorRef | null;
 }
 
@@ -152,6 +154,9 @@ function toTopicDetail(api: ApiTopicDetail): TopicDetail {
     clubId: api.clubId,
     name: api.name,
     certificationRequired: api.certificationRequired ?? false,
+    // Topics written before publishing existed read as drafts, which is what
+    // they are — no mentor has said they are ready.
+    status: api.status ?? 'draft',
     mentor: api.mentor,
   };
 }
@@ -210,6 +215,11 @@ export const topicsService = {
     httpClient
       .patch(`/topics/${topicId}/modules/reorder`, { moduleIds })
       .then(() => {}),
+  /** Mentor-only; the API refuses unless the curriculum totals 100%. */
+  publishTopic: (topicId: string): Promise<void> =>
+    httpClient.post(`/topics/${topicId}/publish`).then(() => {}),
+  unpublishTopic: (topicId: string): Promise<void> =>
+    httpClient.post(`/topics/${topicId}/unpublish`).then(() => {}),
   deleteModuleResource: (moduleId: string, resourceId: string): Promise<void> =>
     httpClient
       .delete(`/modules/${moduleId}/resources/${resourceId}`)

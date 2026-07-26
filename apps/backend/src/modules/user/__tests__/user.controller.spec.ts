@@ -54,7 +54,7 @@ describe('UserController', () => {
 
     it('returns 403 for non-Authority user via PermissionsGuard', () => {
       // Verify @RequireRole('authority') metadata is applied to the handler
-       
+
       const handler = UserController.prototype.findAll;
       const roles = Reflect.getMetadata(REQUIRE_ROLE_KEY, handler) as string[];
       expect(roles).toContain('authority');

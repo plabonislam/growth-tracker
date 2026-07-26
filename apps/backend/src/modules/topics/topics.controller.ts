@@ -22,11 +22,18 @@ interface CallerUser {
 export class TopicsController {
   constructor(private readonly topicsService: TopicsService) {}
 
-  @Public()
+  // Authenticated rather than public: what comes back depends on the caller.
+  // Drafts belong to the people writing them, so the list has to know who asks.
+  @ApiBearerAuth()
   @Get('clubs/:clubId/topics')
-  @ApiOperation({ summary: 'List active topics for a club (public)' })
-  findByClub(@Param('clubId') clubId: string) {
-    return this.topicsService.findByClub(clubId);
+  @ApiOperation({
+    summary: 'List active topics for a club — drafts only for their authors',
+  })
+  findByClub(
+    @Param('clubId') clubId: string,
+    @CurrentUser() caller: CallerUser,
+  ) {
+    return this.topicsService.findByClub(clubId, caller);
   }
 
   @Public()
@@ -58,6 +65,22 @@ export class TopicsController {
     @CurrentUser() caller: CallerUser,
   ) {
     return this.topicsService.update(id, dto, caller);
+  }
+
+  @ApiBearerAuth()
+  @Post('topics/:id/publish')
+  @ApiOperation({
+    summary: 'Publish a topic (Mentor only, weights must be 100%)',
+  })
+  publish(@Param('id') id: string, @CurrentUser() caller: CallerUser) {
+    return this.topicsService.publish(id, caller);
+  }
+
+  @ApiBearerAuth()
+  @Post('topics/:id/unpublish')
+  @ApiOperation({ summary: 'Return a topic to draft (Mentor only)' })
+  unpublish(@Param('id') id: string, @CurrentUser() caller: CallerUser) {
+    return this.topicsService.unpublish(id, caller);
   }
 
   @ApiBearerAuth()

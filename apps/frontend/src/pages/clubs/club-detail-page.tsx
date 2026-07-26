@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router';
 
 import { ClubHero } from '@/features/clubs/components/club-hero';
 import { CreateTopicModal } from '@/features/clubs/components/create-topic-modal';
+import { EditTopicModal } from '@/features/clubs/components/edit-topic-modal';
 import { TopicEnrollModal } from '@/features/clubs/components/topic-enroll-modal';
 import { TopicsList } from '@/features/clubs/components/topics-list';
 import {
@@ -12,20 +13,25 @@ import {
   TOPIC_ENROLLMENT_REVIEW_NOTE,
 } from '@/features/clubs/clubs.constants';
 import type { Topic, TopicAction } from '@/features/clubs/clubs.types';
+import { formatDuration } from '@/lib/format-duration';
 import { useClubDetail, useClubTopics } from '@/features/clubs/hooks/use-clubs';
 import { useAuthStore } from '@/store/auth.store';
 
 /**
- * Enrollment blurb — degrades gracefully while the topics list endpoint omits
- * mentor and curriculum stats (see `Topic`).
+ * What the enroll modal says about the topic. The coordinator's own description
+ * leads when there is one; the generated line stands in for topics written
+ * before descriptions existed.
  */
 function buildTopicAbout(topic: Topic): string {
+  if (topic.description) return topic.description;
+
   const lead = topic.mentor
     ? `This topic is led by ${topic.mentor.name}`
     : 'This topic';
+  const estimate = formatDuration(topic.estTimeMinutes);
   const span =
     topic.modules != null
-      ? ` and spans ${topic.modules} modules${topic.hours != null ? ` (~${topic.hours} hrs)` : ''}`
+      ? ` and spans ${topic.modules} modules${estimate ? ` (~${estimate})` : ''}`
       : '';
   return `${lead}${span}. Enroll to access its modules, tasks, and the peer-review process.`;
 }
@@ -38,16 +44,19 @@ export function ClubDetailPage({ clubId }: { clubId: string }) {
   const { data: topics = [], isLoading: topicsLoading } = useClubTopics(clubId);
   const [enrollTopic, setEnrollTopic] = useState<Topic | null>(null);
   const [creatingTopic, setCreatingTopic] = useState(false);
+  // The topic whose edit form is open; null while none is.
+  const [editingTopic, setEditingTopic] = useState<Topic | null>(null);
 
   // Authority and the club's own coordinator administer its topics.
-  const canEditTopics = isAuthority || (club?.coordinatorId ?? null) === userId;
+  const canManageTopics =
+    isAuthority || (club?.coordinatorId ?? null) === userId;
 
   const handleTopicAction = (topic: Topic, action: TopicAction) => {
     if (action === 'enroll') {
       setEnrollTopic(topic);
       return;
     }
-    // 'edit', 'manage-modules' and 'open' all resolve to the topic route.
+    // 'manage-modules' and 'open' both resolve to the topic route.
     navigate(`/topics/${topic.id}`);
   };
 
@@ -109,7 +118,11 @@ export function ClubDetailPage({ clubId }: { clubId: string }) {
               <TopicsList
                 topics={topics}
                 onTopicAction={handleTopicAction}
-                canEditTopics={canEditTopics}
+                canManageTopics={canManageTopics}
+                // Editing includes reassigning the mentor, which the API
+                // restricts to coordinator/authority — so a topic's own mentor
+                // gets "Manage modules" without the edit control.
+                onEditTopic={canManageTopics ? setEditingTopic : undefined}
                 onCreateTopic={
                   isAuthority ? () => setCreatingTopic(true) : undefined
                 }
@@ -138,6 +151,17 @@ export function ClubDetailPage({ clubId }: { clubId: string }) {
         open={creatingTopic}
         onClose={() => setCreatingTopic(false)}
       />
+
+      {/* Keyed so switching topics remounts the form rather than reseeding a
+          half-edited one. */}
+      {editingTopic && (
+        <EditTopicModal
+          key={editingTopic.id}
+          clubId={clubId}
+          topic={editingTopic}
+          onClose={() => setEditingTopic(null)}
+        />
+      )}
     </div>
   );
 }

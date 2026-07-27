@@ -27,14 +27,26 @@ export class ClubsService {
   constructor(private readonly repo: ClubsRepository) {}
 
   async findAll(caller: Caller) {
-    const clubs = await this.repo.findAllActive();
-    const memberships = await this.repo.findMembershipsByUserId(caller.userId);
+    const [clubs, memberships, mentoredClubIds] = await Promise.all([
+      this.repo.findAllActive(),
+      this.repo.findMembershipsByUserId(caller.userId),
+      this.repo.findMentoredClubIds(caller.userId),
+    ]);
 
     const membershipMap = new Map(memberships.map((m) => [m.clubId, m.status]));
+    const mentored = new Set(mentoredClubIds);
 
     return clubs.map((club) => ({
       ...club,
       membershipStatus: membershipMap.get(club.id) ?? null,
+      // Roles are club-scoped, so they belong on the club rather than on the
+      // account — this is what tells a screen which club is the caller's to run.
+      role:
+        club.coordinatorId === caller.userId
+          ? 'coordinator'
+          : mentored.has(club.id)
+            ? 'mentor'
+            : null,
     }));
   }
 

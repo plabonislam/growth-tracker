@@ -185,6 +185,16 @@ export class ClubsRepository {
     return row ?? null;
   }
 
+  /** Clubs where this user mentors a topic — a role held through the topic. */
+  async findMentoredClubIds(userId: string) {
+    const rows = await this.db.db
+      .selectDistinct({ clubId: topicsTable.clubId })
+      .from(topicMentorsTable)
+      .innerJoin(topicsTable, eq(topicMentorsTable.topicId, topicsTable.id))
+      .where(eq(topicMentorsTable.userId, userId));
+    return rows.map((row) => row.clubId);
+  }
+
   findMembershipsByUserId(userId: string) {
     return this.db.db
       .select({
@@ -242,7 +252,9 @@ export class ClubsRepository {
   ) {
     const [row] = await this.db.db
       .update(clubMembershipsTable)
-      .set(data)
+      // Stamped here rather than by the caller: every status move is dated, and
+      // the dashboard counts approvals and departures by that date.
+      .set({ ...data, updatedAt: new Date() })
       .where(
         and(
           eq(clubMembershipsTable.clubId, clubId),

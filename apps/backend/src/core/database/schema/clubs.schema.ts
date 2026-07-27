@@ -51,6 +51,11 @@ export const clubMembershipsTable = pgTable(
     /** Applicant's stated reason for joining — set on the initial application. */
     expectation: text('expectation'),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+    /**
+     * When the status last moved. `created_at` alone can't date an approval or
+     * a departure, which the dashboard counts per period.
+     */
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
   },
   (t) => [unique().on(t.clubId, t.userId)],
 );

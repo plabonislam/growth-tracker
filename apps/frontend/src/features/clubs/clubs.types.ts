@@ -30,6 +30,11 @@ export interface Club {
   members: number;
   /** `null` when the user has not joined the club yet. */
   membership: MembershipStatus | null;
+  /**
+   * What the caller runs in this club. Roles are club-scoped, so this is a fact
+   * about the pair, not about the account — `null` for a plain learner.
+   */
+  role: 'coordinator' | 'mentor' | null;
 }
 
 /** Icon key for a topic, resolved in `clubs.constants.ts`. */

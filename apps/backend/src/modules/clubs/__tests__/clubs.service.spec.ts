@@ -11,6 +11,7 @@ import { ClubsService } from '../clubs.service';
 const mockRepo = {
   findAllActive: jest.fn(),
   findMembershipsByUserId: jest.fn(),
+  findMentoredClubIds: jest.fn(),
   findById: jest.fn(),
   insert: jest.fn(),
   updateById: jest.fn(),
@@ -66,6 +67,10 @@ describe('ClubsService', () => {
   });
 
   describe('findAll', () => {
+    beforeEach(() => {
+      mockRepo.findMentoredClubIds.mockResolvedValue([]);
+    });
+
     it('returns non-archived clubs with user membership status', async () => {
       mockRepo.findAllActive.mockResolvedValue([club]);
       mockRepo.findMembershipsByUserId.mockResolvedValue([
@@ -78,7 +83,9 @@ describe('ClubsService', () => {
       expect(mockRepo.findMembershipsByUserId).toHaveBeenCalledWith(
         'uid-user1',
       );
-      expect(result).toEqual([{ ...club, membershipStatus: 'active' }]);
+      expect(result).toEqual([
+        { ...club, membershipStatus: 'active', role: null },
+      ]);
     });
 
     it('sets membershipStatus to null when no membership exists', async () => {
@@ -87,7 +94,27 @@ describe('ClubsService', () => {
 
       const result = await service.findAll(caller);
 
-      expect(result).toEqual([{ ...club, membershipStatus: null }]);
+      expect(result).toEqual([{ ...club, membershipStatus: null, role: null }]);
+    });
+
+    it('marks the club a caller coordinates', async () => {
+      mockRepo.findAllActive.mockResolvedValue([club]);
+      mockRepo.findMembershipsByUserId.mockResolvedValue([]);
+
+      // `club.coordinatorId` is 'uid-coord'.
+      const result = await service.findAll(coordinator);
+
+      expect(result[0].role).toBe('coordinator');
+    });
+
+    it('marks a club the caller mentors a topic in', async () => {
+      mockRepo.findAllActive.mockResolvedValue([club]);
+      mockRepo.findMembershipsByUserId.mockResolvedValue([]);
+      mockRepo.findMentoredClubIds.mockResolvedValue(['club-1']);
+
+      const result = await service.findAll(caller);
+
+      expect(result[0].role).toBe('mentor');
     });
   });
 

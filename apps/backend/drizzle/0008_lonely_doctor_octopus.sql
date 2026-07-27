@@ -1,0 +1,1 @@
+ALTER TABLE "topic_enrollments" ADD COLUMN "reason" text;

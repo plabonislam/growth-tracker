@@ -37,6 +37,7 @@ interface ApiClub {
   topicCount: number;
   memberCount: number;
   membershipStatus: MembershipStatus | null;
+  role: 'coordinator' | 'mentor' | null;
 }
 
 /** Shape returned by `GET /clubs/:id` — see ClubsRepository.findById(). */
@@ -137,6 +138,7 @@ function toClub(apiClub: ApiClub, index: number): Club {
     topics: apiClub.topicCount,
     members: apiClub.memberCount,
     membership: apiClub.membershipStatus,
+    role: apiClub.role,
   };
 }
 

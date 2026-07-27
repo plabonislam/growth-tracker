@@ -22,6 +22,62 @@
       "when": 1783860665986,
       "tag": "0002_mushy_scourge",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1783870024279,
+      "tag": "0003_ordinary_nitro",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1784820661328,
+      "tag": "0004_chubby_spectrum",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1784981006527,
+      "tag": "0005_lively_goblin_queen",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1785002132053,
+      "tag": "0006_friendly_trish_tilby",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1785010109907,
+      "tag": "0007_heavy_gargoyle",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1785067506357,
+      "tag": "0008_lonely_doctor_octopus",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1785089161373,
+      "tag": "0009_lame_xavin",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1785178901785,
+      "tag": "0010_attendance_optional",
+      "breakpoints": true
     }
   ]
 }

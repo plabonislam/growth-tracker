@@ -24,6 +24,12 @@ export const sessionsTable = pgTable('sessions', {
   type: sessionTypeEnum('type').notNull(),
   objective: text('objective').notNull(),
   facilitator: text('facilitator').notNull(),
-  participantCount: integer('participant_count').notNull(),
+  /**
+   * Heads counted. Nullable because attendance is gathered after the session —
+   * from a third party or from the facilitator — so a session is legitimately
+   * logged before anyone has been counted. Null is "not counted yet", which is
+   * not the same claim as 0.
+   */
+  participantCount: integer('participant_count'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });

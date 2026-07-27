@@ -9,6 +9,7 @@ const mockRepo = {
   getClubModuleTotals: jest.fn(),
   findActiveTopic: jest.fn(),
   findTopicModuleProgress: jest.fn(),
+  findTopicCertification: jest.fn(),
   findCompletedTopics: jest.fn(),
   countCertificates: jest.fn(),
   findLatestCertificateTopic: jest.fn(),
@@ -30,6 +31,7 @@ const topic = {
   title: 'Vue.js',
   description: 'A progressive framework',
   startedAt: new Date('2026-06-02T09:00:00.000Z'),
+  certificationRequired: false,
 };
 
 /** A learner with nothing yet — the state every account starts in. */
@@ -40,6 +42,7 @@ const givenNothing = () => {
   mockRepo.countCertificates.mockResolvedValue(0);
   mockRepo.findLatestCertificateTopic.mockResolvedValue(null);
   mockRepo.sumCompletedModuleMinutes.mockResolvedValue(0);
+  mockRepo.findTopicCertification.mockResolvedValue(null);
 };
 
 describe('DashboardService', () => {
@@ -176,6 +179,47 @@ describe('DashboardService', () => {
 
       expect(result.activeTopic?.moduleIndex).toBe(2);
       expect(result.activeTopic?.progressPct).toBe(100);
+      // What separates "on the last module" from "finished it".
+      expect(result.activeTopic?.completedModules).toBe(2);
+    });
+
+    it('reports a topic that asks for no certificate as asking for none', async () => {
+      mockRepo.findTopicModuleProgress.mockResolvedValue([
+        { id: 'm1', weight: 100, status: 'completed' },
+      ]);
+
+      const result = await service.getLearnerDashboard(learner);
+
+      expect(result.activeTopic?.certificationRequired).toBe(false);
+      expect(result.activeTopic?.certificationStatus).toBeNull();
+    });
+
+    it('carries the certificate standing of a topic that certifies', async () => {
+      mockRepo.findActiveTopic.mockResolvedValue({
+        ...topic,
+        certificationRequired: true,
+      });
+      mockRepo.findTopicCertification.mockResolvedValue('pending');
+      mockRepo.findTopicModuleProgress.mockResolvedValue([
+        { id: 'm1', weight: 100, status: 'completed' },
+      ]);
+
+      const result = await service.getLearnerDashboard(learner);
+
+      expect(result.activeTopic?.certificationRequired).toBe(true);
+      expect(result.activeTopic?.certificationStatus).toBe('pending');
+    });
+
+    it('treats a topic predating the column as needing no certificate', async () => {
+      mockRepo.findActiveTopic.mockResolvedValue({
+        ...topic,
+        certificationRequired: null,
+      });
+      mockRepo.findTopicModuleProgress.mockResolvedValue([]);
+
+      const result = await service.getLearnerDashboard(learner);
+
+      expect(result.activeTopic?.certificationRequired).toBe(false);
     });
 
     it('handles a topic whose curriculum has not been written yet', async () => {

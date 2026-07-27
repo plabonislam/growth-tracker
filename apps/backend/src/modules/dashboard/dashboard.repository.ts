@@ -124,6 +124,7 @@ export class DashboardRepository {
         title: topicsTable.name,
         description: topicsTable.description,
         startedAt: topicEnrollmentsTable.createdAt,
+        certificationRequired: topicsTable.certificationRequired,
       })
       .from(topicEnrollmentsTable)
       .innerJoin(topicsTable, eq(topicEnrollmentsTable.topicId, topicsTable.id))
@@ -189,6 +190,24 @@ export class DashboardRepository {
       .having(
         sql`count(${courseModulesTable.id}) > 0 and count(${courseModulesTable.id}) = count(case when ${moduleProgressTable.status} = ${ModuleProgressStatus.completed} then 1 end)`,
       );
+  }
+
+  /**
+   * Where the learner stands on one topic's certificate. Null when no row has
+   * been raised yet — which is the normal state until the modules are done.
+   */
+  async findTopicCertification(topicId: string, userId: string) {
+    const [row] = await this.db.db
+      .select({ status: certificationsTable.status })
+      .from(certificationsTable)
+      .where(
+        and(
+          eq(certificationsTable.topicId, topicId),
+          eq(certificationsTable.userId, userId),
+        ),
+      )
+      .limit(1);
+    return row?.status ?? null;
   }
 
   async countCertificates(userId: string) {

@@ -52,6 +52,10 @@ export interface ActiveTopic {
   startedOn: string;
   moduleLabel: string;
   progressPct: number;
+  /** Every module finished. Changes what the card offers to do next. */
+  completed: boolean;
+  /** Where the certificate stands, once one is asked for. Null otherwise. */
+  certificationNote: string | null;
 }
 
 export type LearningPathStatus = 'completed' | 'active' | 'upcoming' | 'locked';

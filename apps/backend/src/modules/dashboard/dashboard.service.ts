@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { ModuleProgressStatus, type LearnerDashboardResponse } from 'shared';
+import {
+  ModuleProgressStatus,
+  type CertificationStatus,
+  type LearnerDashboardResponse,
+} from 'shared';
 
 import { DashboardRepository } from './dashboard.repository';
 
@@ -93,10 +97,14 @@ export class DashboardService {
       title: string;
       description: string | null;
       startedAt: Date | null;
+      certificationRequired: boolean | null;
     },
     userId: string,
   ) {
-    const modules = await this.repo.findTopicModuleProgress(topic.id, userId);
+    const [modules, certificationStatus] = await Promise.all([
+      this.repo.findTopicModuleProgress(topic.id, userId),
+      this.repo.findTopicCertification(topic.id, userId),
+    ]);
 
     const totalWeight = modules.reduce((sum, m) => sum + m.weight, 0);
     const doneWeight = modules
@@ -115,8 +123,13 @@ export class DashboardService {
       // one once the topic is done.
       moduleIndex: Math.min(completedCount + 1, modules.length),
       moduleCount: modules.length,
+      completedModules: completedCount,
       progressPct:
         totalWeight === 0 ? 0 : Math.round((doneWeight / totalWeight) * 100),
+      // The column is nullable for topics written before it existed; those
+      // never asked for a certificate.
+      certificationRequired: topic.certificationRequired ?? false,
+      certificationStatus: certificationStatus as CertificationStatus | null,
     };
   }
 

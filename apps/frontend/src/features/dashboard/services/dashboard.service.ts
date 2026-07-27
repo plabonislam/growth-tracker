@@ -39,16 +39,71 @@ function toHours(minutes: number): number {
   return Math.round(minutes / 60);
 }
 
+type ApiTopic = NonNullable<LearnerDashboardResponse['activeTopic']>;
+
+/** Every module done — the point where the topic stops asking for modules. */
+function isTopicComplete(topic: ApiTopic): boolean {
+  return topic.moduleCount > 0 && topic.completedModules >= topic.moduleCount;
+}
+
+/**
+ * What a finished topic still wants from the learner. A topic with no
+ * certification ends at its last module; one that certifies ends at the
+ * certificate, so the two cannot share a line.
+ */
+function buildCompletionLine(topic: ApiTopic): string {
+  if (!topic.certificationRequired) {
+    return `You’ve completed every module in ${topic.title}. Nothing left to do here.`;
+  }
+  switch (topic.certificationStatus) {
+    case 'obtained':
+      return `${topic.title} is complete and your certificate has been issued.`;
+    case 'pending':
+      return `All modules in ${topic.title} are done — your certification is being reviewed.`;
+    default:
+      return `All modules in ${topic.title} are done — certification is the last step.`;
+  }
+}
+
 /** The one thing worth doing next, from what the learner actually has. */
 function buildNudge(api: LearnerDashboardResponse): string {
   if (!api.club) return 'Join a club to start learning.';
   if (!api.activeTopic) {
     return `Pick a topic in ${api.club.name} to get started.`;
   }
-  const { moduleIndex, moduleCount, title } = api.activeTopic;
-  return moduleCount === 0
-    ? `${title} is still being written — check back soon.`
-    : `Pick up module ${moduleIndex} of ${title}.`;
+  const topic = api.activeTopic;
+  if (topic.moduleCount === 0) {
+    return `${topic.title} is still being written — check back soon.`;
+  }
+  return isTopicComplete(topic)
+    ? buildCompletionLine(topic)
+    : `Pick up module ${topic.moduleIndex} of ${topic.title}.`;
+}
+
+/** The progress row's caption — a position while there is one left to reach. */
+function buildModuleLabel(topic: ApiTopic): string {
+  if (topic.moduleCount === 0) return 'No modules yet';
+  if (isTopicComplete(topic)) {
+    return `All ${topic.moduleCount} ${
+      topic.moduleCount === 1 ? 'module' : 'modules'
+    } complete`;
+  }
+  return `Module ${topic.moduleIndex} of ${topic.moduleCount}`;
+}
+
+/** The certificate's standing, for the topic card. Null when none is asked for. */
+function buildCertificationNote(topic: ApiTopic): string | null {
+  if (!topic.certificationRequired) return null;
+  switch (topic.certificationStatus) {
+    case 'obtained':
+      return 'Certificate earned';
+    case 'pending':
+      return 'Certification under review';
+    default:
+      return isTopicComplete(topic)
+        ? 'Certification not started'
+        : 'Certification required';
+  }
 }
 
 function toEvents(api: LearnerDashboardResponse): AgendaItem[] {
@@ -89,11 +144,10 @@ function toDashboard(api: LearnerDashboardResponse): LearnerDashboard {
       title: api.activeTopic.title,
       description: api.activeTopic.description ?? '',
       startedOn: formatDay(api.activeTopic.startedAt),
-      moduleLabel:
-        api.activeTopic.moduleCount === 0
-          ? 'No modules yet'
-          : `Module ${api.activeTopic.moduleIndex} of ${api.activeTopic.moduleCount}`,
+      moduleLabel: buildModuleLabel(api.activeTopic),
       progressPct: api.activeTopic.progressPct,
+      completed: isTopicComplete(api.activeTopic),
+      certificationNote: buildCertificationNote(api.activeTopic),
     },
     stats: {
       completedTopics: {

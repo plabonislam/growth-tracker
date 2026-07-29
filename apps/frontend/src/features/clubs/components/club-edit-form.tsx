@@ -1,12 +1,11 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2, Send } from 'lucide-react';
-import { useRef } from 'react';
+import { Save } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import {
   CLUB_DESCRIPTION_LENGTH,
-  CreateClubSchema,
-  type CreateClub,
+  UpdateClubSchema,
+  type UpdateClub,
 } from 'shared';
 
 import { Button } from '@/components/ui/button';
@@ -26,43 +25,49 @@ import { CoordinatorSelect } from '@/features/users/components/coordinator-selec
 import { fieldLabelClass } from '@/lib/form-styles';
 import { cn } from '@/lib/utils';
 import { getApiErrorMessage, isConflictError } from '@/services/http/client';
-import { useCheckClubName, useCreateClub } from '../hooks/use-clubs';
+import type { Club } from '../clubs.types';
+import { useClubDetail, useUpdateClub } from '../hooks/use-clubs';
 
 const NAME_TAKEN_MESSAGE = 'This club name is already taken';
 
-export function ClubCreateForm({ onCreated }: { onCreated?: () => void }) {
-  const mutation = useCreateClub();
-  const checkName = useCheckClubName();
-  const lastCheckedName = useRef<string | null>(null);
+/**
+ * An authority editing a club's identity. Name and description arrive filled
+ * in, since editing is a correction to something that exists rather than a
+ * blank form.
+ *
+ * The coordinator is the exception: it starts empty and is only sent when one
+ * is picked, so saving a renamed club can't silently clear whoever runs it.
+ * The current holder is shown alongside so the field reads as "change this",
+ * not "this is unset".
+ */
+export function ClubEditForm({
+  club,
+  onSaved,
+}: {
+  club: Club;
+  onSaved?: () => void;
+}) {
+  const mutation = useUpdateClub(club.id);
+  // Only for the current coordinator's name — the card doesn't carry it.
+  const { data: detail } = useClubDetail(club.id);
 
-  const form = useForm<CreateClub>({
-    resolver: zodResolver(CreateClubSchema),
+  const form = useForm<UpdateClub>({
+    resolver: zodResolver(UpdateClubSchema),
     defaultValues: {
-      name: '',
-      description: '',
+      name: club.name,
+      description: club.description,
       coordinatorEmail: undefined,
     },
   });
 
-  const onSubmit = async (values: CreateClub) => {
-    // The blur check is a soft, early hint — re-verify authoritatively here so
-    // a submit that races ahead of (or skips) the blur check can't slip through.
-    const available = await checkName
-      .mutateAsync(values.name)
-      .catch(() => true);
-    if (!available) {
-      form.setError('name', { type: 'manual', message: NAME_TAKEN_MESSAGE });
-      return;
-    }
-
+  const onSubmit = (values: UpdateClub) => {
     mutation.mutate(values, {
       onSuccess: (club) => {
-        toast.success(`Club “${club.name}” created`);
-        onCreated?.();
+        toast.success(`Club “${club.name}” updated`);
+        onSaved?.();
       },
       onError: (error) => {
-        // Final backstop for a name that was taken in the instant between
-        // this check and the actual insert (e.g. another tab/user racing us).
+        // The only conflict this endpoint raises is a name already in use.
         if (isConflictError(error)) {
           form.setError('name', {
             type: 'manual',
@@ -73,28 +78,15 @@ export function ClubCreateForm({ onCreated }: { onCreated?: () => void }) {
     });
   };
 
-  const checkNameOnBlur = async (name: string) => {
-    const trimmed = name.trim();
-    if (!trimmed || trimmed === lastCheckedName.current) return;
-    lastCheckedName.current = trimmed;
-
-    const available = await checkName.mutateAsync(trimmed).catch(() => true);
-    if (!available) {
-      form.setError('name', { type: 'manual', message: NAME_TAKEN_MESSAGE });
-    }
-  };
-
-  // Success closes the form and says so in a toast, like every other create
-  // in the app — nothing to hold the authority here once the club exists.
   return (
     <Card className="overflow-hidden p-0 shadow-md">
-      <div className="border-b p-8 pb-6 ">
-        <h2 className="mb-3 font-serif text-2xl font-semibold text-primary text-center">
-          Create a New Club
+      <div className="border-b p-8 pb-6">
+        <h2 className="mb-3 text-center font-serif text-2xl font-semibold text-primary">
+          Edit Club
         </h2>
-        <p className="mx-auto max-w-xl text-sm text-muted-foreground">
-          Establish a new community. Define its identity and, optionally,
-          designate its initial coordinator.
+        <p className="mx-auto max-w-xl text-center text-sm text-muted-foreground">
+          Update how {club.name} is described across the programme, or hand it
+          to a different coordinator.
         </p>
       </div>
 
@@ -107,28 +99,17 @@ export function ClubCreateForm({ onCreated }: { onCreated?: () => void }) {
               <FormItem>
                 <FormLabel className={fieldLabelClass}>Club Name</FormLabel>
                 <FormControl>
-                  <div className="relative">
-                    <Input
-                      placeholder="e.g., Innovation Lab"
-                      className="pr-9"
-                      maxLength={100}
-                      {...field}
-                      onChange={(e) => {
-                        field.onChange(e);
-                        lastCheckedName.current = null;
-                        if (form.formState.errors.name?.type === 'manual') {
-                          form.clearErrors('name');
-                        }
-                      }}
-                      onBlur={(e) => {
-                        field.onBlur();
-                        void checkNameOnBlur(e.target.value);
-                      }}
-                    />
-                    {checkName.isPending && (
-                      <Loader2 className="absolute right-3.5 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />
-                    )}
-                  </div>
+                  <Input
+                    maxLength={100}
+                    {...field}
+                    value={field.value ?? ''}
+                    onChange={(e) => {
+                      field.onChange(e);
+                      if (form.formState.errors.name?.type === 'manual') {
+                        form.clearErrors('name');
+                      }
+                    }}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -139,8 +120,6 @@ export function ClubCreateForm({ onCreated }: { onCreated?: () => void }) {
             control={form.control}
             name="description"
             render={({ field }) => {
-              // Trimmed, the same string the schema measures — a raw count
-              // would read as met while a field of spaces was still rejected.
               const count = (field.value ?? '').trim().length;
               const belowMin = count < CLUB_DESCRIPTION_LENGTH.min;
               const overMax = count > CLUB_DESCRIPTION_LENGTH.max;
@@ -166,11 +145,7 @@ export function ClubCreateForm({ onCreated }: { onCreated?: () => void }) {
                     </span>
                   </div>
                   <FormControl>
-                    <Textarea
-                      rows={4}
-                      placeholder="Describe the club's mission, vision, and activities..."
-                      {...field}
-                    />
+                    <Textarea rows={4} {...field} value={field.value ?? ''} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -184,7 +159,7 @@ export function ClubCreateForm({ onCreated }: { onCreated?: () => void }) {
             render={({ field }) => (
               <FormItem>
                 <FormLabel className={fieldLabelClass}>
-                  Select Coordinator{' '}
+                  Change Coordinator{' '}
                   <span className="text-[10px] font-normal normal-case tracking-normal text-muted-foreground/70">
                     (Optional)
                   </span>
@@ -196,7 +171,9 @@ export function ClubCreateForm({ onCreated }: { onCreated?: () => void }) {
                   />
                 </FormControl>
                 <FormDescription className="italic">
-                  You can choose a coordinator later if you&apos;re not ready.
+                  {detail?.coordinatorName
+                    ? `Currently ${detail.coordinatorName}. Leave empty to keep them.`
+                    : 'This club has no coordinator yet.'}
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -204,10 +181,10 @@ export function ClubCreateForm({ onCreated }: { onCreated?: () => void }) {
           />
 
           {mutation.isError && !isConflictError(mutation.error) && (
-            <p className="text-sm text-destructive text-center">
+            <p className="text-center text-sm text-destructive">
               {getApiErrorMessage(
                 mutation.error,
-                'Something went wrong creating the club. Please try again.',
+                'Something went wrong saving the club. Please try again.',
               )}
             </p>
           )}
@@ -215,15 +192,11 @@ export function ClubCreateForm({ onCreated }: { onCreated?: () => void }) {
           <Button
             type="submit"
             size="lg"
-            className="group w-full"
-            disabled={mutation.isPending || checkName.isPending}
+            className="w-full"
+            disabled={mutation.isPending}
           >
-            {mutation.isPending
-              ? 'Creating…'
-              : checkName.isPending
-                ? 'Checking name…'
-                : 'Create Club'}
-            <Send className="size-4 transition-transform group-hover:translate-x-1" />
+            {mutation.isPending ? 'Saving…' : 'Save Changes'}
+            <Save className="size-4" />
           </Button>
         </form>
       </Form>

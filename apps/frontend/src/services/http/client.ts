@@ -24,6 +24,18 @@ export function getApiErrorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
+/**
+ * The stable `code` a NestJS error carries, when it has one. Screens branch on
+ * this rather than on the message, which is prose and free to be reworded.
+ */
+export function getApiErrorCode(error: unknown): string | null {
+  if (axios.isAxiosError(error)) {
+    const data = error.response?.data as { code?: unknown };
+    if (typeof data?.code === 'string') return data.code;
+  }
+  return null;
+}
+
 /** True for a 409 response — e.g. a uniqueness conflict caught server-side. */
 export function isConflictError(error: unknown): boolean {
   return axios.isAxiosError(error) && error.response?.status === 409;

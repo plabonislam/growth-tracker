@@ -11,6 +11,7 @@ import {
 } from 'shared';
 
 import { Button } from '@/components/ui/button';
+import { FormActions } from '@/components/ui/form-actions';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Form,
@@ -236,14 +237,19 @@ export function TopicFormModal({
               )}
             />
 
-            <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="ghost" onClick={onClose}>
+            <FormActions className="pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                onClick={onClose}
+              >
                 Cancel
               </Button>
-              <Button type="submit" disabled={pending}>
+              <Button type="submit" size="lg" disabled={pending}>
                 {pending ? pendingLabel : submitLabel}
               </Button>
-            </div>
+            </FormActions>
           </form>
         </Form>
       </div>

@@ -28,7 +28,9 @@ export function BottomNav({ activePath }: { activePath: string }) {
             type="button"
             onClick={() => navigate(path)}
             className={cn(
-              'flex flex-col items-center justify-center gap-0.5 text-[11px] font-medium transition-colors',
+              // Sized past the label's own height so the tap area is the whole
+              // tab, not just the icon and its two lines of text.
+              'flex min-h-11 min-w-16 flex-col items-center justify-center gap-0.5 px-3 text-[11px] font-medium transition-colors',
               isActive
                 ? 'scale-105 font-bold text-primary'
                 : 'text-muted-foreground hover:text-primary',

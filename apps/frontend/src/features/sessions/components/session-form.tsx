@@ -4,6 +4,7 @@ import { useForm } from 'react-hook-form';
 import { CreateSessionSchema, SessionType, type CreateSession } from 'shared';
 
 import { Button } from '@/components/ui/button';
+import { FormActions } from '@/components/ui/form-actions';
 import { Card } from '@/components/ui/card';
 import {
   Form,
@@ -221,28 +222,22 @@ export function SessionForm({
           </div>
         </Card>
 
-        {/* Reversed while stacked, so the primary action sits under the thumb
-            rather than below Cancel. */}
-        <div className="flex flex-col-reverse gap-2.5 sm:flex-row sm:items-center sm:justify-end">
+        <FormActions>
           <Button
             type="button"
             variant="outline"
+            size="lg"
             onClick={onCancel}
             disabled={pending}
-            className="w-full rounded-[10px] sm:w-auto"
           >
             Cancel
           </Button>
-          <Button
-            type="submit"
-            disabled={pending}
-            className="w-full rounded-[10px] sm:w-auto"
-          >
+          <Button type="submit" size="lg" disabled={pending}>
             <span className="truncate">
               {pending ? 'Logging…' : `Log session for ${clubName}`}
             </span>
           </Button>
-        </div>
+        </FormActions>
       </form>
     </Form>
   );

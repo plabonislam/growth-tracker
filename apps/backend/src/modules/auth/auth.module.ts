@@ -15,7 +15,9 @@ import { JwtStrategy } from './strategies/jwt.strategy';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         secret: config.getOrThrow<string>('JWT_SECRET'),
-        signOptions: { expiresIn: '15m' },
+        // Default expiry for every token signed through this module — the
+        // access token. The refresh token overrides it at the call site.
+        signOptions: { expiresIn: '4h' },
       }),
     }),
   ],

@@ -13,6 +13,8 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { EnrollTopicSchema, TOPIC_ENROLLMENT_REASON_LENGTH } from 'shared';
 
+import { Button } from '@/components/ui/button';
+import { FormActions } from '@/components/ui/form-actions';
 import { formatDuration } from '@/lib/format-duration';
 import { cn } from '@/lib/utils';
 
@@ -403,35 +405,33 @@ export function TopicEnrollModal({
               </span>
             )}
 
-            {/* wrap-reverse: the primary action leads on one line and sits on
-                top when they stack. */}
-            <div className="flex flex-wrap-reverse gap-2.5 border-t pt-3.5">
-              <button
+            <FormActions className="border-t pt-3.5">
+              <Button
                 type="button"
+                variant="outline"
+                size="lg"
                 onClick={onClose}
                 disabled={isSubmitting}
-                className="flex-[1_1_130px] rounded-[10px] border bg-card px-[18px] py-3.5 text-[13px] font-semibold text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:opacity-50"
               >
                 Cancel
-              </button>
+              </Button>
               {/* Reads as closed until the form is in order, but stays a real
                   button: pressing it is how a learner asks what is missing, and
                   a disabled one — in markup or to a screen reader — would
                   answer nothing. */}
-              <button
+              <Button
                 type="submit"
+                size="lg"
                 disabled={isSubmitting}
                 className={cn(
-                  'inline-flex flex-[2_1_220px] items-center justify-center gap-2 rounded-[10px] border px-[18px] py-3.5 text-[13px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
-                  ready && !isSubmitting
-                    ? 'border-primary bg-primary text-primary-foreground shadow-sm hover:bg-primary/90'
-                    : 'border-muted bg-muted text-muted-foreground',
+                  !(ready && !isSubmitting) &&
+                    'bg-muted text-muted-foreground shadow-none hover:bg-muted',
                 )}
               >
                 {isSubmitting ? 'Sending…' : 'Send enrollment request'}
                 <Send className="size-3.5" strokeWidth={2} />
-              </button>
-            </div>
+              </Button>
+            </FormActions>
           </form>
         </div>
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Bell, ChevronRight, Menu, Plus, X } from 'lucide-react';
+import { ArrowLeft, Bell, ChevronRight, Menu, Plus, X } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router';
 
 import { AppSidebar, SidebarContent } from '@/components/layout/app-sidebar';
@@ -61,14 +61,21 @@ function Breadcrumb({ items }: { items: BreadcrumbItem[] }) {
  * slide-over drawer on tablet (`md`–`lg`), bottom nav on mobile. Pages render
  * their own `<main>` content. `activePath` drives the active state of the
  * navs; `breadcrumb` renders the page context on the left of the top bar.
+ *
+ * `backTo` turns that left slot into a back arrow plus the page's own title
+ * (the last crumb), for pages reached from one place and returned to it — the
+ * page then owns no back affordance of its own.
  */
 export function AppShell({
   activePath,
   breadcrumb,
+  backTo,
   children,
 }: {
   activePath: string;
   breadcrumb?: BreadcrumbItem[];
+  /** Where the back arrow goes. Replaces the breadcrumb trail when set. */
+  backTo?: string;
   children: React.ReactNode;
 }) {
   const navigate = useNavigate();
@@ -76,6 +83,9 @@ export function AppShell({
   const isAuthority = useAuthStore((s) => s.isAuthority);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [createClubOpen, setCreateClubOpen] = useState(false);
+
+  // The page's own name is the last crumb — the trail's tail is the title.
+  const pageTitle = breadcrumb?.[breadcrumb.length - 1]?.label;
 
   // The navbar's primary action is context-aware: Create Club on Explore,
   // Create Topic on a club detail page (`/clubs/:clubId`). The club detail
@@ -135,14 +145,19 @@ export function AppShell({
       <div className="flex min-w-0 flex-1 flex-col bg-[#F9FAFB] pb-16 dark:bg-background md:pb-0">
         <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background">
           <div className="flex h-14 w-full items-center gap-3 px-4 md:h-16 md:px-6">
-            {/* Left — brand on mobile, hamburger on tablet, page context on desktop */}
-            <button
-              type="button"
-              onClick={() => navigate('/dashboard')}
-              className="flex h-11 shrink-0 items-center md:hidden"
-            >
-              <BrandLogo />
-            </button>
+            {/* Left — brand on mobile, hamburger on tablet, page context on
+                desktop. A back arrow takes the brand's place on mobile: on a
+                page you came from somewhere, leaving matters more than the
+                logo, and the two together leave no room for the title. */}
+            {!backTo && (
+              <button
+                type="button"
+                onClick={() => navigate('/dashboard')}
+                className="flex h-11 shrink-0 items-center md:hidden"
+              >
+                <BrandLogo />
+              </button>
+            )}
             <button
               type="button"
               aria-label="Open navigation"
@@ -153,8 +168,25 @@ export function AppShell({
             >
               <Menu className="size-5" strokeWidth={1.75} />
             </button>
-            {breadcrumb && breadcrumb.length > 0 && (
-              <Breadcrumb items={breadcrumb} />
+            {backTo ? (
+              <div className="flex min-w-0 items-center gap-1">
+                <button
+                  type="button"
+                  aria-label="Go back"
+                  onClick={() => navigate(backTo)}
+                  className="flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 md:size-9"
+                >
+                  <ArrowLeft className="size-5" strokeWidth={1.75} />
+                </button>
+                {pageTitle && (
+                  <span className="truncate text-sm font-semibold text-foreground">
+                    {pageTitle}
+                  </span>
+                )}
+              </div>
+            ) : (
+              breadcrumb &&
+              breadcrumb.length > 0 && <Breadcrumb items={breadcrumb} />
             )}
 
             {/* Center — search owns the flexible space */}
@@ -210,6 +242,7 @@ export function AppShell({
       <ClubCreateModal
         open={createClubOpen}
         onClose={() => setCreateClubOpen(false)}
+        onCreated={() => setCreateClubOpen(false)}
       />
     </div>
   );

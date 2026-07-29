@@ -5,6 +5,7 @@ import type {
   JoinClub,
   TopicListItem,
   TopicResponse,
+  UpdateClub,
   UpdateTopic,
 } from 'shared';
 
@@ -189,6 +190,8 @@ export const clubsService = {
       .then((r) => ({ applicationId: r.data.id, status: r.data.status })),
   createClub: (payload: CreateClub): Promise<ClubResponse> =>
     httpClient.post<ClubResponse>('/clubs', payload).then((r) => r.data),
+  updateClub: (id: string, payload: UpdateClub): Promise<ClubResponse> =>
+    httpClient.patch<ClubResponse>(`/clubs/${id}`, payload).then((r) => r.data),
   getTopicsByClub: (clubId: string): Promise<Topic[]> =>
     httpClient
       .get<TopicListItem[]>(`/clubs/${clubId}/topics`)

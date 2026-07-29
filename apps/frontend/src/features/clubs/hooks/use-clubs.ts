@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { CreateClub, CreateTopic, JoinClub } from 'shared';
+import type { CreateClub, CreateTopic, JoinClub, UpdateClub } from 'shared';
 
 import { clubsService } from '../services/clubs.service';
 
@@ -66,6 +66,20 @@ export function useCreateClub() {
     mutationFn: (payload: CreateClub) => clubsService.createClub(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: CLUBS_KEYS.list() });
+    },
+  });
+}
+
+export function useUpdateClub(clubId: string) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: UpdateClub) =>
+      clubsService.updateClub(clubId, payload),
+    onSuccess: () => {
+      // The edited name and description are on the card and on the club page.
+      queryClient.invalidateQueries({ queryKey: CLUBS_KEYS.list() });
+      queryClient.invalidateQueries({ queryKey: CLUBS_KEYS.detail(clubId) });
     },
   });
 }

@@ -10,9 +10,16 @@ function CardSkeleton() {
 interface ExploreClubsGridProps {
   onExplore?: (club: Club) => void;
   onJoin?: (club: Club) => void;
+  isAuthority?: boolean;
+  onEdit?: (club: Club) => void;
 }
 
-export function ExploreClubsGrid({ onExplore, onJoin }: ExploreClubsGridProps) {
+export function ExploreClubsGrid({
+  onExplore,
+  onJoin,
+  isAuthority,
+  onEdit,
+}: ExploreClubsGridProps) {
   const { data: clubs = [], isLoading, isError } = useClubs();
 
   if (isError) {
@@ -33,6 +40,8 @@ export function ExploreClubsGrid({ onExplore, onJoin }: ExploreClubsGridProps) {
               club={club}
               onExplore={onExplore}
               onJoin={onJoin}
+              isAuthority={isAuthority}
+              onEdit={onEdit}
             />
           ))}
     </div>

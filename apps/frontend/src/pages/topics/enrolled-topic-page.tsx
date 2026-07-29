@@ -1,4 +1,3 @@
-import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router';
 
 import { useClubDetail } from '@/features/clubs/hooks/use-clubs';
@@ -50,18 +49,8 @@ export function EnrolledTopicPage({ topicId }: { topicId: string }) {
 
         {topic && (
           <>
-            {/* In-content back affordance, as on the club page. It points at
-                the club rather than at history, so a topic opened from a link
-                still leads somewhere rather than out of the app. */}
-            <button
-              type="button"
-              onClick={() => navigate(`/clubs/${topic.clubId}`)}
-              className="mb-4 flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-            >
-              <ArrowLeft className="size-4" />
-              Back to club
-            </button>
-
+            {/* Leaving is the navbar's job here — the shell carries the back
+                arrow to the club, so the page owns no affordance of its own. */}
             {canAdminister ? (
               <MentorTopicView
                 topic={topic}

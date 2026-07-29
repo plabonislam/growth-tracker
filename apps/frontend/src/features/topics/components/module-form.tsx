@@ -11,6 +11,7 @@ import {
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { FormActions } from '@/components/ui/form-actions';
 import {
   Form,
   FormControl,
@@ -605,13 +606,19 @@ export function ModuleForm({
                 </p>
               )}
             </SectionCard>
-            <aside className="mt-10 flex flex-col-2 gap-2 xl:mt-0 justify-center">
+            {/* Centred rather than right-aligned: this row is the full width
+                of the form, not a modal's footer, so the pair reads as the
+                end of the page instead of drifting to one corner. */}
+            <FormActions className="mt-10 sm:justify-center xl:mt-0">
               <Button
-                type="submit"
+                type="button"
+                variant="outline"
                 size="lg"
-                disabled={mutation.isPending}
-                className="w-50"
+                onClick={handleCancel}
               >
+                Cancel
+              </Button>
+              <Button type="submit" size="lg" disabled={mutation.isPending}>
                 {isEditing
                   ? mutation.isPending
                     ? 'Saving…'
@@ -620,15 +627,7 @@ export function ModuleForm({
                     ? 'Creating…'
                     : 'Create module'}
               </Button>
-              <Button
-                type="button"
-                variant="secondary"
-                className="w-50"
-                onClick={handleCancel}
-              >
-                Cancel
-              </Button>
-            </aside>
+            </FormActions>
           </div>
         </form>
       </Form>

@@ -3,6 +3,7 @@ import { AlertTriangle } from 'lucide-react';
 import { createPortal } from 'react-dom';
 
 import { Button } from '@/components/ui/button';
+import { FormActions } from '@/components/ui/form-actions';
 import { cn } from '@/lib/utils';
 
 /**
@@ -86,10 +87,11 @@ export function ConfirmDialog({
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 border-t bg-muted/30 p-4">
+        <FormActions className="border-t bg-muted/30 p-4">
           <Button
             type="button"
-            variant="ghost"
+            variant="outline"
+            size="lg"
             // Focused on open: the reversible half of the choice is the one a
             // stray Enter should land on.
             autoFocus
@@ -101,13 +103,14 @@ export function ConfirmDialog({
           <Button
             type="button"
             variant={destructive ? 'destructive' : 'default'}
+            size="lg"
             disabled={pending}
             onClick={onConfirm}
             className={cn(pending && 'pointer-events-none')}
           >
             {pending ? (pendingLabel ?? confirmLabel) : confirmLabel}
           </Button>
-        </div>
+        </FormActions>
       </div>
     </div>,
     document.body,

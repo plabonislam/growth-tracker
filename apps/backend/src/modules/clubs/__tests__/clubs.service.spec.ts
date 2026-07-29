@@ -301,6 +301,61 @@ describe('ClubsService', () => {
       ).rejects.toThrow(BadRequestException);
       expect(mockRepo.updateById).not.toHaveBeenCalled();
     });
+
+    it('throws 409 when renaming onto another club’s name', async () => {
+      mockRepo.findByName.mockResolvedValue({ ...club, id: 'club-2' });
+
+      await expect(
+        service.update('club-1', { name: 'Design Club' }),
+      ).rejects.toThrow(ConflictException);
+      expect(mockRepo.updateById).not.toHaveBeenCalled();
+    });
+
+    it('allows a club to keep its own name', async () => {
+      mockRepo.findByName.mockResolvedValue(club);
+      mockRepo.updateById.mockResolvedValue(club);
+
+      await service.update('club-1', {
+        name: club.name,
+        description: 'Same name, new description for this club',
+      });
+
+      expect(mockRepo.updateById).toHaveBeenCalled();
+    });
+
+    it('resolves a coordinator given by email, as a create does', async () => {
+      mockRepo.findUserByEmail.mockResolvedValue({
+        id: 'uid-coord',
+        isAuthority: false,
+      });
+      mockRepo.updateById.mockResolvedValue(club);
+
+      await service.update('club-1', {
+        name: 'Renamed',
+        coordinatorEmail: 'coord@example.com',
+      });
+
+      expect(mockRepo.findUserByEmail).toHaveBeenCalledWith(
+        'coord@example.com',
+      );
+      // The email itself never reaches the column — only the resolved id.
+      expect(mockRepo.updateById).toHaveBeenCalledWith('club-1', {
+        name: 'Renamed',
+        coordinatorId: 'uid-coord',
+      });
+    });
+
+    it('refuses an emailed coordinator who is an Authority user', async () => {
+      mockRepo.findUserByEmail.mockResolvedValue({
+        id: 'uid-auth',
+        isAuthority: true,
+      });
+
+      await expect(
+        service.update('club-1', { coordinatorEmail: 'auth@example.com' }),
+      ).rejects.toThrow(BadRequestException);
+      expect(mockRepo.updateById).not.toHaveBeenCalled();
+    });
   });
 
   describe('archive', () => {

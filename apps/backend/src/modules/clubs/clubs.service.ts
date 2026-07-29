@@ -104,7 +104,30 @@ export class ClubsService {
     if (dto.coordinatorId) {
       await this.assertNotAuthority(dto.coordinatorId);
     }
-    return this.repo.updateById(id, dto);
+
+    // Names are unique case-insensitively (`clubs_name_lower_unique`). Caught
+    // here so a rename onto a taken name answers 409 rather than falling
+    // through to the index and surfacing as a 500. Renaming a club to what it
+    // is already called is not a collision.
+    if (dto.name) {
+      const existing = await this.repo.findByName(dto.name);
+      if (existing && existing.id !== id) {
+        throw new ConflictException('A club with this name already exists');
+      }
+    }
+
+    // The picker emits an email, as it does on create. Resolving it here keeps
+    // the id out of the client, which never had a reason to know it.
+    const { coordinatorEmail, ...rest } = dto;
+    const patch = coordinatorEmail
+      ? {
+          ...rest,
+          coordinatorId:
+            await this.resolveCoordinatorIdByEmail(coordinatorEmail),
+        }
+      : rest;
+
+    return this.repo.updateById(id, patch);
   }
 
   async archive(id: string) {

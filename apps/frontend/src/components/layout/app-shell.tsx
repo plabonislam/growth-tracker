@@ -210,6 +210,7 @@ export function AppShell({
       <ClubCreateModal
         open={createClubOpen}
         onClose={() => setCreateClubOpen(false)}
+        onCreated={() => setCreateClubOpen(false)}
       />
     </div>
   );

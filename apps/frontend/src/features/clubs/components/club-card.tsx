@@ -1,4 +1,4 @@
-import { MessagesSquare, Users } from 'lucide-react';
+import { MessagesSquare, Pencil, Users } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -11,6 +11,13 @@ interface ClubCardProps {
   club: Club;
   onExplore?: (club: Club) => void;
   onJoin?: (club: Club) => void;
+  /**
+   * An authority runs the programme rather than takes part in it: they never
+   * join, so a membership badge would only ever read "Not Enrolled". The slot
+   * carries the club's edit action instead.
+   */
+  isAuthority?: boolean;
+  onEdit?: (club: Club) => void;
 }
 
 function Stat({ icon: Icon, value }: { icon: typeof Users; value: string }) {
@@ -22,7 +29,13 @@ function Stat({ icon: Icon, value }: { icon: typeof Users; value: string }) {
   );
 }
 
-export function ClubCard({ club, onExplore, onJoin }: ClubCardProps) {
+export function ClubCard({
+  club,
+  onExplore,
+  onJoin,
+  isAuthority = false,
+  onEdit,
+}: ClubCardProps) {
   const tone = CLUB_TONE[club.tone];
   const Icon = CLUB_ICONS[club.iconKey];
   const HIDE_JOIN_STATUSES: MembershipStatus[] = [
@@ -39,7 +52,18 @@ export function ClubCard({ club, onExplore, onJoin }: ClubCardProps) {
         <div className={`rounded-lg p-3 ${tone.bgSoft}`}>
           <Icon className={`size-6 ${tone.text}`} />
         </div>
-        <ClubStatusBadge status={club.membership} />
+        {isAuthority ? (
+          <button
+            type="button"
+            aria-label={`Edit ${club.name}`}
+            onClick={() => onEdit?.(club)}
+            className="flex size-11 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 md:size-9"
+          >
+            <Pencil className="size-4" strokeWidth={1.9} />
+          </button>
+        ) : (
+          <ClubStatusBadge status={club.membership} />
+        )}
       </div>
 
       <h3 className="mb-1 font-serif text-xl font-semibold">{club.name}</h3>
@@ -53,7 +77,7 @@ export function ClubCard({ club, onExplore, onJoin }: ClubCardProps) {
       </div>
 
       <div className="mt-auto flex gap-2">
-        {!hasJoinedOrRequested && (
+        {!isAuthority && !hasJoinedOrRequested && (
           <Button className="flex-1" onClick={() => onJoin?.(club)}>
             Join
           </Button>
@@ -61,7 +85,7 @@ export function ClubCard({ club, onExplore, onJoin }: ClubCardProps) {
         <Button
           variant="outline"
           className={`flex-1 border-primary/20 bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary ${
-            hasJoinedOrRequested ? 'w-full' : ''
+            isAuthority || hasJoinedOrRequested ? 'w-full' : ''
           }`}
           onClick={() => onExplore?.(club)}
         >

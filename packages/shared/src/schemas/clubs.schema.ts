@@ -49,12 +49,14 @@ export const CreateClubSchema = z.object({
  * Wire contract for `PATCH /clubs/:id`. Name and description carry the rules and
  * wording they were created under — picked from `CreateClubSchema` so an edit
  * can never accept what a create would reject — each optional, since a patch
- * carries only what changed. The coordinator arrives as an id rather than an
- * email: by this point the caller has already resolved the user.
+ * carries only what changed. The coordinator arrives either way: as an id when
+ * the caller has already resolved the user, or as an email like a create does,
+ * which is what the coordinator picker emits.
  */
 export const UpdateClubSchema = CreateClubSchema.pick({
   name: true,
   description: true,
+  coordinatorEmail: true,
 })
   .partial()
   .extend({

@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { ClubJoinErrorCode } from 'shared';
 import { ClubsRepository } from '../clubs.repository';
 import { ClubsService } from '../clubs.service';
 
@@ -391,7 +392,35 @@ describe('ClubsService', () => {
       expect(mockRepo.createMembership).not.toHaveBeenCalled();
     });
 
-    it('throws 400 when the caller is already active in another club', async () => {
+    // Every past outcome hits the same check, and each has to explain itself
+    // differently — one message for all five is what this replaces.
+    it.each([
+      ['pending', ClubJoinErrorCode.APPLICATION_PENDING],
+      ['active', ClubJoinErrorCode.ALREADY_MEMBER],
+      ['on_break', ClubJoinErrorCode.MEMBERSHIP_ON_BREAK],
+      ['dropped_out', ClubJoinErrorCode.MEMBERSHIP_ENDED],
+      ['rejected', ClubJoinErrorCode.APPLICATION_REJECTED],
+    ])(
+      'explains an existing %s membership with its own code',
+      async (status, expectedCode) => {
+        mockRepo.findById.mockResolvedValue(club);
+        mockRepo.findMembership.mockResolvedValue({ ...membership, status });
+
+        const error = await service
+          .submitJoinApplication('club-1', 'uid-user1', application)
+          .catch((caught: ConflictException) => caught);
+
+        const body = (error as ConflictException).getResponse() as {
+          code: string;
+          message: string;
+        };
+        expect(body.code).toBe(expectedCode);
+        // The club is named rather than called "this club".
+        expect(body.message).toContain(club.name);
+      },
+    );
+
+    it('throws 409 naming both clubs when the caller is active elsewhere', async () => {
       mockRepo.findById.mockResolvedValue(club);
       mockRepo.findMembership.mockResolvedValue(null);
       mockRepo.findActiveMembershipElsewhere.mockResolvedValue({
@@ -399,9 +428,18 @@ describe('ClubsService', () => {
         clubName: 'Design Club',
       });
 
-      await expect(
-        service.submitJoinApplication('club-1', 'uid-user1', application),
-      ).rejects.toThrow(BadRequestException);
+      const error = await service
+        .submitJoinApplication('club-1', 'uid-user1', application)
+        .catch((caught: ConflictException) => caught);
+
+      expect(error).toBeInstanceOf(ConflictException);
+      const body = (error as ConflictException).getResponse() as {
+        code: string;
+        message: string;
+      };
+      expect(body.code).toBe(ClubJoinErrorCode.ACTIVE_IN_OTHER_CLUB);
+      expect(body.message).toContain('Design Club');
+      expect(body.message).toContain(club.name);
       expect(mockRepo.createMembership).not.toHaveBeenCalled();
     });
 
@@ -499,6 +537,35 @@ describe('ClubsService', () => {
         ),
       ).rejects.toThrow(ConflictException);
       expect(mockRepo.updateMembership).not.toHaveBeenCalled();
+    });
+
+    it('tells the coordinator which club holds the learner, and who can free them', async () => {
+      mockRepo.findCoordinatorMatch.mockResolvedValue(club);
+      mockRepo.findMembership.mockResolvedValue({
+        ...membership,
+        status: 'pending',
+      });
+      mockRepo.findActiveMembershipElsewhere.mockResolvedValue({
+        clubId: 'club-2',
+        clubName: 'Design Club',
+      });
+
+      const error = await service
+        .updateMembershipStatus(
+          'club-1',
+          'uid-user1',
+          { status: 'active' },
+          coordinator,
+        )
+        .catch((caught: ConflictException) => caught);
+
+      const body = (error as ConflictException).getResponse() as {
+        code: string;
+        message: string;
+      };
+      expect(body.code).toBe(ClubJoinErrorCode.ACTIVE_IN_OTHER_CLUB);
+      expect(body.message).toContain('Design Club');
+      expect(body.message).toContain('coordinator');
     });
 
     it('leaves other transitions alone — only approving is constrained', async () => {

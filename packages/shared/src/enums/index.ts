@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+export * from './errors';
+
 export const membershipStatusSchema = z.enum([
   'pending',
   'active',

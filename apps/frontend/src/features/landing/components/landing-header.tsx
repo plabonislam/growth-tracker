@@ -19,7 +19,11 @@ export function LandingHeader({
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/90 backdrop-blur-md">
       <div className="mx-auto flex w-full max-w-[1800px] items-center justify-between px-4 py-4 md:px-6">
-        <button type="button" onClick={() => navigate('/')}>
+        <button
+          type="button"
+          onClick={() => navigate('/')}
+          className="flex h-11 items-center md:h-auto"
+        >
           <BrandLogo />
         </button>
         <div className="flex items-center gap-2">
@@ -27,17 +31,21 @@ export function LandingHeader({
             <button
               type="button"
               aria-label="Notifications"
-              className="relative rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted"
+              className="relative rounded-full p-3 text-muted-foreground transition-colors hover:bg-muted md:p-2"
             >
               <Bell className="size-5" />
-              <span className="absolute right-2 top-2 size-2 rounded-full bg-destructive" />
+              {/* Pinned to the icon's corner, which the padding moves. */}
+              <span className="absolute right-3 top-3 size-2 rounded-full bg-destructive md:right-2 md:top-2" />
             </button>
           )}
           {showLogin && (
-            // The one action on the landing bar, so it carries the default 36px
-            // height rather than `sm`'s 32px, with the wider padding a
-            // label-only CTA needs to stop reading as a chip.
-            <Button className="px-5" onClick={() => navigate('/login')}>
+            // The one action on the landing bar: 44px on touch, the app's 36px
+            // from `md` up, with the wider padding a label-only CTA needs to
+            // stop reading as a chip.
+            <Button
+              className="h-11 px-5 md:h-9"
+              onClick={() => navigate('/login')}
+            >
               Login
             </Button>
           )}

@@ -50,7 +50,7 @@ export function ClubJoinModal({ clubId, open, onClose }: ClubJoinModalProps) {
           type="button"
           onClick={onClose}
           aria-label="Close"
-          className="absolute right-4 top-4 z-10 flex size-9 items-center justify-center rounded-full bg-background/80 text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground"
+          className="absolute right-4 top-4 z-10 flex size-11 items-center justify-center rounded-full bg-background/80 md:size-9 text-muted-foreground shadow-sm transition-colors hover:bg-muted hover:text-foreground"
         >
           <X className="size-5" />
         </button>

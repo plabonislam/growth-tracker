@@ -102,7 +102,7 @@ export function SearchCommand() {
         type="button"
         aria-label="Search"
         onClick={() => setOpen(true)}
-        className="hidden h-9 w-full max-w-md items-center gap-2 rounded-full border bg-muted/40 px-3 text-sm text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:flex"
+        className="hidden h-11 w-full max-w-md items-center gap-2 rounded-full border bg-muted/40 px-3 text-sm text-muted-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:flex md:h-9"
       >
         <Search className="size-4" strokeWidth={1.75} />
         <span className="flex-1 text-left">Search…</span>
@@ -114,7 +114,8 @@ export function SearchCommand() {
         type="button"
         aria-label="Search"
         onClick={() => setOpen(true)}
-        className="rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:hidden"
+        // Phones only, so it holds the 44px target at every width it shows at.
+        className="flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:hidden"
       >
         <Search className="size-5" strokeWidth={1.75} />
       </button>

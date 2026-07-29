@@ -7,6 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
+  ClubJoinErrorCode,
   MembershipStatus,
   type CreateClub,
   type JoinClub,
@@ -123,15 +124,27 @@ export class ClubsService {
 
     try {
       const club = await this.repo.findById(clubId);
-      if (!club) throw new NotFoundException('Club not found');
+      if (!club) {
+        throw new NotFoundException({
+          code: ClubJoinErrorCode.CLUB_NOT_FOUND,
+          message:
+            'We couldn’t find that club. It may have been removed — pick it again from Explore Clubs.',
+        });
+      }
       if (club.archived) {
-        throw new BadRequestException('This club is no longer active');
+        throw new BadRequestException({
+          code: ClubJoinErrorCode.CLUB_ARCHIVED,
+          message: `${club.name} has been closed and isn’t accepting members. Explore Clubs lists the ones still open.`,
+        });
       }
 
+      // One row per (club, user) ever exists, so every past outcome lands
+      // here. Each says something different about what the person should do
+      // next, and only a coordinator can move any of them.
       const existing = await this.repo.findMembership(clubId, userId);
       if (existing) {
         throw new ConflictException(
-          'You have already applied to or joined this club',
+          this.describeExistingMembership(existing.status, club.name),
         );
       }
 
@@ -144,9 +157,10 @@ export class ClubsService {
         userId,
       );
       if (elsewhere) {
-        throw new BadRequestException(
-          `You are already an active member of ${elsewhere.clubName}. Leave that club before joining another.`,
-        );
+        throw new ConflictException({
+          code: ClubJoinErrorCode.ACTIVE_IN_OTHER_CLUB,
+          message: `You can be in one club at a time, and you’re currently an active member of ${elsewhere.clubName}. To move to ${club.name}, ask ${elsewhere.clubName}’s coordinator to end your membership there first.`,
+        });
       }
 
       const membership = await this.repo.createMembership(clubId, userId, {
@@ -191,9 +205,13 @@ export class ClubsService {
           userId,
         );
         if (elsewhere) {
-          throw new ConflictException(
-            `This learner is already an active member of ${elsewhere.clubName}`,
-          );
+          // Read by a coordinator, not by the learner — so it says what the
+          // learner did (joining elsewhere is allowed while paused or after
+          // leaving), why it blocks this, and who can unblock it.
+          throw new ConflictException({
+            code: ClubJoinErrorCode.ACTIVE_IN_OTHER_CLUB,
+            message: `This learner is now an active member of ${elsewhere.clubName}, and a learner can be in one club at a time. Their membership of ${elsewhere.clubName} has to be ended before you can activate them here — that club’s coordinator can do it.`,
+          });
         }
       }
 
@@ -251,6 +269,55 @@ export class ClubsService {
       })),
       total,
     };
+  }
+
+  /**
+   * Why a second application is refused, in the terms of the membership that
+   * already exists. Every branch names the club and names who can act on it —
+   * a coordinator in each case, since none of these are the learner's to
+   * change from here.
+   */
+  private describeExistingMembership(
+    // `string`, not `MembershipStatus`: the Drizzle column is widened to string
+    // at `clubs.schema.ts` (`as [string, ...string[]]`), so a `default` here is
+    // the boundary check rather than dead code.
+    status: string,
+    clubName: string,
+  ): { code: ClubJoinErrorCode; message: string } {
+    switch (status) {
+      case MembershipStatus.pending:
+        return {
+          code: ClubJoinErrorCode.APPLICATION_PENDING,
+          message: `Your application to ${clubName} is already in. Its coordinator reviews it — reviews usually take 3–5 business days, and you’ll be notified when it’s decided.`,
+        };
+      case MembershipStatus.active:
+        return {
+          code: ClubJoinErrorCode.ALREADY_MEMBER,
+          message: `You’re already a member of ${clubName}. Open the club to see its topics.`,
+        };
+      case MembershipStatus.on_break:
+        return {
+          code: ClubJoinErrorCode.MEMBERSHIP_ON_BREAK,
+          // A break doesn't hold the one-club slot, so this has to say what is
+          // still open to them — otherwise "paused" reads as "stuck".
+          message: `Your membership of ${clubName} is paused, not ended, and a new application won’t restart it — its coordinator reactivates you. While you’re on a break you can apply to a different club.`,
+        };
+      case MembershipStatus.dropped_out:
+        return {
+          code: ClubJoinErrorCode.MEMBERSHIP_ENDED,
+          message: `You previously left ${clubName}. Only its coordinator can bring you back in — applying again won’t reopen it.`,
+        };
+      case MembershipStatus.rejected:
+        return {
+          code: ClubJoinErrorCode.APPLICATION_REJECTED,
+          message: `Your earlier application to ${clubName} wasn’t accepted, and it can’t be re-submitted here. Contact its coordinator if your situation has changed.`,
+        };
+      default:
+        return {
+          code: ClubJoinErrorCode.ALREADY_MEMBER,
+          message: `You already have a membership record with ${clubName}, so this application can’t be sent. Its coordinator can tell you where it stands.`,
+        };
+    }
   }
 
   private async hasClubRole(clubId: string, caller: Caller) {

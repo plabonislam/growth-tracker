@@ -12,12 +12,15 @@ export interface AgendaItem {
   tone: AgendaTone;
 }
 
-/** "Your Active Journey" summary card. */
+/** The club the learner is currently working through. */
 export interface JourneySummary {
+  /** Links the card and its empty state back to the club page. */
+  id: string;
   clubName: string;
+  /** What the club covers, clamped to two lines on the card. */
+  description: string;
   /** Display date, e.g. "12 Jan 2026". */
   memberSince: string;
-  cohortBadge: string;
   progressPct: number;
   /** Names rendered as stacked initials avatars. */
   memberNames: string[];
@@ -25,9 +28,20 @@ export interface JourneySummary {
   membersNote: string;
 }
 
+/** One figure on the dashboard's top row, with the line that qualifies it. */
+export interface LearnerMetric {
+  value: number;
+  /** Suffix set beside the figure, e.g. "%" or "h". Omitted for a plain count. */
+  unit?: string;
+  /** What the figure is drawn from, e.g. "Across 3 clubs". */
+  note: string;
+}
+
 export interface LearnerStats {
-  completedTopics: number;
-  earnedCertificates: number;
+  completedTopics: LearnerMetric;
+  earnedCertificates: LearnerMetric;
+  clubProgress: LearnerMetric;
+  learningTime: LearnerMetric;
 }
 
 export interface ActiveTopic {
@@ -38,6 +52,10 @@ export interface ActiveTopic {
   startedOn: string;
   moduleLabel: string;
   progressPct: number;
+  /** Every module finished. Changes what the card offers to do next. */
+  completed: boolean;
+  /** Where the certificate stands, once one is asked for. Null otherwise. */
+  certificationNote: string | null;
 }
 
 export type LearningPathStatus = 'completed' | 'active' | 'upcoming' | 'locked';
@@ -57,10 +75,13 @@ export interface LearningPath {
 }
 
 export interface LearnerDashboard {
-  journey: JourneySummary;
+  /** The line under the greeting — what to pick up today. */
+  nudge: string;
+  /** Null until the learner's application to a club has been approved. */
+  club: JourneySummary | null;
   stats: LearnerStats;
-  activeTopic: ActiveTopic;
-  learningPath: LearningPath;
+  /** Null until a mentor approves them into a topic. */
+  activeTopic: ActiveTopic | null;
   deadlines: AgendaItem[];
   events: AgendaItem[];
 }

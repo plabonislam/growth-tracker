@@ -1,0 +1,1 @@
+ALTER TABLE "sessions" ALTER COLUMN "participant_count" DROP NOT NULL;

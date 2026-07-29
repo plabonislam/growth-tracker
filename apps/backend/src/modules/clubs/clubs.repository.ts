@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { and, count, eq, sql } from 'drizzle-orm';
+import { and, count, eq, ne, sql } from 'drizzle-orm';
 import { MembershipStatus } from 'shared';
 
 import { DatabaseService } from '../../core/database/database.service';
@@ -185,6 +185,16 @@ export class ClubsRepository {
     return row ?? null;
   }
 
+  /** Clubs where this user mentors a topic — a role held through the topic. */
+  async findMentoredClubIds(userId: string) {
+    const rows = await this.db.db
+      .selectDistinct({ clubId: topicsTable.clubId })
+      .from(topicMentorsTable)
+      .innerJoin(topicsTable, eq(topicMentorsTable.topicId, topicsTable.id))
+      .where(eq(topicMentorsTable.userId, userId));
+    return rows.map((row) => row.clubId);
+  }
+
   findMembershipsByUserId(userId: string) {
     return this.db.db
       .select({
@@ -193,6 +203,29 @@ export class ClubsRepository {
       })
       .from(clubMembershipsTable)
       .where(eq(clubMembershipsTable.userId, userId));
+  }
+
+  /**
+   * An active membership the user holds in some *other* club. A learner belongs
+   * to one club at a time, so this is what stands between them and a second —
+   * the club's name comes back with it, since any refusal has to name it.
+   */
+  async findActiveMembershipElsewhere(clubId: string, userId: string) {
+    const [row] = await this.db.db
+      .select({
+        clubId: clubMembershipsTable.clubId,
+        clubName: clubsTable.name,
+      })
+      .from(clubMembershipsTable)
+      .innerJoin(clubsTable, eq(clubMembershipsTable.clubId, clubsTable.id))
+      .where(
+        and(
+          eq(clubMembershipsTable.userId, userId),
+          eq(clubMembershipsTable.status, MembershipStatus.active),
+          ne(clubMembershipsTable.clubId, clubId),
+        ),
+      );
+    return row ?? null;
   }
 
   async createMembership(
@@ -219,7 +252,9 @@ export class ClubsRepository {
   ) {
     const [row] = await this.db.db
       .update(clubMembershipsTable)
-      .set(data)
+      // Stamped here rather than by the caller: every status move is dated, and
+      // the dashboard counts approvals and departures by that date.
+      .set({ ...data, updatedAt: new Date() })
       .where(
         and(
           eq(clubMembershipsTable.clubId, clubId),

@@ -11,6 +11,7 @@ import { ClubsService } from '../clubs.service';
 const mockRepo = {
   findAllActive: jest.fn(),
   findMembershipsByUserId: jest.fn(),
+  findMentoredClubIds: jest.fn(),
   findById: jest.fn(),
   insert: jest.fn(),
   updateById: jest.fn(),
@@ -22,6 +23,7 @@ const mockRepo = {
   findByName: jest.fn(),
   findMembersByClubId: jest.fn(),
   findMembership: jest.fn(),
+  findActiveMembershipElsewhere: jest.fn(),
   createMembership: jest.fn(),
   updateMembership: jest.fn(),
   findPendingClubEnrollments: jest.fn(),
@@ -65,6 +67,10 @@ describe('ClubsService', () => {
   });
 
   describe('findAll', () => {
+    beforeEach(() => {
+      mockRepo.findMentoredClubIds.mockResolvedValue([]);
+    });
+
     it('returns non-archived clubs with user membership status', async () => {
       mockRepo.findAllActive.mockResolvedValue([club]);
       mockRepo.findMembershipsByUserId.mockResolvedValue([
@@ -77,7 +83,9 @@ describe('ClubsService', () => {
       expect(mockRepo.findMembershipsByUserId).toHaveBeenCalledWith(
         'uid-user1',
       );
-      expect(result).toEqual([{ ...club, membershipStatus: 'active' }]);
+      expect(result).toEqual([
+        { ...club, membershipStatus: 'active', role: null },
+      ]);
     });
 
     it('sets membershipStatus to null when no membership exists', async () => {
@@ -86,7 +94,27 @@ describe('ClubsService', () => {
 
       const result = await service.findAll(caller);
 
-      expect(result).toEqual([{ ...club, membershipStatus: null }]);
+      expect(result).toEqual([{ ...club, membershipStatus: null, role: null }]);
+    });
+
+    it('marks the club a caller coordinates', async () => {
+      mockRepo.findAllActive.mockResolvedValue([club]);
+      mockRepo.findMembershipsByUserId.mockResolvedValue([]);
+
+      // `club.coordinatorId` is 'uid-coord'.
+      const result = await service.findAll(coordinator);
+
+      expect(result[0].role).toBe('coordinator');
+    });
+
+    it('marks a club the caller mentors a topic in', async () => {
+      mockRepo.findAllActive.mockResolvedValue([club]);
+      mockRepo.findMembershipsByUserId.mockResolvedValue([]);
+      mockRepo.findMentoredClubIds.mockResolvedValue(['club-1']);
+
+      const result = await service.findAll(caller);
+
+      expect(result[0].role).toBe('mentor');
     });
   });
 
@@ -314,6 +342,7 @@ describe('ClubsService', () => {
     it('creates a pending membership and returns it', async () => {
       mockRepo.findById.mockResolvedValue(club);
       mockRepo.findMembership.mockResolvedValue(null);
+      mockRepo.findActiveMembershipElsewhere.mockResolvedValue(null);
       mockRepo.createMembership.mockResolvedValue({
         ...membership,
         status: 'pending',
@@ -361,6 +390,39 @@ describe('ClubsService', () => {
       ).rejects.toThrow(ConflictException);
       expect(mockRepo.createMembership).not.toHaveBeenCalled();
     });
+
+    it('throws 400 when the caller is already active in another club', async () => {
+      mockRepo.findById.mockResolvedValue(club);
+      mockRepo.findMembership.mockResolvedValue(null);
+      mockRepo.findActiveMembershipElsewhere.mockResolvedValue({
+        clubId: 'club-2',
+        clubName: 'Design Club',
+      });
+
+      await expect(
+        service.submitJoinApplication('club-1', 'uid-user1', application),
+      ).rejects.toThrow(BadRequestException);
+      expect(mockRepo.createMembership).not.toHaveBeenCalled();
+    });
+
+    it('lets someone who has left another club apply again', async () => {
+      mockRepo.findById.mockResolvedValue(club);
+      mockRepo.findMembership.mockResolvedValue(null);
+      // Dropped out elsewhere, so nothing is active to conflict with.
+      mockRepo.findActiveMembershipElsewhere.mockResolvedValue(null);
+      mockRepo.createMembership.mockResolvedValue({
+        ...membership,
+        status: 'pending',
+      });
+
+      const result = await service.submitJoinApplication(
+        'club-1',
+        'uid-user1',
+        application,
+      );
+
+      expect(result.status).toBe('pending');
+    });
   });
 
   describe('getPendingClubEnrollments', () => {
@@ -398,6 +460,65 @@ describe('ClubsService', () => {
   });
 
   describe('updateMembershipStatus', () => {
+    it('approves a pending application when the learner is in no other club', async () => {
+      mockRepo.findCoordinatorMatch.mockResolvedValue(club);
+      mockRepo.findMembership.mockResolvedValue({
+        ...membership,
+        status: 'pending',
+      });
+      mockRepo.findActiveMembershipElsewhere.mockResolvedValue(null);
+      mockRepo.updateMembership.mockResolvedValue(membership);
+
+      const result = await service.updateMembershipStatus(
+        'club-1',
+        'uid-user1',
+        { status: 'active' },
+        coordinator,
+      );
+
+      expect(result.status).toBe('active');
+    });
+
+    it('throws 409 when approving someone already active in another club', async () => {
+      mockRepo.findCoordinatorMatch.mockResolvedValue(club);
+      mockRepo.findMembership.mockResolvedValue({
+        ...membership,
+        status: 'pending',
+      });
+      mockRepo.findActiveMembershipElsewhere.mockResolvedValue({
+        clubId: 'club-2',
+        clubName: 'Design Club',
+      });
+
+      await expect(
+        service.updateMembershipStatus(
+          'club-1',
+          'uid-user1',
+          { status: 'active' },
+          coordinator,
+        ),
+      ).rejects.toThrow(ConflictException);
+      expect(mockRepo.updateMembership).not.toHaveBeenCalled();
+    });
+
+    it('leaves other transitions alone — only approving is constrained', async () => {
+      mockRepo.findCoordinatorMatch.mockResolvedValue(club);
+      mockRepo.findMembership.mockResolvedValue(membership);
+      mockRepo.updateMembership.mockResolvedValue({
+        ...membership,
+        status: 'on_break',
+      });
+
+      await service.updateMembershipStatus(
+        'club-1',
+        'uid-user1',
+        { status: 'on_break' },
+        coordinator,
+      );
+
+      expect(mockRepo.findActiveMembershipElsewhere).not.toHaveBeenCalled();
+    });
+
     it('updates status for existing member', async () => {
       mockRepo.findCoordinatorMatch.mockResolvedValue(club);
       mockRepo.findMembership.mockResolvedValue(membership);

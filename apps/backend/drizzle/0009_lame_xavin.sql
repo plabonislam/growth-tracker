@@ -1,0 +1,1 @@
+ALTER TABLE "club_memberships" ADD COLUMN "updated_at" timestamp with time zone DEFAULT now();

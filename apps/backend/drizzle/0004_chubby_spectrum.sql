@@ -1,0 +1,1 @@
+ALTER TABLE "club_memberships" ADD COLUMN "expectation" text;

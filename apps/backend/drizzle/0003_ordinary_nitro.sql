@@ -1,0 +1,1 @@
+ALTER TABLE "clubs" ALTER COLUMN "coordinator_id" DROP NOT NULL;

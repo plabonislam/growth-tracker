@@ -142,16 +142,23 @@ function PublishToggle({
 }
 
 /**
- * The mentor's topic view — learning modules and nothing else. Progress and
- * mentor cards are deliberately absent: a mentor authors the curriculum, they
- * don't work through it.
+ * A topic's curriculum, for the people who administer it rather than work
+ * through it — its mentor, the club's coordinator, and an authority. Progress
+ * and mentor cards are deliberately absent.
+ *
+ * Only the mentor writes here. A coordinator or authority reads the same page
+ * without the controls: the API grants authoring and publishing to the mentor
+ * alone, so offering either to anyone else would only produce a 403.
  */
 export function MentorTopicView({
   topic,
+  canEdit,
   onCreateModule,
   onEditModule,
 }: {
   topic: TopicDetail;
+  /** True only for this topic's own mentor — everyone else is reading. */
+  canEdit: boolean;
   /** Fired by the "Create Module" action in the curriculum header. */
   onCreateModule?: () => void;
   /** Fired by a card's edit control. Omitted hides the control. */
@@ -238,38 +245,66 @@ export function MentorTopicView({
     <section>
       {/* The mentor's one authoring action sits in the navbar, next to the
           shell's other create actions. */}
-      <NavbarActions>
-        <Button
-          type="button"
-          size="sm"
-          onClick={onCreateModule}
-          aria-label="Create Module"
-          // `h-auto` frees the height `size="sm"` fixes at 32px, and the
-          // `has-` variant restates the padding so `sm`'s own
-          // `has-[>svg]:px-2.5` — higher specificity, and this button does
-          // have a direct svg child — can't clamp it back to 10px.
-          className="h-auto gap-1.5  has-[>svg]:p-3"
-        >
-          <Plus className="size-4" strokeWidth={1.75} />
-          <span className="hidden sm:inline">Create Module</span>
-        </Button>
-      </NavbarActions>
+      {canEdit && (
+        <NavbarActions>
+          <Button
+            type="button"
+            size="sm"
+            onClick={onCreateModule}
+            aria-label="Create Module"
+            // `h-auto` frees the height `size="sm"` fixes at 32px, and the
+            // `has-` variant restates the padding so `sm`'s own
+            // `has-[>svg]:px-2.5` — higher specificity, and this button does
+            // have a direct svg child — can't clamp it back to 10px.
+            className="h-auto gap-1.5  has-[>svg]:p-3"
+          >
+            <Plus className="size-4" strokeWidth={1.75} />
+            <span className="hidden sm:inline">Create Module</span>
+          </Button>
+        </NavbarActions>
+      )}
 
       <SectionHeading
         title="Curriculum Modules"
-        subtitle="Manage and organize your learning content into learning modules"
+        subtitle={
+          canEdit
+            ? 'Manage and organize your learning content into learning modules'
+            : `The curriculum as its mentor has built it${
+                topic.mentor ? `, authored by ${topic.mentor.name}` : ''
+              }`
+        }
         className="mb-6"
         action={
-          <PublishToggle
-            isPublished={isPublished}
-            canPublish={canPublish}
-            note={statusNote}
-            onToggle={() => setPendingPublish(true)}
-          />
+          canEdit ? (
+            <PublishToggle
+              isPublished={isPublished}
+              canPublish={canPublish}
+              note={statusNote}
+              onToggle={() => setPendingPublish(true)}
+            />
+          ) : (
+            // Readable, not switchable: publishing is the mentor's call alone.
+            <span
+              className={cn(
+                'inline-flex items-center gap-[7px] rounded-lg border px-3 py-2 text-[12.5px] font-semibold',
+                isPublished
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/60 dark:bg-emerald-950/40 dark:text-emerald-400'
+                  : 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-400',
+              )}
+            >
+              <span
+                className={cn(
+                  'size-[7px] rounded-full',
+                  isPublished ? 'bg-emerald-500' : 'bg-amber-500',
+                )}
+              />
+              {isPublished ? 'Published' : 'Draft'}
+            </span>
+          )
         }
       />
 
-      {isPublished && (
+      {canEdit && isPublished && (
         <div className="mb-6 flex items-start gap-2.5 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-3 text-[12.5px] font-medium leading-[1.45] text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300">
           <span className="mt-[5px] size-[7px] shrink-0 rounded-full bg-emerald-500" />
           This topic is live. Edits to a module publish immediately — switch
@@ -300,7 +335,9 @@ export function MentorTopicView({
             No modules yet
           </div>
           <p className="mt-1.5 text-[13px] text-muted-foreground">
-            Add the first module to give learners somewhere to start.
+            {canEdit
+              ? 'Add the first module to give learners somewhere to start.'
+              : 'Its mentor has not added any modules to this topic yet.'}
           </p>
         </div>
       )}
@@ -313,10 +350,12 @@ export function MentorTopicView({
               module={toCardModule(module, index + 1)}
               emptyResourcesLabel="No resources attached yet."
               weightBar
-              // Only this view renders for the topic's mentor, so the control
-              // needs no further permission check of its own.
-              onEdit={onEditModule && (() => onEditModule(module))}
-              onDelete={() => setPendingDelete(module)}
+              // Both controls are the mentor's; omitting them is what hides
+              // them from a coordinator or authority reading the page.
+              onEdit={
+                canEdit && onEditModule ? () => onEditModule(module) : undefined
+              }
+              onDelete={canEdit ? () => setPendingDelete(module) : undefined}
             />
           ))}
         </div>

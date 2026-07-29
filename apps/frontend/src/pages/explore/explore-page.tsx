@@ -23,7 +23,7 @@ export function ExplorePage() {
           className="py-8 md:py-10"
           action={
             !isLoading && (
-              <span className="text-sm text-muted-foreground">
+              <span className="text-sm text-muted-foreground lg:pr-10">
                 Showing {clubs.length} clubs
               </span>
             )

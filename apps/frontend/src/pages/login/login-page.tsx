@@ -59,7 +59,7 @@ function LoginPanel() {
             Welcome Back
           </CardTitle>
           <CardDescription>
-            Sign in with your @iinovators account
+            Sign in with your @innovators account
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">

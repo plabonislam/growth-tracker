@@ -3,10 +3,10 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { REQUIRED_TOPIC_WEIGHT } from 'shared';
 
+import { NavbarActionButton } from '@/components/layout/navbar-action-button';
 import { NavbarActions } from '@/components/layout/navbar-actions';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { SectionHeading } from '@/components/ui/section-heading';
-import { Button } from '@/components/ui/button';
 import { formatDuration } from '@/lib/format-duration';
 import { cn } from '@/lib/utils';
 import { getApiErrorMessage } from '@/services/http/client';
@@ -247,20 +247,11 @@ export function MentorTopicView({
           shell's other create actions. */}
       {canEdit && (
         <NavbarActions>
-          <Button
-            type="button"
-            size="sm"
+          <NavbarActionButton
+            label="Create Module"
+            icon={Plus}
             onClick={onCreateModule}
-            aria-label="Create Module"
-            // `h-auto` frees the height `size="sm"` fixes at 32px, and the
-            // `has-` variant restates the padding so `sm`'s own
-            // `has-[>svg]:px-2.5` — higher specificity, and this button does
-            // have a direct svg child — can't clamp it back to 10px.
-            className="h-auto gap-1.5  has-[>svg]:p-3"
-          >
-            <Plus className="size-4" strokeWidth={1.75} />
-            <span className="hidden sm:inline">Create Module</span>
-          </Button>
+          />
         </NavbarActions>
       )}
 

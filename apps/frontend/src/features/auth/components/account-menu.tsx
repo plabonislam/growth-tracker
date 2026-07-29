@@ -53,7 +53,7 @@ export function AccountMenu() {
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="flex size-9 items-center justify-center rounded-full border bg-muted text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+        className="flex size-11 items-center justify-center rounded-full border bg-muted md:size-9 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
       >
         {user ? (
           initialsOf(user.name)
@@ -78,7 +78,7 @@ export function AccountMenu() {
           <div className="p-1.5">
             <span
               aria-disabled
-              className="flex cursor-default items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground/50"
+              className="flex cursor-default items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium md:py-2 text-muted-foreground/50"
             >
               <User className="size-[18px]" strokeWidth={1.75} />
               <span className="flex-1">Profile</span>
@@ -90,7 +90,7 @@ export function AccountMenu() {
               type="button"
               role="menuitem"
               onClick={handleLogout}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/40"
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium md:py-2 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/40"
             >
               <LogOut className="size-[18px]" strokeWidth={1.75} />
               Logout

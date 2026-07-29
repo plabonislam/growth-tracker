@@ -34,7 +34,10 @@ export function LandingHeader({
             </button>
           )}
           {showLogin && (
-            <Button size="sm" onClick={() => navigate('/login')}>
+            // The one action on the landing bar, so it carries the default 36px
+            // height rather than `sm`'s 32px, with the wider padding a
+            // label-only CTA needs to stop reading as a chip.
+            <Button className="px-5" onClick={() => navigate('/login')}>
               Login
             </Button>
           )}

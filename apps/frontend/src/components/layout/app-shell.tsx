@@ -5,8 +5,8 @@ import { useLocation, useNavigate } from 'react-router';
 import { AppSidebar, SidebarContent } from '@/components/layout/app-sidebar';
 import { BottomNav } from '@/components/layout/bottom-nav';
 import { BrandLogo } from '@/components/layout/brand-logo';
+import { NavbarActionButton } from '@/components/layout/navbar-action-button';
 import { NAVBAR_ACTIONS_SLOT_ID } from '@/components/layout/navbar-actions';
-import { Button } from '@/components/ui/button';
 import { AccountMenu } from '@/features/auth/components/account-menu';
 import { ClubCreateModal } from '@/features/clubs/components/club-create-modal';
 import { SearchCommand } from '@/features/search/components/search-command';
@@ -121,7 +121,7 @@ export function AppShell({
             type="button"
             aria-label="Close navigation"
             onClick={() => setDrawerOpen(false)}
-            className="absolute right-2 top-2 rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            className="absolute right-2 top-2 flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           >
             <X className="size-4" />
           </button>
@@ -139,7 +139,7 @@ export function AppShell({
             <button
               type="button"
               onClick={() => navigate('/dashboard')}
-              className="shrink-0 md:hidden"
+              className="flex h-11 shrink-0 items-center md:hidden"
             >
               <BrandLogo />
             </button>
@@ -147,7 +147,9 @@ export function AppShell({
               type="button"
               aria-label="Open navigation"
               onClick={() => setDrawerOpen(true)}
-              className="hidden shrink-0 rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 md:block lg:hidden"
+              // Only ever shown on tablets, so it keeps the 44px touch size at
+              // every width it appears at.
+              className="hidden size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 md:flex lg:hidden"
             >
               <Menu className="size-5" strokeWidth={1.75} />
             </button>
@@ -169,15 +171,11 @@ export function AppShell({
               />
               {showCreateClub && (
                 <>
-                  <Button
-                    type="button"
-                    size="sm"
+                  <NavbarActionButton
+                    label="Create Club"
+                    icon={Plus}
                     onClick={() => setCreateClubOpen(true)}
-                    className="gap-1.5"
-                  >
-                    <Plus className="size-4" strokeWidth={1.75} />
-                    <span className="hidden sm:inline">Create Club</span>
-                  </Button>
+                  />
                   <span
                     aria-hidden
                     className="mx-1 hidden h-5 w-px bg-border sm:block"
@@ -187,10 +185,11 @@ export function AppShell({
               <button
                 type="button"
                 aria-label="Notifications"
-                className="relative rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                className="relative rounded-full p-3 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 md:p-2"
               >
                 <Bell className="size-5" strokeWidth={1.75} />
-                <span className="absolute right-2 top-2 size-2 rounded-full bg-destructive ring-2 ring-background" />
+                {/* Pinned to the icon's corner, which the padding moves. */}
+                <span className="absolute right-3 top-3 size-2 rounded-full bg-destructive ring-2 ring-background md:right-2 md:top-2" />
               </button>
               <span
                 aria-hidden

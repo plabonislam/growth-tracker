@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import { Button } from '@/components/ui/button';
+import { FormActions } from '@/components/ui/form-actions';
 import { Checkbox } from '@/components/ui/checkbox';
 
 type MarkDoneModalProps = {
@@ -85,23 +86,25 @@ export function MarkDoneModal({
           </label>
         </div>
 
-        <div className="flex flex-col gap-3 bg-muted/30 p-4 sm:flex-row-reverse">
+        <FormActions className="bg-muted/30 p-4">
           <Button
-            className="flex-1"
-            disabled={!confirmed || isSubmitting}
-            onClick={onSubmit}
-          >
-            {isSubmitting ? 'Sending…' : 'Submit Request'}
-          </Button>
-          <Button
+            type="button"
             variant="outline"
-            className="flex-1"
+            size="lg"
             disabled={isSubmitting}
             onClick={onClose}
           >
             Cancel
           </Button>
-        </div>
+          <Button
+            type="button"
+            size="lg"
+            disabled={!confirmed || isSubmitting}
+            onClick={onSubmit}
+          >
+            {isSubmitting ? 'Sending…' : 'Submit Request'}
+          </Button>
+        </FormActions>
       </div>
     </div>,
     document.body,

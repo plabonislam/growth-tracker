@@ -1,4 +1,3 @@
-import { ArrowLeft } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
@@ -112,16 +111,7 @@ export function ClubDetailPage({ clubId }: { clubId: string }) {
   return (
     <div className="pb-24">
       <main className="mx-auto w-full max-w-[1800px] px-4 py-6 md:px-6 lg:px-12 lg:py-8">
-        {/* In-content back affordance — keeps global chrome constant */}
-        <button
-          type="button"
-          onClick={() => navigate('/explore')}
-          className="mb-4 flex items-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-        >
-          <ArrowLeft className="size-4" />
-          Back to Explore
-        </button>
-
+        {/* Back lives in the navbar — see `AppShell`'s `backTo`. */}
         {isError && (
           <p className="py-12 text-center text-sm text-destructive">
             Couldn’t load this club. Please try again.

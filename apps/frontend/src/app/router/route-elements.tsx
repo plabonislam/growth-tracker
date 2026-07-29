@@ -2,6 +2,7 @@ import { useParams } from 'react-router';
 
 import { AppShell } from '@/components/layout/app-shell';
 import { useCurrentUser } from '@/features/auth/hooks/use-current-user';
+import { useTopic } from '@/features/topics/hooks/use-topics';
 import { ClubDetailPage } from '@/pages/clubs/club-detail-page';
 import { ClubDashboard } from '@/pages/dashboard/club-dashboard';
 import { DashboardPage } from '@/pages/dashboard/dashboard-page';
@@ -62,13 +63,16 @@ export function PendingEnrollmentsRoute() {
 
 export function EnrolledTopicRoute() {
   const { topicId } = useParams();
+  // The topic is what says which club to go back to. The page asks for it too
+  // — this is the same cached query, not a second fetch. Until it lands the
+  // arrow points at the dashboard, which is somewhere rather than nowhere.
+  const { data: topic } = useTopic(topicId!);
+
   return (
     <AppShell
       activePath="/dashboard"
-      breadcrumb={[
-        { label: 'Dashboard', path: '/dashboard' },
-        { label: 'Enrolled Topic' },
-      ]}
+      backTo={topic ? `/clubs/${topic.clubId}` : '/dashboard'}
+      breadcrumb={[{ label: 'Manage Module' }]}
     >
       <EnrolledTopicPage topicId={topicId!} />
     </AppShell>
@@ -77,14 +81,15 @@ export function EnrolledTopicRoute() {
 
 export function CreateModuleRoute() {
   const { topicId } = useParams();
+  // The topic the module belongs to is the context worth naming up here — the
+  // page's own h1 already says whether it's a new module or an edit. Same
+  // cached query the form page reads.
+  const { data: topic } = useTopic(topicId!);
   return (
     <AppShell
       activePath="/dashboard"
-      breadcrumb={[
-        { label: 'Dashboard', path: '/dashboard' },
-        { label: 'Enrolled Topic', path: `/topics/${topicId}` },
-        { label: 'New Module' },
-      ]}
+      backTo={`/topics/${topicId}`}
+      breadcrumb={[{ label: topic?.name ?? 'New Module' }]}
     >
       <ModuleFormPage topicId={topicId!} />
     </AppShell>
@@ -93,14 +98,12 @@ export function CreateModuleRoute() {
 
 export function EditModuleRoute() {
   const { topicId, moduleId } = useParams();
+  const { data: topic } = useTopic(topicId!);
   return (
     <AppShell
       activePath="/dashboard"
-      breadcrumb={[
-        { label: 'Dashboard', path: '/dashboard' },
-        { label: 'Enrolled Topic', path: `/topics/${topicId}` },
-        { label: 'Edit Module' },
-      ]}
+      backTo={`/topics/${topicId}`}
+      breadcrumb={[{ label: topic?.name ?? 'Edit Module' }]}
     >
       <ModuleFormPage topicId={topicId!} moduleId={moduleId!} />
     </AppShell>
@@ -125,10 +128,8 @@ export function ClubDetailRoute() {
   return (
     <AppShell
       activePath="/explore"
-      breadcrumb={[
-        { label: 'Explore Clubs', path: '/explore' },
-        { label: 'Club Details' },
-      ]}
+      backTo="/explore"
+      breadcrumb={[{ label: 'Club Details' }]}
     >
       <ClubDetailPage clubId={clubId!} />
     </AppShell>

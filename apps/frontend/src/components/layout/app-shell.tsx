@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Bell, ChevronRight, Menu, Plus, X } from 'lucide-react';
+import { ArrowLeft, Bell, ChevronRight, Menu, Plus, X } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router';
 
 import { AppSidebar, SidebarContent } from '@/components/layout/app-sidebar';
 import { BottomNav } from '@/components/layout/bottom-nav';
 import { BrandLogo } from '@/components/layout/brand-logo';
+import { NavbarActionButton } from '@/components/layout/navbar-action-button';
 import { NAVBAR_ACTIONS_SLOT_ID } from '@/components/layout/navbar-actions';
-import { Button } from '@/components/ui/button';
 import { AccountMenu } from '@/features/auth/components/account-menu';
 import { ClubCreateModal } from '@/features/clubs/components/club-create-modal';
 import { SearchCommand } from '@/features/search/components/search-command';
@@ -61,14 +61,21 @@ function Breadcrumb({ items }: { items: BreadcrumbItem[] }) {
  * slide-over drawer on tablet (`md`–`lg`), bottom nav on mobile. Pages render
  * their own `<main>` content. `activePath` drives the active state of the
  * navs; `breadcrumb` renders the page context on the left of the top bar.
+ *
+ * `backTo` turns that left slot into a back arrow plus the page's own title
+ * (the last crumb), for pages reached from one place and returned to it — the
+ * page then owns no back affordance of its own.
  */
 export function AppShell({
   activePath,
   breadcrumb,
+  backTo,
   children,
 }: {
   activePath: string;
   breadcrumb?: BreadcrumbItem[];
+  /** Where the back arrow goes. Replaces the breadcrumb trail when set. */
+  backTo?: string;
   children: React.ReactNode;
 }) {
   const navigate = useNavigate();
@@ -76,6 +83,9 @@ export function AppShell({
   const isAuthority = useAuthStore((s) => s.isAuthority);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [createClubOpen, setCreateClubOpen] = useState(false);
+
+  // The page's own name is the last crumb — the trail's tail is the title.
+  const pageTitle = breadcrumb?.[breadcrumb.length - 1]?.label;
 
   // The navbar's primary action is context-aware: Create Club on Explore,
   // Create Topic on a club detail page (`/clubs/:clubId`). The club detail
@@ -121,7 +131,7 @@ export function AppShell({
             type="button"
             aria-label="Close navigation"
             onClick={() => setDrawerOpen(false)}
-            className="absolute right-2 top-2 rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+            className="absolute right-2 top-2 flex size-11 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
           >
             <X className="size-4" />
           </button>
@@ -135,24 +145,48 @@ export function AppShell({
       <div className="flex min-w-0 flex-1 flex-col bg-[#F9FAFB] pb-16 dark:bg-background md:pb-0">
         <header className="sticky top-0 z-50 w-full border-b border-border/60 bg-background">
           <div className="flex h-14 w-full items-center gap-3 px-4 md:h-16 md:px-6">
-            {/* Left — brand on mobile, hamburger on tablet, page context on desktop */}
-            <button
-              type="button"
-              onClick={() => navigate('/dashboard')}
-              className="shrink-0 md:hidden"
-            >
-              <BrandLogo />
-            </button>
+            {/* Left — brand on mobile, hamburger on tablet, page context on
+                desktop. A back arrow takes the brand's place on mobile: on a
+                page you came from somewhere, leaving matters more than the
+                logo, and the two together leave no room for the title. */}
+            {!backTo && (
+              <button
+                type="button"
+                onClick={() => navigate('/dashboard')}
+                className="flex h-11 shrink-0 items-center md:hidden"
+              >
+                <BrandLogo />
+              </button>
+            )}
             <button
               type="button"
               aria-label="Open navigation"
               onClick={() => setDrawerOpen(true)}
-              className="hidden shrink-0 rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 md:block lg:hidden"
+              // Only ever shown on tablets, so it keeps the 44px touch size at
+              // every width it appears at.
+              className="hidden size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 md:flex lg:hidden"
             >
               <Menu className="size-5" strokeWidth={1.75} />
             </button>
-            {breadcrumb && breadcrumb.length > 0 && (
-              <Breadcrumb items={breadcrumb} />
+            {backTo ? (
+              <div className="flex min-w-0 items-center gap-1">
+                <button
+                  type="button"
+                  aria-label="Go back"
+                  onClick={() => navigate(backTo)}
+                  className="flex size-11 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 md:size-9"
+                >
+                  <ArrowLeft className="size-5" strokeWidth={1.75} />
+                </button>
+                {pageTitle && (
+                  <span className="truncate text-sm font-semibold text-foreground">
+                    {pageTitle}
+                  </span>
+                )}
+              </div>
+            ) : (
+              breadcrumb &&
+              breadcrumb.length > 0 && <Breadcrumb items={breadcrumb} />
             )}
 
             {/* Center — search owns the flexible space */}
@@ -169,15 +203,11 @@ export function AppShell({
               />
               {showCreateClub && (
                 <>
-                  <Button
-                    type="button"
-                    size="sm"
+                  <NavbarActionButton
+                    label="Create Club"
+                    icon={Plus}
                     onClick={() => setCreateClubOpen(true)}
-                    className="gap-1.5"
-                  >
-                    <Plus className="size-4" strokeWidth={1.75} />
-                    <span className="hidden sm:inline">Create Club</span>
-                  </Button>
+                  />
                   <span
                     aria-hidden
                     className="mx-1 hidden h-5 w-px bg-border sm:block"
@@ -187,10 +217,11 @@ export function AppShell({
               <button
                 type="button"
                 aria-label="Notifications"
-                className="relative rounded-full p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                className="relative rounded-full p-3 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 md:p-2"
               >
                 <Bell className="size-5" strokeWidth={1.75} />
-                <span className="absolute right-2 top-2 size-2 rounded-full bg-destructive ring-2 ring-background" />
+                {/* Pinned to the icon's corner, which the padding moves. */}
+                <span className="absolute right-3 top-3 size-2 rounded-full bg-destructive ring-2 ring-background md:right-2 md:top-2" />
               </button>
               <span
                 aria-hidden
@@ -211,6 +242,7 @@ export function AppShell({
       <ClubCreateModal
         open={createClubOpen}
         onClose={() => setCreateClubOpen(false)}
+        onCreated={() => setCreateClubOpen(false)}
       />
     </div>
   );

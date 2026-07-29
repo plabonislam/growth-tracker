@@ -1,7 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { CheckCircle2, Send } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { JOIN_EXPECTATION_LENGTH, JoinClubSchema, type JoinClub } from 'shared';
+import {
+  ClubJoinErrorCode,
+  JOIN_EXPECTATION_LENGTH,
+  JoinClubSchema,
+  type JoinClub,
+} from 'shared';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -19,8 +24,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { useCurrentUser } from '@/features/auth/hooks/use-current-user';
 import { fieldLabelClass } from '@/lib/form-styles';
 import { cn } from '@/lib/utils';
-import { getApiErrorMessage } from '@/services/http/client';
+import { getApiErrorCode } from '@/services/http/client';
 import { useSubmitJoinApplication } from '../hooks/use-clubs';
+import { ClubJoinError } from './club-join-error';
 
 function ReadOnlyField({ label, value }: { label: string; value: string }) {
   return (
@@ -156,12 +162,7 @@ export function ClubJoinForm({ clubId }: { clubId: string }) {
           />
 
           {mutation.isError && (
-            <p className="text-sm text-destructive">
-              {getApiErrorMessage(
-                mutation.error,
-                'Something went wrong submitting your application. Please try again.',
-              )}
-            </p>
+            <ClubJoinError error={mutation.error} clubId={clubId} />
           )}
 
           <div className="space-y-4">
@@ -174,9 +175,14 @@ export function ClubJoinForm({ clubId }: { clubId: string }) {
               {mutation.isPending ? 'Submitting…' : 'Submit Application'}
               <Send className="size-4 transition-transform group-hover:translate-x-1" />
             </Button>
-            <p className="text-center text-xs text-muted-foreground">
-              Application review typically takes 3–5 business days.
-            </p>
+            {/* The pending-application error states the same timing, in more
+                specific terms — no need to say it twice. */}
+            {getApiErrorCode(mutation.error) !==
+              ClubJoinErrorCode.APPLICATION_PENDING && (
+              <p className="text-center text-xs text-muted-foreground">
+                Application review typically takes 3–5 business days.
+              </p>
+            )}
           </div>
         </form>
       </Form>

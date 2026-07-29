@@ -1,4 +1,4 @@
-import { ArrowLeft, Lock } from 'lucide-react';
+import { Lock } from 'lucide-react';
 import { useNavigate } from 'react-router';
 
 import { Button } from '@/components/ui/button';
@@ -11,31 +11,18 @@ const containerClass =
   'mx-auto w-full max-w-[1800px] px-4 pb-28 pt-5 sm:px-6 md:pb-32 md:pt-8 xl:pb-16';
 
 function PageHeader({
-  topicName,
   position,
   isEditing,
-  onBack,
 }: {
-  topicName: string;
   /** 1-based slot this module holds in the curriculum. */
   position: number;
   isEditing: boolean;
-  onBack: () => void;
 }) {
   return (
     <header className="mb-6 md:mb-8">
-      {/* The shell's breadcrumb is desktop-only, so the page carries its own
-          way back — and names the destination while it's at it. */}
-      <button
-        type="button"
-        onClick={onBack}
-        className="-ml-1 inline-flex max-w-full items-center gap-1.5 rounded-md px-1 py-1 text-[13px] font-semibold text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-      >
-        <ArrowLeft className="size-4 shrink-0" strokeWidth={2} />
-        <span className="truncate">{topicName}</span>
-      </button>
-
-      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-2">
+      {/* No back affordance here — the shell's navbar carries the arrow back
+          to the topic at every width. */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
         <h1 className="font-serif text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
           {isEditing ? 'Edit module' : 'New module'}
         </h1>
@@ -178,12 +165,10 @@ export function ModuleFormPage({
   return (
     <main className={containerClass}>
       <PageHeader
-        topicName={topic.name}
         // Editing shows the slot the module already holds; creating shows the
         // one it is about to take.
         position={editing ? editing.order + 1 : modules.length + 1}
         isEditing={editing != null}
-        onBack={backToTopic}
       />
 
       <ModuleForm

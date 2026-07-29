@@ -1,4 +1,5 @@
 import {
+  // CalendarPlus, // used by the commented-out "Log a session" item below
   CircleCheckBig,
   Compass,
   LayoutDashboard,
@@ -34,8 +35,8 @@ function buildSections(
   isReviewer: boolean,
   pendingCount: number,
 ): SidebarSection[] {
-  // Only routes that exist. Tasks, sessions and certifications were listed
-  // here as "Soon" placeholders — nothing to navigate to, so nothing to show.
+  // Only routes that exist. Tasks and certifications were listed here as
+  // "Soon" placeholders — nothing to navigate to, so nothing to show.
   const sections: SidebarSection[] = [
     {
       items: [
@@ -48,6 +49,15 @@ function buildSections(
           count: pendingCount > 0 ? pendingCount : undefined,
           reviewersOnly: true,
         },
+        // Sessions are created by a third-party app, not from this UI. The
+        // entry point stays commented out rather than deleted in case the
+        // in-app log is wanted again.
+        // {
+        //   label: 'Log a session',
+        //   icon: CalendarPlus,
+        //   path: '/sessions/new',
+        //   reviewersOnly: true,
+        // },
       ],
     },
   ];

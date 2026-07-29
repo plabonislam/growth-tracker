@@ -11,6 +11,7 @@ import {
   DashboardRoute,
   EnrolledTopicRoute,
   ExploreRoute,
+  // LogSessionRoute, // session creation comes from a third-party app
   PendingEnrollmentsRoute,
 } from './route-elements';
 
@@ -36,6 +37,8 @@ export const routes: RouteObject[] = [
         path: '/topics/:topicId/modules/:moduleId/edit',
         element: <EditModuleRoute />,
       },
+      // Sessions are created by a third-party app — no in-app creation form.
+      // { path: '/sessions/new', element: <LogSessionRoute /> },
       { path: '/clubs/:clubId', element: <ClubDetailRoute /> },
     ],
   },

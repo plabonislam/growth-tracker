@@ -1,8 +1,9 @@
 import { MessagesSquare, Pencil, Users } from 'lucide-react';
 
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { CLUB_ICONS, CLUB_TONE } from '../clubs.constants';
+import { CLUB_ICONS, CLUB_TONE, COORDINATOR_META } from '../clubs.constants';
 
 import type { Club, MembershipStatus } from '../clubs.types';
 import { ClubStatusBadge } from './club-status-badge';
@@ -45,6 +46,9 @@ export function ClubCard({
   ];
   const hasJoinedOrRequested =
     club.membership != null && HIDE_JOIN_STATUSES.includes(club.membership);
+  // The one club this caller runs. Roles are club-scoped, so this is true of
+  // this card alone — every other club still reads as a learner's.
+  const isCoordinator = club.role === 'coordinator';
 
   return (
     <Card className="flex flex-col gap-0 border-t-4 border-t-primary/40 p-6 transition-all hover:-translate-y-1 hover:border-t-primary hover:shadow-md">
@@ -61,6 +65,13 @@ export function ClubCard({
           >
             <Pencil className="size-4" strokeWidth={1.9} />
           </button>
+        ) : isCoordinator ? (
+          <Badge
+            variant="outline"
+            className={`border-transparent ${COORDINATOR_META.className}`}
+          >
+            {COORDINATOR_META.label}
+          </Badge>
         ) : (
           <ClubStatusBadge status={club.membership} />
         )}
@@ -77,7 +88,9 @@ export function ClubCard({
       </div>
 
       <div className="mt-auto flex gap-2">
-        {!isAuthority && !hasJoinedOrRequested && (
+        {/* Nobody joins a club they already answer for — a coordinator gets
+            Explore alone, as an authority does. */}
+        {!isAuthority && !isCoordinator && !hasJoinedOrRequested && (
           <Button className="flex-1" onClick={() => onJoin?.(club)}>
             Join
           </Button>
@@ -85,7 +98,7 @@ export function ClubCard({
         <Button
           variant="outline"
           className={`flex-1 border-primary/20 bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary ${
-            isAuthority || hasJoinedOrRequested ? 'w-full' : ''
+            isAuthority || isCoordinator || hasJoinedOrRequested ? 'w-full' : ''
           }`}
           onClick={() => onExplore?.(club)}
         >

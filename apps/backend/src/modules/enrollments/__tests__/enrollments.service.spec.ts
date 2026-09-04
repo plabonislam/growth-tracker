@@ -12,7 +12,7 @@ const mockRepo = {
   findTopicById: jest.fn(),
   findClubMembership: jest.fn(),
   findEnrollment: jest.fn(),
-  findApprovedEnrollmentElsewhere: jest.fn(),
+  findBlockingEnrollmentElsewhere: jest.fn(),
   findEnrollmentsByUserId: jest.fn(),
   insertEnrollment: jest.fn(),
   decidePendingEnrollment: jest.fn(),
@@ -73,7 +73,7 @@ describe('EnrollmentsService', () => {
       mockRepo.findTopicById.mockResolvedValue(topic);
       mockRepo.findClubMembership.mockResolvedValue(activeMembership);
       mockRepo.findEnrollment.mockResolvedValue(null);
-      mockRepo.findApprovedEnrollmentElsewhere.mockResolvedValue(null);
+      mockRepo.findBlockingEnrollmentElsewhere.mockResolvedValue(null);
     };
 
     it('creates a pending enrollment carrying the learner’s reason', async () => {
@@ -152,9 +152,9 @@ describe('EnrollmentsService', () => {
       expect(mockRepo.insertEnrollment).not.toHaveBeenCalled();
     });
 
-    it('throws 400 when the learner is already approved in another topic', async () => {
+    it('throws 400 when the learner is still working through another topic', async () => {
       givenEligible();
-      mockRepo.findApprovedEnrollmentElsewhere.mockResolvedValue({
+      mockRepo.findBlockingEnrollmentElsewhere.mockResolvedValue({
         ...enrollment,
         topicId: 'topic-2',
         status: 'approved',

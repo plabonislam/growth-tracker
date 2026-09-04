@@ -172,8 +172,11 @@ export function ClubDetailPage({ clubId }: { clubId: string }) {
                 // restricts to coordinator/authority — so a topic's own mentor
                 // gets "Manage modules" without the edit control.
                 onEditTopic={canManageTopics ? setEditingTopic : undefined}
+                // Creating is the same right as managing: an authority, or
+                // the coordinator this club is assigned to. The API agrees —
+                // `POST /clubs/:clubId/topics` is Coordinator / Authority.
                 onCreateTopic={
-                  isAuthority ? () => setCreatingTopic(true) : undefined
+                  canManageTopics ? () => setCreatingTopic(true) : undefined
                 }
               />
             )}

@@ -99,6 +99,16 @@ export const NOT_ENROLLED_META = {
 };
 
 /**
+ * Shown in place of the membership badge on the club a caller coordinates.
+ * They run that club rather than take part in it, so "Active" — or worse,
+ * "Not Enrolled" — describes the wrong relationship entirely.
+ */
+export const COORDINATOR_META = {
+  label: 'Coordinator',
+  className: 'bg-primary/10 text-primary',
+};
+
+/**
  * Why a club's topics carry no enroll action, keyed by where the caller stands
  * with the club — `none` for someone who has never applied. `active` has no
  * entry: nothing is in their way, so there is nothing to explain.

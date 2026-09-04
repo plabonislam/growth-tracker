@@ -31,7 +31,8 @@ export class EnrollmentsService {
    * A learner's request to join a topic. Four things have to hold before the
    * mentor is asked: the topic is published, the learner belongs to the club it
    * sits in, they are not already mid-request or enrolled here, and they are
-   * not part-way through another topic.
+   * not part-way through another topic — one they have finished every module
+   * of, or one in a club they are on break from, doesn't count.
    */
   async applyToTopic(topicId: string, dto: EnrollTopic, caller: Caller) {
     this.logger.log(
@@ -67,13 +68,15 @@ export class EnrollmentsService {
         );
       }
 
-      const elsewhere = await this.repo.findApprovedEnrollmentElsewhere(
+      const elsewhere = await this.repo.findBlockingEnrollmentElsewhere(
         topicId,
         caller.userId,
       );
       if (elsewhere) {
         throw new BadRequestException(
-          'Finish or leave your current topic before enrolling in another',
+          // Finishing is the only way out of this — there is no endpoint for
+          // leaving a topic, so the message doesn't offer one.
+          'Finish every module of your current topic before enrolling in another',
         );
       }
 

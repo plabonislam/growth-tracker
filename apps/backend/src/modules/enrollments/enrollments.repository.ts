@@ -1,12 +1,28 @@
 import { Injectable } from '@nestjs/common';
-import { and, count, eq, inArray, ne, or } from 'drizzle-orm';
-import { EnrollmentStatus } from 'shared';
+import {
+  and,
+  count,
+  eq,
+  exists,
+  inArray,
+  isNull,
+  ne,
+  or,
+  sql,
+} from 'drizzle-orm';
+import {
+  EnrollmentStatus,
+  MembershipStatus,
+  ModuleProgressStatus,
+} from 'shared';
 
 import { DatabaseService } from '../../core/database/database.service';
 import {
   clubMembershipsTable,
   clubsTable,
 } from '../../core/database/schema/clubs.schema';
+import { courseModulesTable } from '../../core/database/schema/course-modules.schema';
+import { moduleProgressTable } from '../../core/database/schema/progress.schema';
 import {
   topicEnrollmentsTable,
   topicMentorsTable,
@@ -60,21 +76,64 @@ export class EnrollmentsRepository {
   }
 
   /**
-   * An approved enrollment the caller holds in some *other* topic — the one
-   * thing that stands between them and a second topic at the same time.
+   * An approved enrollment the caller holds in some *other* topic that still
+   * has work left in it — the one thing that stands between them and a second
+   * topic at the same time.
+   *
+   * Two approved enrollments don't hold anyone back:
+   *
+   * - **A finished topic.** Working through every module *is* finishing the
+   *   topic, so a topic whose modules are all `completed` is behind the
+   *   learner. (Enrollment has no `completed` state to move it to, so this is
+   *   asked of the progress rows rather than read off a column.)
+   * - **A club they are on break from.** The topic isn't theirs to work on
+   *   while the membership is anything but `active`, so it can't be the reason
+   *   they're refused a topic in a club they *are* active in.
    */
-  async findApprovedEnrollmentElsewhere(topicId: string, userId: string) {
+  async findBlockingEnrollmentElsewhere(topicId: string, userId: string) {
+    const unfinishedModule = this.db.db
+      .select({ one: sql`1` })
+      .from(courseModulesTable)
+      .leftJoin(
+        moduleProgressTable,
+        and(
+          eq(moduleProgressTable.moduleId, courseModulesTable.id),
+          eq(moduleProgressTable.learnerId, userId),
+        ),
+      )
+      .where(
+        and(
+          eq(courseModulesTable.topicId, topicEnrollmentsTable.topicId),
+          // Never started counts as unfinished, so the missing progress row
+          // has to be caught alongside the ones still in flight.
+          or(
+            isNull(moduleProgressTable.status),
+            ne(moduleProgressTable.status, ModuleProgressStatus.completed),
+          ),
+        ),
+      );
+
     const [row] = await this.db.db
-      .select()
+      .select({ enrollment: topicEnrollmentsTable })
       .from(topicEnrollmentsTable)
+      .innerJoin(topicsTable, eq(topicsTable.id, topicEnrollmentsTable.topicId))
+      .innerJoin(
+        clubMembershipsTable,
+        and(
+          eq(clubMembershipsTable.clubId, topicsTable.clubId),
+          eq(clubMembershipsTable.userId, userId),
+        ),
+      )
       .where(
         and(
           eq(topicEnrollmentsTable.userId, userId),
           eq(topicEnrollmentsTable.status, EnrollmentStatus.approved),
           ne(topicEnrollmentsTable.topicId, topicId),
+          eq(clubMembershipsTable.status, MembershipStatus.active),
+          exists(unfinishedModule),
         ),
       );
-    return row ?? null;
+    return row?.enrollment ?? null;
   }
 
   findEnrollmentsByUserId(userId: string) {

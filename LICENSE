@@ -1,0 +1,84 @@
+DSi Club Growth Tracker — Source-Available License
+
+Copyright (c) 2024-2026 DSi Club. All rights reserved.
+
+This software and its source code (the "Software") are proprietary to
+DSi Club (the "Copyright Holder"). The Software is made publicly
+viewable so that it can be reviewed and improved by contributors, but it
+is NOT open source. No rights are granted except as expressly set out
+below.
+
+1. Permitted Use
+
+   Subject to the terms of this license, you may:
+
+   a. view and read the Software's source code;
+   b. clone or fork the Software's repository, and build and run the
+      Software locally, solely for the purpose of reviewing it or
+      preparing a contribution to the Copyright Holder's repository at
+      https://github.com/plabonislam/growth-tracker; and
+   c. submit contributions (bug fixes, features, documentation, and
+      similar changes) to that repository by pull request.
+
+2. Reserved Rights
+
+   All rights not expressly granted above are reserved by the Copyright
+   Holder. Without the Copyright Holder's prior written permission, you
+   may NOT:
+
+   a. use the Software, or any part of it, for any commercial purpose or
+      in any production, staging, or otherwise live environment;
+   b. copy, publish, distribute, sublicense, sell, rent, lease, or lend
+      the Software or any part of it, except that a fork hosted for the
+      purpose of preparing a contribution under Section 1 is permitted;
+   c. create or distribute derivative works of the Software, other than
+      modifications you make for the purpose of contributing them back
+      under Section 1; or
+   d. remove or alter any copyright, license, or other proprietary notice
+      in the Software.
+
+3. Contributions
+
+   By submitting a contribution to the Copyright Holder's repository,
+   you:
+
+   a. represent that you have the right to submit it;
+   b. grant the Copyright Holder a perpetual, worldwide, irrevocable,
+      royalty-free license to use, reproduce, modify, distribute,
+      sublicense, and otherwise exploit the contribution as part of, or
+      in connection with, the Software, under this license or any other
+      terms the Copyright Holder chooses; and
+   c. agree that your contribution is subject to this license once it
+      is incorporated into the Software.
+
+   No separate contributor license agreement is required.
+
+4. No Trademark Rights
+
+   This license does not grant permission to use the names, logos, or
+   trademarks of the Copyright Holder, except as required to describe
+   the origin of the Software.
+
+5. Termination
+
+   This license terminates automatically if you breach any of its terms.
+   On termination you must stop using the Software and delete all copies
+   in your possession, other than a fork retained solely for the purpose
+   of an open pull request to the Copyright Holder's repository.
+
+6. Disclaimer of Warranty
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND
+   NON-INFRINGEMENT.
+
+7. Limitation of Liability
+
+   IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+   ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+   CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION
+   WITH THE SOFTWARE OR THE USE OF OR OTHER DEALINGS IN THE SOFTWARE.
+
+For permission beyond the scope of this license, contact the Copyright
+Holder via https://dsinnovators.com.

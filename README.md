@@ -16,6 +16,7 @@ A learning and growth tracking platform for DSI Clubs. Built as a pnpm monorepo 
 - [Code Quality](#-code-quality)
 - [Troubleshooting](#-troubleshooting)
 - [Contributing](#-contributing)
+- [License](#-license)
 
 ## 🎯 Overview
 
@@ -371,6 +372,8 @@ pnpm install
 
 Contributions go through a **fork and pull request** workflow. You don't need write access to the main repository — you work in your own fork and open a PR against upstream.
 
+By submitting a pull request you agree that your contribution is licensed to DSi Club under the terms in [LICENSE](LICENSE) — see [License](#-license). No separate contributor agreement is needed.
+
 ### One-time setup
 
 1. **Fork the repository** — click **Fork** on [plabonislam/growth-tracker](https://github.com/plabonislam/growth-tracker) to create a copy under your own account.
@@ -468,6 +471,10 @@ git commit -m "feat(backend): add topic enrollment endpoint"
 - Keep feature code inside its module (backend) or feature folder (frontend)
 - Put anything both apps need into `packages/shared`
 - Never commit `.env` — it's gitignored, and secrets belong in your local file only
+
+## 📄 License
+
+Copyright © 2024–2026 DSi Club. This project is **proprietary and source-available**, not open source. You may view the source and fork or run it locally to review it or contribute back via pull request; all other rights — including commercial or production use, redistribution, and derivative works — are reserved. See [LICENSE](LICENSE) for the full terms.
 
 ## 📚 Resources
 

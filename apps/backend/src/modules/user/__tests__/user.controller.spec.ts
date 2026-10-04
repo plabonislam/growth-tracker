@@ -55,6 +55,9 @@ describe('UserController', () => {
     it('returns 403 for non-Authority user via PermissionsGuard', () => {
       // Verify @RequireRole('authority') metadata is applied to the handler
 
+      // Taken as a metadata key, never called, so the unbound `this` the rule
+      // guards against cannot arise.
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       const handler = UserController.prototype.findAll;
       const roles = Reflect.getMetadata(REQUIRE_ROLE_KEY, handler) as string[];
       expect(roles).toContain('authority');

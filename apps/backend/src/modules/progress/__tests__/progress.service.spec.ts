@@ -62,7 +62,7 @@ describe('ProgressService', () => {
 
       const result = await service.getTopicProgress('topic-1', learner);
 
-      expect(result.modules[0]!.status).toBe('to_do');
+      expect(result.modules[0].status).toBe('to_do');
       expect(result.progress).toBe(0);
     });
 

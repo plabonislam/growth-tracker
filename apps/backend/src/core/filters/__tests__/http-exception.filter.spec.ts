@@ -5,7 +5,25 @@ import {
 } from '@nestjs/common';
 import { HttpExceptionFilter } from '../http-exception.filter';
 
-const makeHost = (mockJson: jest.Mock) =>
+/** The body the filter is expected to write. */
+interface ErrorBody {
+  statusCode: number;
+  message: string;
+  timestamp: string;
+  code?: string;
+}
+
+/**
+ * Typed rather than a bare `jest.Mock` so reading `mock.calls` back gives the
+ * body's real field types instead of `any`. The type argument has to go on the
+ * `jest.fn()` call itself — annotating the variable would just be assigning a
+ * `Mock<any, any>` to it.
+ */
+type JsonMock = jest.Mock<void, [ErrorBody]>;
+
+const makeJsonMock = (): JsonMock => jest.fn<void, [ErrorBody]>();
+
+const makeHost = (mockJson: JsonMock) =>
   ({
     switchToHttp: () => ({
       getResponse: () => ({
@@ -23,7 +41,7 @@ describe('HttpExceptionFilter', () => {
   });
 
   it('normalises unknown errors to 500', () => {
-    const mockJson = jest.fn();
+    const mockJson = makeJsonMock();
     filter.catch(new Error('something broke'), makeHost(mockJson));
 
     expect(mockJson).toHaveBeenCalledWith(
@@ -35,7 +53,7 @@ describe('HttpExceptionFilter', () => {
   });
 
   it('timestamp is valid ISO 8601', () => {
-    const mockJson = jest.fn();
+    const mockJson = makeJsonMock();
     filter.catch(new ForbiddenException(), makeHost(mockJson));
 
     const { timestamp } = mockJson.mock.calls[0][0];
@@ -43,7 +61,7 @@ describe('HttpExceptionFilter', () => {
   });
 
   it('passes a thrown code through, and omits the field without one', () => {
-    const withCode = jest.fn();
+    const withCode = makeJsonMock();
     filter.catch(
       new ConflictException({ code: 'ALREADY_MEMBER', message: 'Already in.' }),
       makeHost(withCode),
@@ -56,7 +74,7 @@ describe('HttpExceptionFilter', () => {
       }),
     );
 
-    const withoutCode = jest.fn<void, [Record<string, unknown>]>();
+    const withoutCode = makeJsonMock();
     filter.catch(
       new ForbiddenException('Access denied'),
       makeHost(withoutCode),
@@ -65,14 +83,16 @@ describe('HttpExceptionFilter', () => {
   });
 
   it('normalises HttpException to { statusCode, message, timestamp }', () => {
-    const mockJson = jest.fn();
+    const mockJson = makeJsonMock();
     filter.catch(new ForbiddenException('Access denied'), makeHost(mockJson));
 
     expect(mockJson).toHaveBeenCalledWith(
       expect.objectContaining({
         statusCode: 403,
-        message: expect.any(String),
-        timestamp: expect.any(String),
+        // `expect.any` is typed `any`; narrowed here so the matcher object
+        // stays assignable to the body's own field types.
+        message: expect.any(String) as string,
+        timestamp: expect.any(String) as string,
       }),
     );
   });

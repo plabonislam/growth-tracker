@@ -110,7 +110,7 @@ describe('AuthService', () => {
       const userWithAuthority = { ...mockUser, isAuthority: true };
       const { accessToken } = service.generateTokens(userWithAuthority);
 
-      const decoded = jwtService.decode(accessToken) as Record<string, unknown>;
+      const decoded = jwtService.decode<Record<string, unknown>>(accessToken);
 
       expect(decoded['sub']).toBe(mockUser.id);
       expect(decoded['email']).toBe(mockUser.email);

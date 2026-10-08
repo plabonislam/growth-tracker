@@ -10,27 +10,45 @@ import { FAKE_USERS } from './seed-data/users';
 
 export async function seed(
   db: NodePgDatabase<typeof schema>,
-  authorityEmail: string,
+  authorityEmail?: string,
 ): Promise<void> {
-  // seed users
+  // seed users — existing rows are left untouched so a real account that has
+  // already logged in keeps its name, avatar and is_authority flag
   const users = FAKE_USERS.map((u) => ({
     ...u,
     avatarUrl: null as string | null,
-    isAuthority: u.email === authorityEmail ? true : u.isAuthority,
   }));
 
-  await db
-    .insert(usersTable)
-    .values(users)
-    .onConflictDoUpdate({
-      target: usersTable.email,
-      set: { isAuthority: usersTable.isAuthority },
-    });
+  await db.insert(usersTable).values(users).onConflictDoNothing();
 
   const authorityCount = users.filter((u) => u.isAuthority).length;
   console.log(
-    `seed: inserted/updated ${users.length} users (${authorityCount} authority, ${users.length - authorityCount} members)`,
+    `seed: inserted ${users.length} users (${authorityCount} authority, ${users.length - authorityCount} members)`,
   );
+
+  // promote SEED_EMAIL independently of FAKE_USERS, so it works for a real
+  // Google account that was never part of the sample data
+  if (authorityEmail) {
+    const [promoted] = await db
+      .update(usersTable)
+      .set({ isAuthority: true })
+      .where(eq(usersTable.email, authorityEmail))
+      .returning({ id: usersTable.id });
+
+    if (promoted) {
+      console.log(`seed: promoted ${authorityEmail} to authority`);
+    } else {
+      // No row yet — create one so seeding before the first login also works.
+      // AuthService.upsertUser fills in name/avatarUrl on that login and leaves
+      // is_authority alone.
+      await db.insert(usersTable).values({
+        name: authorityEmail.split('@')[0],
+        email: authorityEmail,
+        isAuthority: true,
+      });
+      console.log(`seed: created ${authorityEmail} as authority`);
+    }
+  }
 
   // seed clubs
   for (const club of FAKE_CLUBS) {
@@ -90,7 +108,7 @@ export async function seed(
 if (require.main === module) {
   const pool = new Pool({ connectionString: process.env.DATABASE_URL! });
   const db = drizzle(pool, { schema });
-  seed(db, process.env.SEED_EMAIL!)
+  seed(db, process.env.SEED_EMAIL)
     .then(() => pool.end())
     .catch((err) => {
       console.error(err);

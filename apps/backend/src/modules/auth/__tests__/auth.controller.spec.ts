@@ -47,7 +47,7 @@ describe('AuthController', () => {
   });
 
   describe('POST /auth/refresh', () => {
-    it('returns new accessToken for valid refresh token', async () => {
+    it('returns new accessToken for valid refresh token', () => {
       mockAuthService.refreshAccessToken.mockReturnValue({
         accessToken: 'new-access-token',
       });

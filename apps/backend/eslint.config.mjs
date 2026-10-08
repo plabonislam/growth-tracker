@@ -29,7 +29,10 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-floating-promises': 'warn',
       '@typescript-eslint/no-unsafe-argument': 'warn',
-      'prettier/prettier': ['error', { endOfLine: 'auto' }],
+      // 'lf' rather than 'auto' so this agrees with the root .prettierrc and
+      // with .gitattributes; 'auto' let the two tools reach different verdicts
+      // on the same file.
+      'prettier/prettier': ['error', { endOfLine: 'lf' }],
     },
   },
 );

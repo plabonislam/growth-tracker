@@ -4,15 +4,22 @@ import {
   Logger,
   PipeTransform,
 } from '@nestjs/common';
-import { ZodSchema } from 'zod';
+import { ZodType } from 'zod';
 
+/**
+ * Generic over the schema's output so callers get the parsed type back rather
+ * than `any` — `ZodSchema` is `ZodType<any>`, which would spread that `any`
+ * through every handler the pipe feeds.
+ */
 @Injectable()
-export class ZodValidationPipe implements PipeTransform {
+export class ZodValidationPipe<TOutput = unknown>
+  implements PipeTransform<unknown, TOutput>
+{
   private readonly logger = new Logger(ZodValidationPipe.name);
 
-  constructor(private readonly schema: ZodSchema) {}
+  constructor(private readonly schema: ZodType<TOutput>) {}
 
-  transform(value: unknown) {
+  transform(value: unknown): TOutput {
     const result = this.schema.safeParse(value);
     if (!result.success) {
       const flattened = result.error.flatten();

@@ -2,7 +2,8 @@ import { toast } from 'sonner';
 import type { CreateTopic } from 'shared';
 
 import { getApiErrorMessage } from '@/services/http/client';
-import { EMPTY_TOPIC, TopicFormModal } from './topic-form-modal';
+import { TopicFormModal } from './topic-form-modal';
+import { EMPTY_TOPIC } from '../clubs.constants';
 import { useCreateTopic } from '../hooks/use-clubs';
 
 type CreateTopicModalProps = {

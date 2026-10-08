@@ -27,14 +27,6 @@ import { MentorSelect } from '@/features/users/components/mentor-select';
 import { fieldLabelClass } from '@/lib/form-styles';
 import { cn } from '@/lib/utils';
 
-/** What the form holds while empty; also what a create reopen resets it to. */
-export const EMPTY_TOPIC: CreateTopicInput = {
-  name: '',
-  description: '',
-  mentorId: '',
-  certificationRequired: false,
-};
-
 type TopicFormModalProps = {
   open: boolean;
   onClose: () => void;

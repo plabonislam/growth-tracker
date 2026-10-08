@@ -9,6 +9,7 @@ import {
   Users,
   type LucideIcon,
 } from 'lucide-react';
+import type { CreateTopicInput } from 'shared';
 
 import type {
   ClubIconKey,
@@ -137,6 +138,14 @@ export const TOPIC_ENROLLMENT_TERMS = [
   'I confirm that I have access to the necessary cloud environment resources.',
   'I have read the requirements and am ready to commit to this topic’s learning schedule.',
 ];
+
+/** What the topic form holds while empty; also what a create reopen resets it to. */
+export const EMPTY_TOPIC: CreateTopicInput = {
+  name: '',
+  description: '',
+  mentorId: '',
+  certificationRequired: false,
+};
 
 /** The weekly load, shown as a topic-summary fact beside modules and time. */
 export const TOPIC_ENROLLMENT_WEEKLY_COMMITMENT = '5–8 hrs / week';

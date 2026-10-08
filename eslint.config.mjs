@@ -12,6 +12,11 @@ export default tseslint.config(
       '**/coverage/**',
       '**/*.js.map',
       '**/*.d.ts',
+      // Each workspace has its own, stricter config. Leaving them to it keeps
+      // this file governing root-level files only, rather than quietly
+      // standing in for theirs whenever ESLint is invoked from the root.
+      'apps/**',
+      'packages/**',
     ],
   },
   eslint.configs.recommended,

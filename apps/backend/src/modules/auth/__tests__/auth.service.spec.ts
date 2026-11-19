@@ -247,12 +247,19 @@ describe('AuthService', () => {
   });
 
   describe('revokeTokens', () => {
-    it("bumps the user's token version", async () => {
+    /** The rows the version-bumping UPDATE reports back. */
+    const givenUpdatedRows = (rows: unknown[]) => {
       const updateChain = {
         set: jest.fn().mockReturnThis(),
-        where: jest.fn().mockResolvedValue(undefined),
+        where: jest.fn().mockReturnThis(),
+        returning: jest.fn().mockResolvedValue(rows),
       };
       mockDb.update.mockReturnValue(updateChain);
+      return updateChain;
+    };
+
+    it("bumps the user's token version", async () => {
+      const updateChain = givenUpdatedRows([{ id: 'uuid-1' }]);
 
       await service.revokeTokens('uuid-1');
 
@@ -262,6 +269,24 @@ describe('AuthService', () => {
       ];
       expect(Object.keys(changes)).toEqual(['tokenVersion']);
       expect(updateChain.where).toHaveBeenCalled();
+    });
+
+    it.each([null, undefined, ''])(
+      'rejects a missing user id (%p) without touching the database',
+      async (userId) => {
+        await expect(
+          service.revokeTokens(userId as unknown as string),
+        ).rejects.toThrow(UnauthorizedException);
+        expect(mockDb.update).not.toHaveBeenCalled();
+      },
+    );
+
+    it('rejects when no user row was revoked', async () => {
+      givenUpdatedRows([]);
+
+      await expect(service.revokeTokens('deleted-user')).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 

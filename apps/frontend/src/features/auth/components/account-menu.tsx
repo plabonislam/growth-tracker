@@ -24,9 +24,13 @@ export function AccountMenu() {
   const rootRef = useRef<HTMLDivElement>(null);
 
   const handleLogout = async () => {
-    // Best effort: an already-expired token can't be revoked, and either way
-    // the local session ends below.
-    await logout().catch(() => undefined);
+    try {
+      await logout();
+    } catch (error) {
+      // Best effort: an already-expired token can't be revoked, and either way
+      // the local session ends below.
+      console.warn('Server-side logout failed; tokens were not revoked', error);
+    }
     tokenStorage.clearTokens();
     useAuthStore.getState().clear();
     navigate('/login');

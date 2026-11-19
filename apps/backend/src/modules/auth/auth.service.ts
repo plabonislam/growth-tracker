@@ -16,7 +16,17 @@ interface GoogleProfile {
   avatarUrl: string | null;
 }
 
-export type TokenType = 'access' | 'refresh';
+export const TokenType = {
+  Access: 'access',
+  Refresh: 'refresh',
+} as const;
+export type TokenType = (typeof TokenType)[keyof typeof TokenType];
+
+/** How long each kind of token stays valid. */
+export const TOKEN_LIFETIME = {
+  [TokenType.Access]: '15m',
+  [TokenType.Refresh]: '5h',
+} as const;
 
 export interface TokenPayload {
   sub: string;
@@ -74,8 +84,8 @@ export class AuthService {
   }
 
   generateTokens(user: TokenSubject) {
-    const accessToken = this.signToken(user, 'access');
-    const refreshToken = this.signToken(user, 'refresh');
+    const accessToken = this.signToken(user, TokenType.Access);
+    const refreshToken = this.signToken(user, TokenType.Refresh);
     return { accessToken, refreshToken };
   }
 
@@ -91,19 +101,19 @@ export class AuthService {
     } catch {
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
-    const user = await this.resolveTokenUser(payload, 'refresh');
+    const user = await this.resolveTokenUser(payload, TokenType.Refresh);
     if (!user) {
       throw new UnauthorizedException('Invalid or expired refresh token');
     }
-    return { accessToken: this.signToken(user, 'access') };
+    return { accessToken: this.signToken(user, TokenType.Access) };
   }
 
   /**
    * The user a verified token speaks for, read fresh from the database. Null
    * when the token is the wrong type, the user is gone, or it was revoked.
    */
-  async resolveTokenUser(payload: TokenPayload, typ: TokenType) {
-    if (payload.typ !== typ) return null;
+  async resolveTokenUser(payload: TokenPayload, expectedType: TokenType) {
+    if (payload.typ !== expectedType) return null;
 
     const [user] = await this.db.db
       .select({
@@ -119,12 +129,21 @@ export class AuthService {
     return user;
   }
 
-  /** Invalidates every access and refresh token issued to the user so far. */
+  /**
+   * Invalidates every access and refresh token issued to the user so far.
+   * Throws rather than succeeding silently when there is no user to revoke —
+   * `WHERE id = NULL` would match nothing and logout would report success.
+   */
   async revokeTokens(userId: string) {
-    await this.db.db
+    if (!userId) throw new UnauthorizedException();
+
+    const revoked = await this.db.db
       .update(usersTable)
       .set({ tokenVersion: sql`${usersTable.tokenVersion} + 1` })
-      .where(eq(usersTable.id, userId));
+      .where(eq(usersTable.id, userId))
+      .returning({ id: usersTable.id });
+
+    if (revoked.length === 0) throw new UnauthorizedException();
   }
 
   private signToken(user: TokenSubject, typ: TokenType) {
@@ -135,10 +154,7 @@ export class AuthService {
       typ,
       ver: user.tokenVersion,
     };
-    // Access tokens take the module default expiry (15m).
-    return typ === 'refresh'
-      ? this.jwtService.sign(payload, { expiresIn: '5h' })
-      : this.jwtService.sign(payload);
+    return this.jwtService.sign(payload, { expiresIn: TOKEN_LIFETIME[typ] });
   }
 
   async getMe(userId: string) {

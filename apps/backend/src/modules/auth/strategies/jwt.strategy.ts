@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { AuthService, type TokenPayload } from '../auth.service';
+import { AuthService, TokenType, type TokenPayload } from '../auth.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -23,7 +23,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
    * request instead of when the token expires.
    */
   async validate(payload: TokenPayload) {
-    const user = await this.authService.resolveTokenUser(payload, 'access');
+    const user = await this.authService.resolveTokenUser(
+      payload,
+      TokenType.Access,
+    );
     if (!user) throw new UnauthorizedException();
     return {
       userId: user.id,

@@ -3,7 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
+import { AuthService, TOKEN_LIFETIME, TokenType } from './auth.service';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { JwtStrategy } from './strategies/jwt.strategy';
 
@@ -15,9 +15,9 @@ import { JwtStrategy } from './strategies/jwt.strategy';
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         secret: config.getOrThrow<string>('JWT_SECRET'),
-        // Default expiry for every token signed through this module — the
-        // access token. The refresh token overrides it at the call site.
-        signOptions: { expiresIn: '15m' },
+        // AuthService passes an explicit expiry for every token it signs; this
+        // default only covers any other caller of JwtService.
+        signOptions: { expiresIn: TOKEN_LIFETIME[TokenType.Access] },
       }),
     }),
   ],

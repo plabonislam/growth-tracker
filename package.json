@@ -11,6 +11,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
     "lint": "pnpm -r --no-bail lint && eslint . --fix",
+    "lint:ci": "pnpm -r --no-bail lint:ci && eslint . --max-warnings=0",
     "type-check": "pnpm --filter backend type-check && pnpm --filter frontend type-check && pnpm --filter shared type-check",
     "prepare": "husky"
   },

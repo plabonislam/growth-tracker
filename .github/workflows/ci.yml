@@ -1,0 +1,83 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+# Least-privilege default token: CI only reads the repo (checkout + install).
+permissions:
+  contents: read
+
+# Four jobs that all run at the same time, so the total wait is about as long as the slowest one.
+# Each job runs on its own machine and repeats the setup (checkout, pnpm, Node, install, build shared).
+jobs:
+  quality:
+    name: Format · Lint · Type-check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.16.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Build first: type-check resolves `shared` from its dist/.
+      - run: pnpm --filter shared build
+      - run: pnpm format:check
+      - run: pnpm lint:ci
+      - run: pnpm type-check
+
+  shared:
+    name: Test shared
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.16.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter shared build
+      - run: pnpm --filter shared test
+
+  backend:
+    name: Test backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.16.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Backend tests resolve `shared` from its dist/.
+      - run: pnpm --filter shared build
+      - run: pnpm --filter backend test
+
+  frontend:
+    name: Build frontend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.16.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Frontend build resolves `shared` from its dist/.
+      - run: pnpm --filter shared build
+      - run: pnpm --filter frontend build

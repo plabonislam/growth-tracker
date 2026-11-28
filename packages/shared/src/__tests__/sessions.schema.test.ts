@@ -24,13 +24,24 @@ describe('CreateSessionSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('rejects non-positive participantCount', () => {
+  it('accepts a zero participantCount (counted, nobody attended)', () => {
     const result = CreateSessionSchema.safeParse({
       date: '2026-06-08',
       type: 'weekly',
       objective: 'Review hooks',
       facilitator: 'Alice',
       participantCount: 0,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects a negative participantCount', () => {
+    const result = CreateSessionSchema.safeParse({
+      date: '2026-06-08',
+      type: 'weekly',
+      objective: 'Review hooks',
+      facilitator: 'Alice',
+      participantCount: -1,
     });
     expect(result.success).toBe(false);
   });

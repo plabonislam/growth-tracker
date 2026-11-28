@@ -5,6 +5,7 @@
   "scripts": {
     "build": "tsup",
     "lint": "eslint . --fix",
+    "lint:ci": "eslint . --max-warnings=0",
     "type-check": "tsc --noEmit",
     "test": "vitest run"
   },
